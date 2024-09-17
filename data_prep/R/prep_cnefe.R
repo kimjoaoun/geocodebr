@@ -163,12 +163,11 @@ zip_hive <- function(directory_to_zip){
   zip_file_name <- basename(directory_to_zip)
   zip_file_name <- paste0(zip_file_name, '.zip')
   zip_file_name <- fs::path(fs::path_dir(directory_to_zip), zip_file_name)
+  zip_file_name <- gsub('=','_', zip_file_name)
 
   # Construct the command
-  command <- paste("zip -r", zip_file_name, directory_to_zip)
-
-  # Execute the command
-  system(command)
+  zip::zip(zipfile = zip_file_name,
+           files = list.files(directory_to_zip,full.names = T))
 
         #
         #   archive::archive_write_dir(
@@ -193,6 +192,9 @@ pbapply::pblapply(X=all_parquet_dirs, FUN =zip_hive)
 zips_to_upoad <- list.files('../../geocodebr_data_prep/2022/parquet/',
                             pattern = '.zip',
                             full.names = TRUE)
+
+zips_to_upoad <- zips_to_upoad[-3]
+
 piggyback::pb_upload(file = zips_to_upoad,
                      repo = 'ipeaGIT/geocodebr',
                      tag = 'data_v0.0.1')
