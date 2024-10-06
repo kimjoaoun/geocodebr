@@ -86,7 +86,20 @@ download_cnefe <- function(abbrev_state = NULL,
   # remove zipped files
   unlink(local_files, recursive = TRUE)
 
+  # get path to parquet subdirs
+  parquet_dirs <- fs::dir_ls(
+    path = geocodebr_env$cache_dir,
+    type = 'directory'
+    )
 
-  return(TRUE)
+  parquet_dirs <- lapply(abbrev_state,
+         FUN = function(uf){
+           temp <- parquet_dirs[data.table::like(parquet_dirs, uf)]
+           return(temp)
+           }
+         )
+
+  parquet_dirs <- unlist(parquet_dirs) |> unname()
+  return(parquet_dirs)
 }
 

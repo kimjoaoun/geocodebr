@@ -1,0 +1,9 @@
+citHeader("To cite geocodebr in publications use:")
+
+bibentry(
+  bibtype  = "Manual",
+  title       = "geocodebr: Download Data from Brazil's Population Census",
+  author      = "Rafael H. M. Pereira [aut, cre]",
+  year        = 2024,
+  version     = "v0.1.0"
+)
