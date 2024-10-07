@@ -15,11 +15,22 @@
 #' @export
 #' @family Microdata
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
-#' # return data as arrow Dataset
-#' df <- geocode(year = 2010,
-#'                       showProgress = FALSE)
+#' # open input data
+#' data_path <- system.file("extdata/sample_1.csv", package = "geocodebr")
+#' input_df <- read.csv(data_path)
 #'
+#' df <- geocodebr::geocode(
+#'   input_table = input_df,
+#'   logradouro = "nm_logradouro",
+#'   numero = "Numero",
+#'   complemento = "Complemento",
+#'   cep = "Cep",
+#'   bairro = "Bairro",
+#'   municipio = "code_muni",
+#'   estado = "abbrev_state"
+#'   )
 #'
+
 geocode <- function(input_table,
                     logradouro = NULL,
                     numero = NULL,
@@ -34,61 +45,132 @@ geocode <- function(input_table,
   # check input
   checkmate::assert_data_frame(input_table)
 
-  # prepare user input
-  input_table <- data.frame(
-    logradouro = "r ns sra da piedade",
-    nroLogradouro = 20,
-    complemento = "qd 20",
-    cep = 25220020,
-    bairro = "jd botanico",
-    codmun_dom = 3304557,
-    uf_dom = "rj"
-  )
-
+  # correspondence of column names
   campos <- enderecopadrao::correspondencia_campos(
-    logradouro = "logradouro",
-    numero = "nroLogradouro",
-    complemento = "complemento",
-    cep = "cep",
-    bairro = "bairro",
-    municipio = "codmun_dom",
-    estado = "uf_dom"
+    logradouro,
+    numero,
+    complemento,
+    cep,
+    bairro,
+    municipio,
+    estado
   )
 
+  # padroniza input do usuario
   input_padrao <- enderecopadrao::padronizar_enderecos(
     enderecos = input_table,
     campos_do_endereco = campos
     )
 
+  input_padrao <- cbind(input_table, input_padrao) # REMOVER quando EP manter ID
+
+  # convert standartdized input to arrow
+  input_arrw_1 <- arrow::as_arrow_table(input_padrao)
+
+  # determine states present in the input
+  input_states <- unique(input_padrao$estado)
+  input_states <- c("AC", "AL", "RJ") ############ REMOVER
+
+  ### 1 download cnefe no cache
+  download_success <- download_cnefe(input_states)
+
+  # check if download worked
+  if (isFALSE(download_success)) { return(invisible(NULL)) }
+
+  # open cnefe parquet
+  cnefe <- arrow_open_dataset(geocodebr_env$cache_dir)
+
+  # narrow scope of search
+  input_states <- unique(input_padrao$estado)
+  input_ceps <- unique(input_padrao$cep)
+  cnefe <- dplyr::filter(cnefe, estado %in% input_states)
+  cnefe <- dplyr::filter(cnefe, cep %in% input_ceps) |>
+    dplyr::compute()
+
+  ### START MATCHING
+
+  ## DETERMINISTIC GROUP
+
+  #   - case 1: match municipio, logradouro, cep, bairro
+  #   - case 2: match municipio, logradouro, cep
+  #   - case 3: match municipio, logradouro, bairro
+  #   - case 4: match municipio, logradouro
+
+  # case 1
+  cols_1 <- c("estado", "municipio", "logradouro", "numero", "cep", "bairro")
+  cols_1g <- c('ID', cols_1)
+  output_caso_1 <- dplyr::left_join(
+    input_arrw_1,
+    cnefe,
+    by = cols_1,
+  ) |> group_by_at(cols_1g) |>
+  summarise(lon = mean(lon, na.rm=TRUE),
+            lat = mean(lat, na.rm=TRUE)) |>
+    filter(!is.na(lon)) |>
+    compute()
+
+  # drop NAs
+  todo_ids <- setdiff(input_arrw$ID, output_caso_1$ID)
+  input_arrw_2 <- dplyr::filter(input_arrw_1, ID %in% todo_ids) |>
+    compute()
+
+  # case 2
+  cols_2 <- c("estado", "municipio", "logradouro", "numero", "cep")
+  cols_2g <- c('ID', cols_2)
+  output_caso_2 <- dplyr::left_join(
+    input_arrw_2,
+    cnefe,
+    by = cols_2,
+  ) |> group_by_at(cols_2g) |>
+    summarise(lon = mean(lon, na.rm=TRUE),
+              lat = mean(lat, na.rm=TRUE)) |>
+    filter(!is.na(lon)) |>
+    compute()
+
+  # drop NAs
+  todo_ids <- setdiff(input_arrw_2$ID, output_caso_2$ID)
+  input_arrw_3 <- dplyr::filter(input_arrw_1, ID %in% todo_ids) |>
+    compute()
+
+  # case 3
+  cols_3 <- c("estado", "municipio", "logradouro", "numero", "bairro")
+  cols_3g <- c('ID', cols_3)
+  output_caso_3 <- dplyr::left_join(
+    input_arrw_3,
+    cnefe,
+    by = cols_3,
+  ) |> group_by_at(cols_3g) |>
+    summarise(lon = mean(lon, na.rm=TRUE),
+              lat = mean(lat, na.rm=TRUE)) |>
+    filter(!is.na(lon)) |>
+    compute()
 
 
-  # # states present in the input
-  # input_states <- unique(input_padrao$estado)
-  # # input_states <- c("AC", "AL", "RJ")
-  #
-  # ### 1 download cnefe no cache
-  # download_cnefe(input_states)
-  #
-  # ### 2 padroniza input do usuario
-  #   funcao dedicada
-  #
-  # ### 3 geocode deterministico
-  # ## bloco 1 todas vars
-  #   funcao dedicada
-  #
-  # ## bloco 2 todas vars - 1
-  #   funcao dedicada
-  #
-  # ## bloco 3 todas vars - 2
-  #   funcao dedicada
-  #
+  # drop NAs
+  todo_ids <- setdiff(input_arrw_3$ID, output_caso_3$ID)
+  input_arrw_4 <- dplyr::filter(input_arrw_1, ID %in% todo_ids) |>
+    compute()
+
+  # case 4
+  cols_4 <- c("estado", "municipio", "logradouro", "numero")
+  cols_4g <- c('ID', cols_4)
+  output_caso_4 <- dplyr::left_join(
+    input_arrw_4,
+    cnefe,
+    by = cols_3,
+  ) |> group_by_at(cols_3g) |>
+    summarise(lon = mean(lon, na.rm=TRUE),
+              lat = mean(lat, na.rm=TRUE)) |>
+    filter(!is.na(lon)) |>
+    compute()
+
+
+  lapply(X=c(output_caso_1, output_caso_2), FUN = dplyr::collapse) |> rbindlist()
+  collect(output_caso_1, output_caso_2)
+
   #   # futuro
   #   - join probabilistico
   #   - interpolar numeros na mesma rua
-
-
-
-
 
 }
 
