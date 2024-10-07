@@ -51,7 +51,7 @@ download_file <- function(file_url = parent.frame()$file_url,
         }
 
 
-  return(local_file)
+  return(TRUE)
   } # nocov end
 
 
