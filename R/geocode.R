@@ -87,9 +87,7 @@ geocode <- function(input_table,
   cnefe <- dplyr::filter(cnefe, cep %in% input_ceps) |>
     dplyr::compute()
 
-  ### START MATCHING
-
-  ## DETERMINISTIC GROUP
+  ### START DETERMINISTIC MATCHING
 
   #   - case 1: match municipio, logradouro, cep, bairro
   #   - case 2: match municipio, logradouro, cep
@@ -110,7 +108,7 @@ geocode <- function(input_table,
     compute()
 
   # drop NAs
-  todo_ids <- setdiff(input_arrw$ID, output_caso_1$ID)
+  todo_ids <- setdiff(input_arrw_1$ID, output_caso_1$ID)
   input_arrw_2 <- dplyr::filter(input_arrw_1, ID %in% todo_ids) |>
     compute()
 
@@ -157,16 +155,20 @@ geocode <- function(input_table,
   output_caso_4 <- dplyr::left_join(
     input_arrw_4,
     cnefe,
-    by = cols_3,
-  ) |> group_by_at(cols_3g) |>
+    by = cols_4,
+  ) |> group_by_at(cols_4g) |>
     summarise(lon = mean(lon, na.rm=TRUE),
               lat = mean(lat, na.rm=TRUE)) |>
     filter(!is.na(lon)) |>
     compute()
 
-
-  lapply(X=c(output_caso_1, output_caso_2), FUN = dplyr::collapse) |> rbindlist()
-  collect(output_caso_1, output_caso_2)
+  # rbind deterministic results
+  output_deterministic <- lapply(
+    X= c(output_caso_1, output_caso_2, output_caso_3, output_caso_4),
+    FUN = dplyr::collect) |>
+    rbindlist(fill = TRUE
+              )
+  return(output_deterministic)
 
   #   # futuro
   #   - join probabilistico
