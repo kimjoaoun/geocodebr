@@ -162,6 +162,14 @@ geocode <- function(input_table,
     filter(!is.na(lon)) |>
     compute()
 
+
+  # add accuracy column
+  output_caso_1 <- dplyr::mutate(output_caso_1, accuracy_g = 1L) |> compute()
+  output_caso_2 <- dplyr::mutate(output_caso_2, accuracy_g = 2L) |> compute()
+  output_caso_3 <- dplyr::mutate(output_caso_3, accuracy_g = 3L) |> compute()
+  output_caso_4 <- dplyr::mutate(output_caso_4, accuracy_g = 4L) |> compute()
+
+
   # rbind deterministic results
   output_deterministic <- lapply(
     X= c(output_caso_1, output_caso_2, output_caso_3, output_caso_4),
