@@ -50,10 +50,20 @@ in the sample component of the questionnaire.
 }
 \examples{
 \dontshow{if (identical(tolower(Sys.getenv("NOT_CRAN")), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
-# return data as arrow Dataset
-df <- geocode(year = 2010,
-                      showProgress = FALSE)
+# open input data
+data_path <- system.file("extdata/sample_1.csv", package = "geocodebr")
+input_df <- read.csv(data_path)
 
+df <- geocodebr::geocode(
+  input_table = input_df,
+  logradouro = "nm_logradouro",
+  numero = "Numero",
+  complemento = "Complemento",
+  cep = "Cep",
+  bairro = "Bairro",
+  municipio = "code_muni",
+  estado = "nm_uf"
+  )
 \dontshow{\}) # examplesIf}
 }
 \concept{Microdata}

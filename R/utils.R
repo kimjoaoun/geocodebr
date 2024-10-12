@@ -118,3 +118,49 @@ cache_message <- function(local_file = parent.frame()$local_file,
      message(paste("Downloading data. Setting 'cache = TRUE' is strongly recommended to speed up future use. File will be stored locally at:", dir_name))
      }
   } # nocov end
+
+
+
+
+#' Add a column of state abbreviations
+#'
+#' @param input_padrao A data.table with standardized addresses.
+#' @return Adds a new column in place
+#'
+#' @keywords internal
+add_abbrev_state_col <- function(dt){
+
+  data.table::setDT(dt)
+
+  # add abbrev state
+  dt[, abbrev_state := data.table::fcase(
+    estado == "RONDONIA", "RO",
+    estado == "ACRE", "AC",
+    estado == "AMAZONAS", "AM",
+    estado == "RORAIMA", "RR",
+    estado == "PARA", "PA",
+    estado == "AMAPA", "AP",
+    estado == "TOCANTINS", "TO",
+    estado == "MARANHAO", "MA",
+    estado == "PIAUI", "PI",
+    estado == "CEARA", "CE",
+    estado == "RIO GRANDE DO NORTE", "RN",
+    estado == "PARAIBA", "PB",
+    estado == "PERNAMBUCO", "PE",
+    estado == "ALAGOAS", "AL",
+    estado == "SERGIPE", "SE",
+    estado == "BAHIA", "BA",
+    estado == "MINAS GERAIS", "MG",
+    estado == "ESPIRITO SANTO", "ES",
+    estado == "RIO DE JANEIRO", "RJ",
+    estado == "SAO PAULO", "SP",
+    estado == "PARANA", "PR",
+    estado == "SANTA CATARINA", "SC",
+    estado == "RIO GRANDE DO SUL", "RS",
+    estado == "MATO GROSSO DO SUL", "MS",
+    estado == "MATO GROSSO", "MT",
+    estado == "GOIAS", "GO",
+    estado == "DISTRITO FEDERAL", "DF"
+  )]
+
+}

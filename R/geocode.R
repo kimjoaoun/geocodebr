@@ -26,11 +26,10 @@
 #'   complemento = "Complemento",
 #'   cep = "Cep",
 #'   bairro = "Bairro",
-#'   municipio = "code_muni",
-#'   estado = "abbrev_state"
+#'   municipio = "nm_municipio",
+#'   estado = "nm_uf"
 #'   )
 #'
-
 geocode <- function(input_table,
                     logradouro = NULL,
                     numero = NULL,
@@ -47,13 +46,13 @@ geocode <- function(input_table,
 
   # correspondence of column names
   campos <- enderecopadrao::correspondencia_campos(
-    logradouro,
-    numero,
-    complemento,
-    cep,
-    bairro,
-    municipio,
-    estado
+    logradouro = {logradouro},
+    numero = {numero},
+    complemento = {complemento},
+    cep = {cep},
+    bairro = {bairro},
+    municipio = {municipio},
+    estado = {estado}
   )
 
   # padroniza input do usuario
@@ -64,12 +63,44 @@ geocode <- function(input_table,
 
   input_padrao <- cbind(input_table, input_padrao) # REMOVER quando EP manter ID
 
+
+  # add abbrev state
+  data.table::setDT(input_padrao)[, abbrev_state := data.table::fcase(
+    estado == "RONDONIA", "RO",
+    estado == "ACRE", "AC",
+    estado == "AMAZONAS", "AM",
+    estado == "RORAIMA", "RR",
+    estado == "PARA", "PA",
+    estado == "AMAPA", "AP",
+    estado == "TOCANTINS", "TO",
+    estado == "MARANHAO", "MA",
+    estado == "PIAUI", "PI",
+    estado == "CEARA", "CE",
+    estado == "RIO GRANDE DO NORTE", "RN",
+    estado == "PARAIBA", "PB",
+    estado == "PERNAMBUCO", "PE",
+    estado == "ALAGOAS", "AL",
+    estado == "SERGIPE", "SE",
+    estado == "BAHIA", "BA",
+    estado == "MINAS GERAIS", "MG",
+    estado == "ESPIRITO SANTO", "ES",
+    estado == "RIO DE JANEIRO", "RJ",
+    estado == "SAO PAULO", "SP",
+    estado == "PARANA", "PR",
+    estado == "SANTA CATARINA", "SC",
+    estado == "RIO GRANDE DO SUL", "RS",
+    estado == "MATO GROSSO DO SUL", "MS",
+    estado == "MATO GROSSO", "MT",
+    estado == "GOIAS", "GO",
+    estado == "DISTRITO FEDERAL", "DF"
+  )]
+
+
   # convert standartdized input to arrow
   input_arrw_1 <- arrow::as_arrow_table(input_padrao)
 
   # determine states present in the input
-  input_states <- unique(input_padrao$estado)
-  input_states <- c("AC", "AL", "RJ") ############ REMOVER
+  input_states <- unique(input_padrao$abbrev_state)
 
   ### 1 download cnefe no cache
   download_success <- download_cnefe(input_states)
@@ -80,12 +111,17 @@ geocode <- function(input_table,
   # open cnefe parquet
   cnefe <- arrow_open_dataset(geocodebr_env$cache_dir)
 
-  # narrow scope of search
-  input_states <- unique(input_padrao$estado)
-  input_ceps <- unique(input_padrao$cep)
-  cnefe <- dplyr::filter(cnefe, estado %in% input_states)
-  cnefe <- dplyr::filter(cnefe, cep %in% input_ceps) |>
+  # narrow scope of search to states
+  cnefe <- dplyr::filter(cnefe, abbrev_state %in% input_states) |>
     dplyr::compute()
+
+  # narrow scope of search to municipalities and zip codes
+  input_ceps <- unique(input_padrao$cep)
+  input_municipio <- unique(input_padrao$municipio)
+  cnefe <- dplyr::filter(
+    cnefe,
+    cep %in% input_ceps | municipio %in% input_municipio) |>
+     dplyr::compute()
 
   ### START DETERMINISTIC MATCHING
 
@@ -96,12 +132,12 @@ geocode <- function(input_table,
 
   # case 1
   cols_1 <- c("estado", "municipio", "logradouro", "numero", "cep", "bairro")
-  cols_1g <- c('ID', cols_1)
+  cols_group1 <- c('ID', cols_1)
   output_caso_1 <- dplyr::left_join(
     input_arrw_1,
     cnefe,
     by = cols_1,
-  ) |> group_by_at(cols_1g) |>
+  ) |> group_by_at(cols_group1) |>
   summarise(lon = mean(lon, na.rm=TRUE),
             lat = mean(lat, na.rm=TRUE)) |>
     filter(!is.na(lon)) |>
@@ -114,12 +150,12 @@ geocode <- function(input_table,
 
   # case 2
   cols_2 <- c("estado", "municipio", "logradouro", "numero", "cep")
-  cols_2g <- c('ID', cols_2)
+  cols_group2 <- c('ID', cols_2)
   output_caso_2 <- dplyr::left_join(
     input_arrw_2,
     cnefe,
     by = cols_2,
-  ) |> group_by_at(cols_2g) |>
+  ) |> group_by_at(cols_group2) |>
     summarise(lon = mean(lon, na.rm=TRUE),
               lat = mean(lat, na.rm=TRUE)) |>
     filter(!is.na(lon)) |>
@@ -132,12 +168,12 @@ geocode <- function(input_table,
 
   # case 3
   cols_3 <- c("estado", "municipio", "logradouro", "numero", "bairro")
-  cols_3g <- c('ID', cols_3)
+  cols_group3 <- c('ID', cols_3)
   output_caso_3 <- dplyr::left_join(
     input_arrw_3,
     cnefe,
     by = cols_3,
-  ) |> group_by_at(cols_3g) |>
+  ) |> group_by_at(cols_group3) |>
     summarise(lon = mean(lon, na.rm=TRUE),
               lat = mean(lat, na.rm=TRUE)) |>
     filter(!is.na(lon)) |>
@@ -151,12 +187,12 @@ geocode <- function(input_table,
 
   # case 4
   cols_4 <- c("estado", "municipio", "logradouro", "numero")
-  cols_4g <- c('ID', cols_4)
+  cols_group4 <- c('ID', cols_4)
   output_caso_4 <- dplyr::left_join(
     input_arrw_4,
     cnefe,
     by = cols_4,
-  ) |> group_by_at(cols_4g) |>
+  ) |> group_by_at(cols_group4) |>
     summarise(lon = mean(lon, na.rm=TRUE),
               lat = mean(lat, na.rm=TRUE)) |>
     filter(!is.na(lon)) |>
@@ -178,7 +214,7 @@ geocode <- function(input_table,
               )
   return(output_deterministic)
 
-  #   # futuro
+  #   # NEXT STEPS
   #   - join probabilistico
   #   - interpolar numeros na mesma rua
 
