@@ -4,6 +4,7 @@ library(enderecopadrao)
 library(data.table)
 library(dplyr)
 library(arrow)
+library(duckdb)
 
 
 # open input data
@@ -47,3 +48,18 @@ toc()
 #> 3.5
 
 
+
+
+tic()
+df_duck2 <- geocode_duck2(
+  input_table = input_df,
+  logradouro = "nm_logradouro",
+  numero = "Numero",
+  complemento = "Complemento",
+  cep = "Cep",
+  bairro = "Bairro",
+  municipio = "nm_municipio",
+  estado = "nm_uf"
+)
+toc()
+#> 3.5

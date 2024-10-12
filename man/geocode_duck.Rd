@@ -68,6 +68,7 @@ df <- geocodebr::geocode_duck(
 }
 \seealso{
 Other Microdata: 
-\code{\link{geocode}()}
+\code{\link{geocode}()},
+\code{\link{geocode_duck2}()}
 }
 \concept{Microdata}

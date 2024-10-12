@@ -111,7 +111,7 @@ geocode_duck <- function(input_table,
   con <- duckdb::dbConnect(duckdb::duckdb())
 
   # Convert input data frame to DuckDB table
-  duckdb::dbWriteTable(con, "input_padrao", input_padrao,
+  duckdb::dbWriteTable(con, "input_padrao_db", input_padrao,
                        temporary = TRUE, overwrite=TRUE)
 
   # Step 8: Load CNEFE data and write to DuckDB
@@ -162,130 +162,150 @@ geocode_duck <- function(input_table,
 
   # Case 1: Match by estado, municipio, logradouro, numero, cep, bairro
   cols_1 <- c("estado", "municipio", "logradouro", "numero", "cep", "bairro")
-  cols_select1 <- paste("input_padrao.", c('ID', cols_1), sep = "", collapse = ", ")
-  cols_group1 <- paste("input_padrao.", cols_1, sep = "", collapse = ", ")
+  cols_select1 <- paste("input_padrao_db.", c('ID', cols_1), sep = "", collapse = ", ")
+  cols_group1 <- paste("input_padrao_db.", cols_1, sep = "", collapse = ", ")
 
   query_case_1 <- sprintf("
   CREATE TEMPORARY TABLE output_caso_1 AS
   SELECT %s, AVG(filtered_cnefe_cep.lon) AS lon, AVG(filtered_cnefe_cep.lat) AS lat
-  FROM input_padrao
+  FROM input_padrao_db
   LEFT JOIN filtered_cnefe_cep
-  ON input_padrao.estado = filtered_cnefe_cep.estado
-    AND input_padrao.municipio = filtered_cnefe_cep.municipio
-    AND input_padrao.logradouro = filtered_cnefe_cep.logradouro
-    AND input_padrao.numero = filtered_cnefe_cep.numero
-    AND input_padrao.cep = filtered_cnefe_cep.cep
-    AND input_padrao.bairro = filtered_cnefe_cep.bairro
+  ON input_padrao_db.estado = filtered_cnefe_cep.estado
+    AND input_padrao_db.municipio = filtered_cnefe_cep.municipio
+    AND input_padrao_db.logradouro = filtered_cnefe_cep.logradouro
+    AND input_padrao_db.numero = filtered_cnefe_cep.numero
+    AND input_padrao_db.cep = filtered_cnefe_cep.cep
+    AND input_padrao_db.bairro = filtered_cnefe_cep.bairro
   WHERE filtered_cnefe_cep.lon IS NOT NULL
-  GROUP BY input_padrao.ID, %s",
+  GROUP BY input_padrao_db.ID, %s",
                           cols_select1, cols_group1)
   DBI::dbExecute(con, query_case_1)
 
-  # DBI::dbReadTable(con, 'input_padrao')
+  # DBI::dbReadTable(con, 'input_padrao_db')
   # DBI::dbReadTable(con, 'output_caso_1')
 # DBI::dbRemoveTable(con, 'output_caso_1')
 # DBI::dbRemoveTable(con, 'output_caso_2')
 # DBI::dbRemoveTable(con, 'output_caso_3')
 # DBI::dbRemoveTable(con, 'output_caso_4')
 
-  # UPDATE input_padrao: Remove observations found in previous step
-  update_input_db(con = con, remove_from = 'output_caso_1')
+  # UPDATE input_padrao_db: Remove observations found in previous step
+  update_input_db(
+    con,
+    update_tb = 'input_padrao_db',
+    reference_tb = 'output_caso_1'
+  )
 
 
 
   # Case 2: Match by estado, municipio, logradouro, numero, cep
   cols_2 <- c("estado", "municipio", "logradouro", "numero", "cep")
-  cols_select2 <- paste("input_padrao.", c('ID', cols_2), sep = "", collapse = ", ")
-  cols_group2 <- paste("input_padrao.", cols_2, sep = "", collapse = ", ")
+  cols_select2 <- paste("input_padrao_db.", c('ID', cols_2), sep = "", collapse = ", ")
+  cols_group2 <- paste("input_padrao_db.", cols_2, sep = "", collapse = ", ")
 
   query_case_2 <- sprintf("
   CREATE TEMPORARY TABLE output_caso_2 AS
   SELECT %s, AVG(filtered_cnefe_cep.lon) AS lon, AVG(filtered_cnefe_cep.lat) AS lat
-  FROM input_padrao
+  FROM input_padrao_db
   LEFT JOIN filtered_cnefe_cep
-  ON input_padrao.estado = filtered_cnefe_cep.estado
-    AND input_padrao.municipio = filtered_cnefe_cep.municipio
-    AND input_padrao.logradouro = filtered_cnefe_cep.logradouro
-    AND input_padrao.numero = filtered_cnefe_cep.numero
-    AND input_padrao.cep = filtered_cnefe_cep.cep
+  ON input_padrao_db.estado = filtered_cnefe_cep.estado
+    AND input_padrao_db.municipio = filtered_cnefe_cep.municipio
+    AND input_padrao_db.logradouro = filtered_cnefe_cep.logradouro
+    AND input_padrao_db.numero = filtered_cnefe_cep.numero
+    AND input_padrao_db.cep = filtered_cnefe_cep.cep
   WHERE filtered_cnefe_cep.lon IS NOT NULL
-  GROUP BY input_padrao.ID, %s",
+  GROUP BY input_padrao_db.ID, %s",
                           cols_select2, cols_group2)
   DBI::dbExecute(con, query_case_2)
 
-  # UPDATE input_padrao: Remove observations found in previous step
-  update_input_db(con = con, remove_from = 'output_caso_2')
+  # UPDATE input_padrao_db: Remove observations found in previous step
+  update_input_db(
+    con,
+    update_tb = 'input_padrao_db',
+    reference_tb = 'output_caso_2'
+  )
 
   # Case 3: Match by estado, municipio, logradouro, cep, bairro
   cols_3 <- c("estado", "municipio", "logradouro", "cep", "bairro")
-  cols_select3 <- paste("input_padrao.", c('ID', cols_3), sep = "", collapse = ", ")
-  cols_group3 <- paste("input_padrao.", cols_3, sep = "", collapse = ", ")
+  cols_select3 <- paste("input_padrao_db.", c('ID', cols_3), sep = "", collapse = ", ")
+  cols_group3 <- paste("input_padrao_db.", cols_3, sep = "", collapse = ", ")
 
   query_case_3 <- sprintf("
   CREATE TEMPORARY TABLE output_caso_3 AS
   SELECT %s, AVG(filtered_cnefe_cep.lon) AS lon, AVG(filtered_cnefe_cep.lat) AS lat
-  FROM input_padrao
+  FROM input_padrao_db
   LEFT JOIN filtered_cnefe_cep
-  ON input_padrao.estado = filtered_cnefe_cep.estado
-    AND input_padrao.municipio = filtered_cnefe_cep.municipio
-    AND input_padrao.logradouro = filtered_cnefe_cep.logradouro
-    AND input_padrao.cep = filtered_cnefe_cep.cep
-    AND input_padrao.bairro = filtered_cnefe_cep.bairro
+  ON input_padrao_db.estado = filtered_cnefe_cep.estado
+    AND input_padrao_db.municipio = filtered_cnefe_cep.municipio
+    AND input_padrao_db.logradouro = filtered_cnefe_cep.logradouro
+    AND input_padrao_db.cep = filtered_cnefe_cep.cep
+    AND input_padrao_db.bairro = filtered_cnefe_cep.bairro
   WHERE filtered_cnefe_cep.lon IS NOT NULL
-  GROUP BY input_padrao.ID, %s",
+  GROUP BY input_padrao_db.ID, %s",
                           cols_select3, cols_group3)
   DBI::dbExecute(con, query_case_3)
 
 
-  # UPDATE input_padrao: Remove observations found in previous step
-  update_input_db(con = con, remove_from = 'output_caso_3')
+  # UPDATE input_padrao_db: Remove observations found in previous step
+  update_input_db(
+    con,
+    update_tb = 'input_padrao_db',
+    reference_tb = 'output_caso_3'
+  )
 
 
   # Case 4: Match by estado, municipio, logradouro, numero
   cols_4 <- c("estado", "municipio", "logradouro", "numero")
-  cols_select4 <- paste("input_padrao.", c('ID', cols_4), sep = "", collapse = ", ")
-  cols_group4 <- paste("input_padrao.", cols_4, sep = "", collapse = ", ")
+  cols_select4 <- paste("input_padrao_db.", c('ID', cols_4), sep = "", collapse = ", ")
+  cols_group4 <- paste("input_padrao_db.", cols_4, sep = "", collapse = ", ")
 
   query_case_4 <- sprintf("
   CREATE TEMPORARY TABLE output_caso_4 AS
   SELECT %s, AVG(filtered_cnefe_cep.lon) AS lon, AVG(filtered_cnefe_cep.lat) AS lat
-  FROM input_padrao
+  FROM input_padrao_db
   LEFT JOIN filtered_cnefe_cep
-  ON input_padrao.estado = filtered_cnefe_cep.estado
-    AND input_padrao.municipio = filtered_cnefe_cep.municipio
-    AND input_padrao.logradouro = filtered_cnefe_cep.logradouro
-    AND input_padrao.numero = filtered_cnefe_cep.numero
+  ON input_padrao_db.estado = filtered_cnefe_cep.estado
+    AND input_padrao_db.municipio = filtered_cnefe_cep.municipio
+    AND input_padrao_db.logradouro = filtered_cnefe_cep.logradouro
+    AND input_padrao_db.numero = filtered_cnefe_cep.numero
   WHERE filtered_cnefe_cep.lon IS NOT NULL
-  GROUP BY input_padrao.ID, %s",
+  GROUP BY input_padrao_db.ID, %s",
                           cols_select4, cols_group4)
   DBI::dbExecute(con, query_case_4)
 
-  # UPDATE input_padrao: Remove observations found in previous step
-  update_input_db(con = con, remove_from = 'output_caso_4')
+  # UPDATE input_padrao_db: Remove observations found in previous step
+  update_input_db(
+    con,
+    update_tb = 'input_padrao_db',
+    reference_tb = 'output_caso_4'
+  )
 
 
 
   # Case 5: Match by estado, municipio, logradouro, cep
   cols_5 <- c("estado", "municipio", "logradouro", "cep")
-  cols_select5 <- paste("input_padrao.", c('ID', cols_5), sep = "", collapse = ", ")
-  cols_group5 <- paste("input_padrao.", cols_5, sep = "", collapse = ", ")
+  cols_select5 <- paste("input_padrao_db.", c('ID', cols_5), sep = "", collapse = ", ")
+  cols_group5 <- paste("input_padrao_db.", cols_5, sep = "", collapse = ", ")
 
   query_case_5 <- sprintf("
   CREATE TEMPORARY TABLE output_caso_5 AS
   SELECT %s, AVG(filtered_cnefe_cep.lon) AS lon, AVG(filtered_cnefe_cep.lat) AS lat
-  FROM input_padrao
+  FROM input_padrao_db
   LEFT JOIN filtered_cnefe_cep
-  ON input_padrao.estado = filtered_cnefe_cep.estado
-    AND input_padrao.municipio = filtered_cnefe_cep.municipio
-    AND input_padrao.logradouro = filtered_cnefe_cep.logradouro
-    AND input_padrao.cep = filtered_cnefe_cep.cep
+  ON input_padrao_db.estado = filtered_cnefe_cep.estado
+    AND input_padrao_db.municipio = filtered_cnefe_cep.municipio
+    AND input_padrao_db.logradouro = filtered_cnefe_cep.logradouro
+    AND input_padrao_db.cep = filtered_cnefe_cep.cep
   WHERE filtered_cnefe_cep.lon IS NOT NULL
-  GROUP BY input_padrao.ID, %s",
+  GROUP BY input_padrao_db.ID, %s",
                           cols_select5, cols_group5)
   DBI::dbExecute(con, query_case_5)
 
-  # UPDATE input_padrao: Remove observations found in previous step
-  update_input_db(con = con, remove_from = 'output_caso_5')
+  # UPDATE input_padrao_db: Remove observations found in previous step
+  update_input_db(
+    con,
+    update_tb = 'input_padrao_db',
+    reference_tb = 'output_caso_5'
+  )
 
 
 
@@ -311,6 +331,7 @@ geocode_duck <- function(input_table,
 
 
   #   # NEXT STEPS
+  #   - exceptional cases (no municipio input)
   #   - join probabilistico
   #   - interpolar numeros na mesma rua
 

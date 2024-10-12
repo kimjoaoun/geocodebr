@@ -124,60 +124,131 @@ cache_message <- function(local_file = parent.frame()$local_file,
 
 #' Add a column of state abbreviations
 #'
-#' @param input_padrao A data.table with standardized addresses.
-#' @return Adds a new column in place
+#' @param con A db connection
+#' @param update_tb String. Name of a table to be updated in con
+#'
+#' @return Adds a new column to a table in con
 #'
 #' @keywords internal
-add_abbrev_state_col <- function(dt){
+add_abbrev_state_col <- function(con, update_tb = "input_padrao_db"){
+  # Assuming `con` is your DuckDB connection and `input_padrao` already exists as a table
 
-  data.table::setDT(dt)
+  # Step 1: Add a new empty column to the existing table
+  dbExecute(con, sprintf("ALTER TABLE %s ADD COLUMN abbrev_state VARCHAR", update_tb))
 
-  # add abbrev state
-  dt[, abbrev_state := data.table::fcase(
-    estado == "RONDONIA", "RO",
-    estado == "ACRE", "AC",
-    estado == "AMAZONAS", "AM",
-    estado == "RORAIMA", "RR",
-    estado == "PARA", "PA",
-    estado == "AMAPA", "AP",
-    estado == "TOCANTINS", "TO",
-    estado == "MARANHAO", "MA",
-    estado == "PIAUI", "PI",
-    estado == "CEARA", "CE",
-    estado == "RIO GRANDE DO NORTE", "RN",
-    estado == "PARAIBA", "PB",
-    estado == "PERNAMBUCO", "PE",
-    estado == "ALAGOAS", "AL",
-    estado == "SERGIPE", "SE",
-    estado == "BAHIA", "BA",
-    estado == "MINAS GERAIS", "MG",
-    estado == "ESPIRITO SANTO", "ES",
-    estado == "RIO DE JANEIRO", "RJ",
-    estado == "SAO PAULO", "SP",
-    estado == "PARANA", "PR",
-    estado == "SANTA CATARINA", "SC",
-    estado == "RIO GRANDE DO SUL", "RS",
-    estado == "MATO GROSSO DO SUL", "MS",
-    estado == "MATO GROSSO", "MT",
-    estado == "GOIAS", "GO",
-    estado == "DISTRITO FEDERAL", "DF"
-  )]
+  # Step 2: Update the new column with the state abbreviations using CASE WHEN
+  query_update <- sprintf("
+  UPDATE %s
+  SET abbrev_state = CASE
+    WHEN estado = 'RONDONIA' THEN 'RO'
+    WHEN estado = 'ACRE' THEN 'AC'
+    WHEN estado = 'AMAZONAS' THEN 'AM'
+    WHEN estado = 'RORAIMA' THEN 'RR'
+    WHEN estado = 'PARA' THEN 'PA'
+    WHEN estado = 'AMAPA' THEN 'AP'
+    WHEN estado = 'TOCANTINS' THEN 'TO'
+    WHEN estado = 'MARANHAO' THEN 'MA'
+    WHEN estado = 'PIAUI' THEN 'PI'
+    WHEN estado = 'CEARA' THEN 'CE'
+    WHEN estado = 'RIO GRANDE DO NORTE' THEN 'RN'
+    WHEN estado = 'PARAIBA' THEN 'PB'
+    WHEN estado = 'PERNAMBUCO' THEN 'PE'
+    WHEN estado = 'ALAGOAS' THEN 'AL'
+    WHEN estado = 'SERGIPE' THEN 'SE'
+    WHEN estado = 'BAHIA' THEN 'BA'
+    WHEN estado = 'MINAS GERAIS' THEN 'MG'
+    WHEN estado = 'ESPIRITO SANTO' THEN 'ES'
+    WHEN estado = 'RIO DE JANEIRO' THEN 'RJ'
+    WHEN estado = 'SAO PAULO' THEN 'SP'
+    WHEN estado = 'PARANA' THEN 'PR'
+    WHEN estado = 'SANTA CATARINA' THEN 'SC'
+    WHEN estado = 'RIO GRANDE DO SUL' THEN 'RS'
+    WHEN estado = 'MATO GROSSO DO SUL' THEN 'MS'
+    WHEN estado = 'MATO GROSSO' THEN 'MT'
+    WHEN estado = 'GOIAS' THEN 'GO'
+    WHEN estado = 'DISTRITO FEDERAL' THEN 'DF'
+    ELSE NULL
+  END",
+    update_tb)
 
+  # Execute the update query
+  dbExecute(con, query_update)
 }
 
 
 
 
-#' Update input_padrao to remove observations previously matched
+#' Update input_padrao_db to remove observations previously matched
 #'
 #' @param con A db connection
-#' @param remove_from A table written in con
-#' @return Drops observations from input_padrao
+#' @param update_tb String. Name of a table to be updated in con
+#' @param reference_tb A table written in con used as reference
+#'
+#' @return Drops observations from input_padrao_db
 #'
 #' @keywords internal
-update_input_db <- function(con, remove_from = NULL){ # remove_from = 'output_caso_1'
+update_input_db <- function(con, update_tb = 'input_padrao_db', reference_tb){
+
+  # update_tb = 'input_padrao_db'
+  # reference_tb = 'output_caso_1'
+
   query_remove_matched <- sprintf("
-    DELETE FROM input_padrao
-    WHERE ID IN (SELECT ID FROM %s)", remove_from)
+    DELETE FROM %s
+    WHERE ID IN (SELECT ID FROM %s)", update_tb, reference_tb)
   DBI::dbExecute(con, query_remove_matched)
+}
+
+
+#' Match cases with left_join
+#'
+#' @param con A db connection
+#' @param x String. Name of a table written in con
+#' @param y String. Name of a table written in con
+#' @param output_tb Name of the new table to be written in con
+#' @param key_cols Vector. Vector with the names of columns to perform left join
+#'
+#' @return Writes the result of the left join as a new table in con
+#'
+#' @keywords internal
+match_case <- function(con, x, y, output_tb, key_cols){
+
+  # x = 'input_padrao_db'
+  # y = 'filtered_cnefe_cep'
+  # output_tb = 'output_caso_1'
+  # key_cols <- c("estado", "municipio", "logradouro", "numero", "cep", "bairro")
+
+  # Build the dynamic select statement to keep ID and key columns from `x`
+  cols_select <- paste(paste0(x, ".", c('ID', key_cols)), collapse = ", ")
+
+  # Build the dynamic group by statement
+  cols_group <- paste(paste0(x, ".", c('ID', key_cols)), collapse = ", ")
+
+  # Create dynamic ON condition for matching key columns between `x` and `y`
+  match_conditions <- paste(
+    paste0(x, ".", key_cols, " = ", y, ".", key_cols),
+    collapse = " AND "
+  )
+
+  # Construct the SQL query
+  query_match_case <- sprintf("
+  CREATE TEMPORARY TABLE %s AS
+  SELECT %s, AVG(%s.lon) AS lon, AVG(%s.lat) AS lat
+  FROM %s
+  LEFT JOIN %s
+  ON %s
+  WHERE %s.lon IS NOT NULL
+  GROUP BY %s",
+    output_tb,          # Name of output table
+    cols_select,        # Columns to select (ID + key columns)
+    y, y,               # Table `y` (for lon/lat selection)
+    x,                  # Table `x` (input table)
+    y,                  # Table `y` (joined reference table)
+    match_conditions,   # Dynamic matching conditions based on key columns
+    y,                  # Exclude NULLs for lon
+    cols_group         # Group by statement
+  )
+
+  # parse(query_match_case)
+
+  DBI::dbExecute(con, query_match_case)
 }

@@ -30,7 +30,6 @@ Imports:
     curl (>= 5.0.0),
     data.table,
     dplyr,
-    duckplyr,
     enderecopadrao,
     fs,
     tools

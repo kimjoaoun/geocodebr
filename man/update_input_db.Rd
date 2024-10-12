@@ -2,19 +2,21 @@
 % Please edit documentation in R/utils.R
 \name{update_input_db}
 \alias{update_input_db}
-\title{Update input_padrao to remove observations previously matched}
+\title{Update input_padrao_db to remove observations previously matched}
 \usage{
-update_input_db(con, remove_from = NULL)
+update_input_db(con, update_tb = "input_padrao_db", reference_tb)
 }
 \arguments{
 \item{con}{A db connection}
 
-\item{remove_from}{A table written in con}
+\item{update_tb}{String. Name of a table to be updated in con}
+
+\item{reference_tb}{A table written in con used as reference}
 }
 \value{
-Drops observations from input_padrao
+Drops observations from input_padrao_db
 }
 \description{
-Update input_padrao to remove observations previously matched
+Update input_padrao_db to remove observations previously matched
 }
 \keyword{internal}
