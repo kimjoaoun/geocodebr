@@ -127,8 +127,8 @@ geocode <- function(input_table,
 
   ### START DETERMINISTIC MATCHING
 
-  #   - case 1: match municipio, logradouro, cep, bairro
-  #   - case 2: match municipio, logradouro, cep
+  #   - case 1: match municipio, logradouro, numero, cep, bairro
+  #   - case 2: match municipio, logradouro, numero, cep
   #   - case 3: match municipio, logradouro, bairro
   #   - case 4: match municipio, logradouro
 

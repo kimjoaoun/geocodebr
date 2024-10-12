@@ -144,7 +144,22 @@ geocode_duck <- function(input_table,
   # duckdb::dbSendQuery(con, query_ceps_municipios)
 
 
-  # Case 1: Match by estado, municipio, logradouro, numero, cep, bairro
+
+
+  ### START DETERMINISTIC MATCHING
+
+  #   - case 01: match municipio, logradouro, numero, cep, bairro
+  #   - case 02: match municipio, logradouro, numero, cep
+  #   - case 03: match municipio, logradouro, cep, bairro
+  #   - case 04: match municipio, logradouro, numero
+  #   - case 05: match municipio, logradouro, cep
+  # TODO  - case 06: match municipio, logradouro, bairro
+  # TODO  - case 07: match municipio, logradouro
+  # TODO  - case 08: match municipio, cep, bairro
+  # TODO  - case 09: match municipio, cep
+  # TODO  - case 10: match municipio, bairro
+
+
   # Case 1: Match by estado, municipio, logradouro, numero, cep, bairro
   cols_1 <- c("estado", "municipio", "logradouro", "numero", "cep", "bairro")
   cols_select1 <- paste("input_padrao.", c('ID', cols_1), sep = "", collapse = ", ")
@@ -206,8 +221,8 @@ geocode_duck <- function(input_table,
   WHERE ID IN (SELECT ID FROM output_caso_2)"
   DBI::dbExecute(con, query_remove_matched)
 
-  # Case 3: Match by estado, municipio, logradouro, numero, bairro
-  cols_3 <- c("estado", "municipio", "logradouro", "numero", "bairro")
+  # Case 3: Match by estado, municipio, logradouro, cep, bairro
+  cols_3 <- c("estado", "municipio", "logradouro", "cep", "bairro")
   cols_select3 <- paste("input_padrao.", c('ID', cols_3), sep = "", collapse = ", ")
   cols_group3 <- paste("input_padrao.", cols_3, sep = "", collapse = ", ")
 
@@ -219,7 +234,7 @@ geocode_duck <- function(input_table,
   ON input_padrao.estado = filtered_cnefe_cep.estado
     AND input_padrao.municipio = filtered_cnefe_cep.municipio
     AND input_padrao.logradouro = filtered_cnefe_cep.logradouro
-    AND input_padrao.numero = filtered_cnefe_cep.numero
+    AND input_padrao.cep = filtered_cnefe_cep.cep
     AND input_padrao.bairro = filtered_cnefe_cep.bairro
   WHERE filtered_cnefe_cep.lon IS NOT NULL
   GROUP BY input_padrao.ID, %s",
@@ -259,15 +274,45 @@ geocode_duck <- function(input_table,
   WHERE ID IN (SELECT ID FROM output_caso_4)"
   DBI::dbExecute(con, query_remove_matched)
 
+
+
+  # Case 5: Match by estado, municipio, logradouro, cep
+  cols_5 <- c("estado", "municipio", "logradouro", "cep")
+  cols_select5 <- paste("input_padrao.", c('ID', cols_5), sep = "", collapse = ", ")
+  cols_group5 <- paste("input_padrao.", cols_5, sep = "", collapse = ", ")
+
+  query_case_5 <- sprintf("
+  CREATE TEMPORARY TABLE output_caso_5 AS
+  SELECT %s, AVG(filtered_cnefe_cep.lon) AS lon, AVG(filtered_cnefe_cep.lat) AS lat
+  FROM input_padrao
+  LEFT JOIN filtered_cnefe_cep
+  ON input_padrao.estado = filtered_cnefe_cep.estado
+    AND input_padrao.municipio = filtered_cnefe_cep.municipio
+    AND input_padrao.logradouro = filtered_cnefe_cep.logradouro
+    AND input_padrao.cep = filtered_cnefe_cep.cep
+  WHERE filtered_cnefe_cep.lon IS NOT NULL
+  GROUP BY input_padrao.ID, %s",
+                          cols_select5, cols_group5)
+  DBI::dbExecute(con, query_case_5)
+
+  # UPDATE input_padrao: Remove observations found in previous step
+  query_remove_matched <- "
+  DELETE FROM input_padrao
+  WHERE ID IN (SELECT ID FROM output_caso_5)"
+  DBI::dbExecute(con, query_remove_matched)
+
+
+
   # Combine results
   output_caso_1 <- DBI::dbGetQuery(con, "SELECT *, 1 AS accuracy_g FROM output_caso_1")
   output_caso_2 <- DBI::dbGetQuery(con, "SELECT *, 2 AS accuracy_g FROM output_caso_2")
   output_caso_3 <- DBI::dbGetQuery(con, "SELECT *, 3 AS accuracy_g FROM output_caso_3")
   output_caso_4 <- DBI::dbGetQuery(con, "SELECT *, 4 AS accuracy_g FROM output_caso_4")
+  output_caso_5 <- DBI::dbGetQuery(con, "SELECT *, 5 AS accuracy_g FROM output_caso_5")
 
   # Combine all cases into one data.table
   output_deterministic <- data.table::rbindlist(
-    list(output_caso_1, output_caso_2, output_caso_3, output_caso_4),
+    list(output_caso_1, output_caso_2, output_caso_3, output_caso_4, output_caso_5),
     fill = TRUE
   )
 
