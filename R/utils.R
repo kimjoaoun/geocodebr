@@ -164,3 +164,20 @@ add_abbrev_state_col <- function(dt){
   )]
 
 }
+
+
+
+
+#' Update input_padrao to remove observations previously matched
+#'
+#' @param con A db connection
+#' @param remove_from A table written in con
+#' @return Drops observations from input_padrao
+#'
+#' @keywords internal
+update_input_db <- function(con, remove_from = NULL){ # remove_from = 'output_caso_1'
+  query_remove_matched <- sprintf("
+    DELETE FROM input_padrao
+    WHERE ID IN (SELECT ID FROM %s)", remove_from)
+  DBI::dbExecute(con, query_remove_matched)
+}

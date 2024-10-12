@@ -189,10 +189,8 @@ geocode_duck <- function(input_table,
 # DBI::dbRemoveTable(con, 'output_caso_4')
 
   # UPDATE input_padrao: Remove observations found in previous step
-  query_remove_matched <- "
-  DELETE FROM input_padrao
-  WHERE ID IN (SELECT ID FROM output_caso_1)"
-  DBI::dbExecute(con, query_remove_matched)
+  update_input_db(con = con, remove_from = 'output_caso_1')
+
 
 
   # Case 2: Match by estado, municipio, logradouro, numero, cep
@@ -216,10 +214,7 @@ geocode_duck <- function(input_table,
   DBI::dbExecute(con, query_case_2)
 
   # UPDATE input_padrao: Remove observations found in previous step
-  query_remove_matched <- "
-  DELETE FROM input_padrao
-  WHERE ID IN (SELECT ID FROM output_caso_2)"
-  DBI::dbExecute(con, query_remove_matched)
+  update_input_db(con = con, remove_from = 'output_caso_2')
 
   # Case 3: Match by estado, municipio, logradouro, cep, bairro
   cols_3 <- c("estado", "municipio", "logradouro", "cep", "bairro")
@@ -243,10 +238,7 @@ geocode_duck <- function(input_table,
 
 
   # UPDATE input_padrao: Remove observations found in previous step
-  query_remove_matched <- "
-  DELETE FROM input_padrao
-  WHERE ID IN (SELECT ID FROM output_caso_3)"
-  DBI::dbExecute(con, query_remove_matched)
+  update_input_db(con = con, remove_from = 'output_caso_3')
 
 
   # Case 4: Match by estado, municipio, logradouro, numero
@@ -269,10 +261,7 @@ geocode_duck <- function(input_table,
   DBI::dbExecute(con, query_case_4)
 
   # UPDATE input_padrao: Remove observations found in previous step
-  query_remove_matched <- "
-  DELETE FROM input_padrao
-  WHERE ID IN (SELECT ID FROM output_caso_4)"
-  DBI::dbExecute(con, query_remove_matched)
+  update_input_db(con = con, remove_from = 'output_caso_4')
 
 
 
@@ -296,10 +285,7 @@ geocode_duck <- function(input_table,
   DBI::dbExecute(con, query_case_5)
 
   # UPDATE input_padrao: Remove observations found in previous step
-  query_remove_matched <- "
-  DELETE FROM input_padrao
-  WHERE ID IN (SELECT ID FROM output_caso_5)"
-  DBI::dbExecute(con, query_remove_matched)
+  update_input_db(con = con, remove_from = 'output_caso_5')
 
 
 
