@@ -4,7 +4,7 @@
 \alias{add_abbrev_state_col}
 \title{Add a column of state abbreviations}
 \usage{
-add_abbrev_state_col(input_padrao)
+add_abbrev_state_col(dt)
 }
 \arguments{
 \item{input_padrao}{A data.table with standardized addresses.}

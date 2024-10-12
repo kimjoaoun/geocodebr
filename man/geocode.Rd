@@ -61,7 +61,7 @@ df <- geocodebr::geocode(
   complemento = "Complemento",
   cep = "Cep",
   bairro = "Bairro",
-  municipio = "code_muni",
+  municipio = "nm_municipio",
   estado = "nm_uf"
   )
 \dontshow{\}) # examplesIf}

@@ -65,7 +65,9 @@ geocode <- function(input_table,
 
 
   # add abbrev state
-  data.table::setDT(input_padrao)[, abbrev_state := data.table::fcase(
+  .datatable.aware = TRUE
+  data.table::setDT(input_padrao)
+  input_padrao[, abbrev_state := data.table::fcase(
     estado == "RONDONIA", "RO",
     estado == "ACRE", "AC",
     estado == "AMAZONAS", "AM",
@@ -141,12 +143,12 @@ geocode <- function(input_table,
   summarise(lon = mean(lon, na.rm=TRUE),
             lat = mean(lat, na.rm=TRUE)) |>
     filter(!is.na(lon)) |>
-    compute()
+    dplyr::compute()
 
   # drop NAs
   todo_ids <- setdiff(input_arrw_1$ID, output_caso_1$ID)
   input_arrw_2 <- dplyr::filter(input_arrw_1, ID %in% todo_ids) |>
-    compute()
+    dplyr::compute()
 
   # case 2
   cols_2 <- c("estado", "municipio", "logradouro", "numero", "cep")
@@ -159,12 +161,12 @@ geocode <- function(input_table,
     summarise(lon = mean(lon, na.rm=TRUE),
               lat = mean(lat, na.rm=TRUE)) |>
     filter(!is.na(lon)) |>
-    compute()
+    dplyr::compute()
 
   # drop NAs
   todo_ids <- setdiff(input_arrw_2$ID, output_caso_2$ID)
   input_arrw_3 <- dplyr::filter(input_arrw_1, ID %in% todo_ids) |>
-    compute()
+    dplyr::compute()
 
   # case 3
   cols_3 <- c("estado", "municipio", "logradouro", "numero", "bairro")
@@ -177,13 +179,13 @@ geocode <- function(input_table,
     summarise(lon = mean(lon, na.rm=TRUE),
               lat = mean(lat, na.rm=TRUE)) |>
     filter(!is.na(lon)) |>
-    compute()
+    dplyr::compute()
 
 
   # drop NAs
   todo_ids <- setdiff(input_arrw_3$ID, output_caso_3$ID)
   input_arrw_4 <- dplyr::filter(input_arrw_1, ID %in% todo_ids) |>
-    compute()
+    dplyr::compute()
 
   # case 4
   cols_4 <- c("estado", "municipio", "logradouro", "numero")
@@ -196,21 +198,21 @@ geocode <- function(input_table,
     summarise(lon = mean(lon, na.rm=TRUE),
               lat = mean(lat, na.rm=TRUE)) |>
     filter(!is.na(lon)) |>
-    compute()
+    dplyr::compute()
 
 
   # add accuracy column
-  output_caso_1 <- dplyr::mutate(output_caso_1, accuracy_g = 1L) |> compute()
-  output_caso_2 <- dplyr::mutate(output_caso_2, accuracy_g = 2L) |> compute()
-  output_caso_3 <- dplyr::mutate(output_caso_3, accuracy_g = 3L) |> compute()
-  output_caso_4 <- dplyr::mutate(output_caso_4, accuracy_g = 4L) |> compute()
+  output_caso_1 <- dplyr::mutate(output_caso_1, accuracy_g = 1L) |> dplyr::compute()
+  output_caso_2 <- dplyr::mutate(output_caso_2, accuracy_g = 2L) |> dplyr::compute()
+  output_caso_3 <- dplyr::mutate(output_caso_3, accuracy_g = 3L) |> dplyr::compute()
+  output_caso_4 <- dplyr::mutate(output_caso_4, accuracy_g = 4L) |> dplyr::compute()
 
 
   # rbind deterministic results
   output_deterministic <- lapply(
     X= c(output_caso_1, output_caso_2, output_caso_3, output_caso_4),
     FUN = dplyr::collect) |>
-    rbindlist(fill = TRUE
+    data.table::rbindlist(fill = TRUE
               )
   return(output_deterministic)
 
