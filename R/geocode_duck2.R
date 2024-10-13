@@ -7,8 +7,8 @@
 #' @template year
 #' @template columns
 #' @template add_labels
-#' @template as_data_frame
 #' @template showProgress
+#' @param output_simple Logic. Defaults to `TRUE`
 #' @param ncores Number of cores to be used in parallel execution. Defaults to
 #'        the number of available cores minus 1.
 #' @template cache
@@ -29,7 +29,8 @@
 #'   cep = "Cep",
 #'   bairro = "Bairro",
 #'   municipio = "nm_municipio",
-#'   estado = "nm_uf"
+#'   estado = "nm_uf",
+#'   ncores = NULL
 #'   )
 #'
 geocode_duck2 <- function(input_table,
@@ -41,6 +42,7 @@ geocode_duck2 <- function(input_table,
                          municipio = NULL,
                          estado = NULL,
                          showProgress = TRUE,
+                         output_simple = TRUE,
                          ncores = NULL,
                          cache = TRUE){
 
@@ -79,6 +81,7 @@ geocode_duck2 <- function(input_table,
     if (is.null(ncores)) {
       ncores <- parallel::detectCores()
       ncores <- ncores-1
+      if (ncores<1) {ncores <- 1}
       }
     DBI::dbExecute(con, sprintf("PRAGMA threads=%s", ncores))
 
@@ -115,7 +118,7 @@ geocode_duck2 <- function(input_table,
   ##  DBI::dbRemoveTable(con, 'cnefe')
 
 
-  # Narrow scope to municipalities and zip codes
+  # Narrow search scope in cnefe to municipalities and zip codes present in input
   input_ceps <- unique(input_padrao$cep)
   input_municipio <- unique(input_padrao$municipio)
   query_filter_cnefe_municipios <- sprintf("
@@ -367,62 +370,73 @@ geocode_duck2 <- function(input_table,
   # DBI::dbRemoveTable(con, 'output_caso_11')
 
 
- # THIS NEEDS TO BE IMPROVED
+
+
 
   # prepare output --------------------------------------------------------------------
+  # THIS NEEDS TO BE IMPROVED / optimized
+  # THIS NEEDS TO BE IMPROVED / optimized
 
-  # Convert input data frame to DuckDB table
-  duckdb::dbWriteTable(con, "output_db", input_padrao,
-                       temporary = TRUE, overwrite=TRUE)
-
-  # merge_results(con,
-  #               x='output_db',
-  #               y='output_caso_01',
-  #               key_column='ID',
-  #               select_columns = c('lon', 'lat', 'precision')
-  # )
-
-  # TO DO: replace code below with
-  ######   MERGE columns back into db
-  ######   THEN return
-
-  # Combine results
-  output_caso_01 <- DBI::dbGetQuery(con, "SELECT * FROM output_caso_01")
-  output_caso_02 <- DBI::dbGetQuery(con, "SELECT * FROM output_caso_02")
-  output_caso_03 <- DBI::dbGetQuery(con, "SELECT * FROM output_caso_03")
-  output_caso_04 <- DBI::dbGetQuery(con, "SELECT * FROM output_caso_04")
-  output_caso_05 <- DBI::dbGetQuery(con, "SELECT * FROM output_caso_05")
-  output_caso_06 <- DBI::dbGetQuery(con, "SELECT * FROM output_caso_06")
-  output_caso_07 <- DBI::dbGetQuery(con, "SELECT * FROM output_caso_07")
-  output_caso_08 <- DBI::dbGetQuery(con, "SELECT * FROM output_caso_08")
-  output_caso_09 <- DBI::dbGetQuery(con, "SELECT * FROM output_caso_09")
-  output_caso_10 <- DBI::dbGetQuery(con, "SELECT * FROM output_caso_10")
-  output_caso_11 <- DBI::dbGetQuery(con, "SELECT * FROM output_caso_11")
-
-  # Combine all cases into one data.table
-  output_deterministic <- data.table::rbindlist(
-    list(output_caso_01,
-         output_caso_02,
-         output_caso_03,
-         output_caso_04,
-         output_caso_05,
-         output_caso_06,
-         output_caso_07,
-         output_caso_08,
-         output_caso_09,
-         output_caso_10,
-         output_caso_11
-    ),
-    fill = TRUE
+  # list all table outputs
+  all_output_tbs <- c(
+    'output_caso_01',
+    'output_caso_02',
+    'output_caso_03',
+    'output_caso_04',
+    'output_caso_05',
+    'output_caso_06',
+    'output_caso_07',
+    'output_caso_08',
+    'output_caso_09',
+    'output_caso_10',
+    'output_caso_11'
   )
+
+  # output with only ID and geocode columns
+  if (isTRUE(output_simple)) {
+
+    # build query
+    outout_query <- paste(
+      paste0("SELECT ", paste0('*', collapse = ', '), " FROM ", all_output_tbs),
+      collapse = " UNION ALL ")
+
+    output_deterministic <- DBI::dbGetQuery(con, outout_query)
+  }
+
+  # output with all original columns
+  if (isFALSE(output_simple)){
+
+    # Convert input data frame to DuckDB table
+    duckdb::dbWriteTable(con, "output_db", input_padrao,
+                         temporary = TRUE, overwrite=TRUE)
+
+    #   merge_results(con,
+    #                 x='output_caso_01',
+    #                 y='output_db',
+    #                 key_column='ID',
+    #                 select_columns = "*"
+    #                )
+    # Combine all cases into one data.table
+    output_deterministic <- lapply(
+      X = all_output_tbs,
+      FUN = function(x){
+        merge_results(
+          con,
+          x = x,
+          y='output_db',
+          key_column='ID',
+          select_columns = "*")
+      }
+    )
+
+    output_deterministic <- data.table::rbindlist(output_deterministic)
+  }
 
   # Disconnect from DuckDB when done
   duckdb::dbDisconnect(con)
 
   # Return the result
   return(output_deterministic)
-
-
 
   #   # NEXT STEPS
   #   - optimize disk and parallel operations in duckdb

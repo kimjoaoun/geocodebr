@@ -215,11 +215,14 @@ match_case <- function(con, x, y, output_tb, key_cols, precision){
 
   # x = 'input_padrao_db'
   # y = 'filtered_cnefe_cep'
-  # output_tb = 'output_caso_1'
+  # update_tb = 'output_caso_01'
   # key_cols <- c("estado", "municipio", "logradouro", "numero", "cep", "bairro")
 
   # Build the dynamic select statement to keep ID and key columns from `x`
-  cols_select <- paste(paste0(x, ".", c('ID', key_cols)), collapse = ", ")
+  cols_select <- paste(paste0(x, ".ID"),
+                       paste0("AVG(", y, ".lon) AS lon"),
+                       paste0("AVG(", y, ".lat) AS lat"),
+                       sep = ", ")
 
   # Build the dynamic group by statement
   cols_group <- paste(paste0(x, ".", c('ID', key_cols)), collapse = ", ")
@@ -233,21 +236,21 @@ match_case <- function(con, x, y, output_tb, key_cols, precision){
   # Construct the SQL query
   query_match_case <- sprintf("
   CREATE TEMPORARY TABLE %s AS
-  SELECT %s, AVG(%s.lon) AS lon, AVG(%s.lat) AS lat
+  SELECT %s
   FROM %s
   LEFT JOIN %s
   ON %s
   WHERE %s.lon IS NOT NULL
-  GROUP BY %s",
-    output_tb,          # Name of output table
-    cols_select,        # Columns to select (ID + key columns)
-    y, y,               # Table `y` (for lon/lat selection)
-    x,                  # Table `x` (input table)
-    y,                  # Table `y` (joined reference table)
-    match_conditions,   # Dynamic matching conditions based on key columns
-    y,                  # Exclude NULLs for lon
-    cols_group         # Group by statement
+  GROUP BY %s.ID",
+                              output_tb,          # Name of output table
+                              cols_select,        # Columns to select (ID, lon, lat)
+                              x,                  # Left table
+                              y,                  # Right table
+                              match_conditions,   # Dynamic matching conditions based on key columns
+                              y,                  # Exclude NULLs for lon
+                              x                   # Group by ID
   )
+
 
   # parse(query_match_case)
   DBI::dbExecute(con, query_match_case)
@@ -257,8 +260,7 @@ match_case <- function(con, x, y, output_tb, key_cols, precision){
     con,
     update_tb = output_tb,
     precision = precision
-    )
-
+  )
 }
 
 
@@ -321,10 +323,12 @@ merge_results <- function(con, x, y, key_column, select_columns){
   # key_column = 'ID'
   # select_columns = c('lon', 'lat', 'precision')
 
+
   # Create the SELECT clause dynamically
-  select_clause <- sprintf(
-    paste0("%s.*, ",
-           paste0(y, ".", select_columns, collapse = ", ")), x
+  select_x <- paste0(x, '.', c('lon', 'lat', 'precision '), collapse = ', ')
+  select_clause <- paste0(
+    select_x,
+    paste0(", ", y, ".", select_columns, collapse = ", ")
     )
 
   # Create the SQL query

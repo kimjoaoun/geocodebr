@@ -68,7 +68,9 @@ df_duck2 <- geocode_duck2(
   cep = "Cep",
   bairro = "Bairro",
   municipio = "nm_municipio",
-  estado = "nm_uf"
+  estado = "nm_uf",
+  output_simple = F,
+  ncores=NULL
 )
 tictoc::toc()
 #> 18: 3.0

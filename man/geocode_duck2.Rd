@@ -14,6 +14,7 @@ geocode_duck2(
   municipio = NULL,
   estado = NULL,
   showProgress = TRUE,
+  output_simple = TRUE,
   ncores = NULL,
   cache = TRUE
 )
@@ -22,6 +23,8 @@ geocode_duck2(
 \item{showProgress}{Logical. Defaults to \code{TRUE} display download progress
 bar. The progress bar only reflects only the downloading
 time, not the time to load the data to memory.}
+
+\item{output_simple}{Logic. Defaults to \code{TRUE}}
 
 \item{ncores}{Number of cores to be used in parallel execution. Defaults to
 the number of available cores minus 1.}
@@ -40,10 +43,6 @@ columns are not read. Defaults to \code{NULL} and read all columns.}
 \item{add_labels}{Character. Whether the function should add labels to the
 responses of categorical variables. When \code{add_labels = "pt"}, the
 function adds labels in Portuguese. Defaults to \code{NULL}.}
-
-\item{as_data_frame}{Logical. When \code{FALSE} (Default), the function returns an
-Arrow Dataset, which allows users to work with larger-than-memory data.
-If \code{TRUE}, the function returns \code{data.frame}.}
 }
 \value{
 An arrow \code{Dataset} or a \code{"data.frame"} object.
@@ -66,7 +65,8 @@ df <- geocodebr::geocode_duck(
   cep = "Cep",
   bairro = "Bairro",
   municipio = "nm_municipio",
-  estado = "nm_uf"
+  estado = "nm_uf",
+  ncores = NULL
   )
 \dontshow{\}) # examplesIf}
 }
