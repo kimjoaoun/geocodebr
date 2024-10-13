@@ -134,7 +134,7 @@ add_abbrev_state_col <- function(con, update_tb = "input_padrao_db"){
   # Assuming `con` is your DuckDB connection and `input_padrao` already exists as a table
 
   # Step 1: Add a new empty column to the existing table
-  dbExecute(con, sprintf("ALTER TABLE %s ADD COLUMN abbrev_state VARCHAR", update_tb))
+  DBI::dbExecute(con, sprintf("ALTER TABLE %s ADD COLUMN abbrev_state VARCHAR", update_tb))
 
   # Step 2: Update the new column with the state abbreviations using CASE WHEN
   query_update <- sprintf("
@@ -172,7 +172,7 @@ add_abbrev_state_col <- function(con, update_tb = "input_padrao_db"){
     update_tb)
 
   # Execute the update query
-  dbExecute(con, query_update)
+  DBI::dbExecute(con, query_update)
 }
 
 
@@ -206,11 +206,12 @@ update_input_db <- function(con, update_tb = 'input_padrao_db', reference_tb){
 #' @param y String. Name of a table written in con
 #' @param output_tb Name of the new table to be written in con
 #' @param key_cols Vector. Vector with the names of columns to perform left join
+#' @param precision Integer. An integer
 #'
 #' @return Writes the result of the left join as a new table in con
 #'
 #' @keywords internal
-match_case <- function(con, x, y, output_tb, key_cols){
+match_case <- function(con, x, y, output_tb, key_cols, precision){
 
   # x = 'input_padrao_db'
   # y = 'filtered_cnefe_cep'
@@ -249,6 +250,97 @@ match_case <- function(con, x, y, output_tb, key_cols){
   )
 
   # parse(query_match_case)
-
   DBI::dbExecute(con, query_match_case)
+
+  # add precision column to output
+  add_precision_col(
+    con,
+    update_tb = output_tb,
+    precision = precision
+    )
+
+}
+
+
+
+
+
+
+#' Add a column with info of geocode precision
+#'
+#' @param con A db connection
+#' @param update_tb String. Name of a table to be updated in con
+#' @param precision Integer. An integer
+#'
+#' @return Adds a new column to a table in con
+#'
+#' @keywords internal
+add_precision_col <- function(con, update_tb = NULL, precision = NULL){
+
+  # update_tb = "output_caso_01"
+  # precision = 1L
+
+  # create empty column
+  DBI::dbExecute(con,
+                 sprintf("ALTER TABLE %s ADD COLUMN precision INTEGER", update_tb)
+  )
+
+  DBI::dbExecute(con,
+                 sprintf("UPDATE %s SET precision = %s", update_tb, precision)
+                 )
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+#' Merge results of spatial coordinates and precision info for output
+#'
+#' @param con A db connection
+#' @param x String. Name of a table written in con
+#' @param y String. Name of a table written in con
+#' @param output_tb Name of the new table to be written in con
+#' @param key_cols Vector. Vector with the names of columns to perform left join
+#' @param precision Integer. An integer
+#'
+#' @return Writes the result of the left join as a new table in con
+#'
+#' @keywords internal
+merge_results <- function(con, x, y, key_column, select_columns){
+
+  # x = 'output_db'
+  # y = 'output_caso_01'
+  # key_column = 'ID'
+  # select_columns = c('lon', 'lat', 'precision')
+
+  # Create the SELECT clause dynamically
+  select_clause <- sprintf(
+    paste0("%s.*, ",
+           paste0(y, ".", select_columns, collapse = ", ")), x
+    )
+
+  # Create the SQL query
+  query <- sprintf("
+    SELECT %s
+    FROM %s
+    LEFT JOIN %s
+    ON %s.%s = %s.%s",
+                   select_clause, # Selected columns
+                   x,             # Left table
+                   y,             # Right table
+                   x, key_column, # Left table and key column
+                   y, key_column  # Right table and key column
+  )
+
+  # Execute the query and fetch the merged data
+  merged_data <- dbGetQuery(con, query)
+  return(merged_data)
 }

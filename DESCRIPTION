@@ -32,6 +32,7 @@ Imports:
     dplyr,
     enderecopadrao,
     fs,
+    parallel,
     tools
 Suggests:
     covr,

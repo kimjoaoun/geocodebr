@@ -14,6 +14,7 @@ geocode_duck2(
   municipio = NULL,
   estado = NULL,
   showProgress = TRUE,
+  ncores = NULL,
   cache = TRUE
 )
 }
@@ -21,6 +22,9 @@ geocode_duck2(
 \item{showProgress}{Logical. Defaults to \code{TRUE} display download progress
 bar. The progress bar only reflects only the downloading
 time, not the time to load the data to memory.}
+
+\item{ncores}{Number of cores to be used in parallel execution. Defaults to
+the number of available cores minus 1.}
 
 \item{cache}{Logical. Whether the function should read the data cached
 locally, which is much faster. Defaults to \code{TRUE}. The first time the
