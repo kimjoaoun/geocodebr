@@ -29,25 +29,27 @@
 #'   cep = "Cep",
 #'   bairro = "Bairro",
 #'   municipio = "nm_municipio",
-#'   estado = "nm_uf",
-#'   ncores = NULL
+#'   estado = "nm_uf"
 #'   )
 #'
 geocode_duck2 <- function(input_table,
-                         logradouro = NULL,
-                         numero = NULL,
-                         complemento = NULL,
-                         cep = NULL,
-                         bairro = NULL,
-                         municipio = NULL,
-                         estado = NULL,
-                         showProgress = TRUE,
-                         output_simple = TRUE,
-                         ncores = NULL,
-                         cache = TRUE){
+                          logradouro = NULL,
+                          numero = NULL,
+                          complemento = NULL,
+                          cep = NULL,
+                          bairro = NULL,
+                          municipio = NULL,
+                          estado = NULL,
+                          showProgress = TRUE,
+                          output_simple = TRUE,
+                          ncores = NULL,
+                          cache = TRUE){
 
   # check input
   checkmate::assert_data_frame(input_table)
+  checkmate::assert_logical(showProgress)
+  checkmate::assert_logical(output_simple)
+  checkmate::assert_logical(cache)
   checkmate::assert_number(ncores, null.ok = TRUE)
 
   # correspondence of column names
@@ -160,8 +162,14 @@ geocode_duck2 <- function(input_table,
   cols_10 <- c("estado", "municipio", "bairro")
   cols_11 <- c("estado", "municipio")
 
+  # start progress bar
+  if (isTRUE(showProgress)) {
+    total_n <- nrow(input_df)
+    pb <- txtProgressBar(min = 0, max = total_n, style = 3)
+    }
+
   # CASE 1 --------------------------------------------------------------------
-  match_case(
+ temp_n <- match_case(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
@@ -177,8 +185,17 @@ geocode_duck2 <- function(input_table,
     reference_tb = 'output_caso_01'
     )
 
+  # update progress bar
+  if (isTRUE(showProgress)) {
+    ndone <- temp_n
+    utils::setTxtProgressBar(pb, ndone)
+    }
+
+  # DBI::dbReadTable(con, 'output_caso_01')
+  # DBI::dbRemoveTable(con, 'output_caso_01')
+
   # CASE 2 --------------------------------------------------------------------
-  match_case(
+  temp_n <- match_case(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
@@ -194,8 +211,14 @@ geocode_duck2 <- function(input_table,
     reference_tb = 'output_caso_02'
   )
 
+  # update progress bar
+  if (isTRUE(showProgress)) {
+    ndone <- ndone + temp_n
+    utils::setTxtProgressBar(pb, ndone)
+  }
+
   # CASE 3 --------------------------------------------------------------------
-  match_case(
+  temp_n <- match_case(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
@@ -211,9 +234,14 @@ geocode_duck2 <- function(input_table,
     reference_tb = 'output_caso_03'
   )
 
+  # update progress bar
+  if (isTRUE(showProgress)) {
+    ndone <- ndone + temp_n
+    utils::setTxtProgressBar(pb, ndone)
+  }
 
   # CASE 4  --------------------------------------------------------------------
-  match_case(
+  temp_n <- match_case(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
@@ -229,8 +257,14 @@ geocode_duck2 <- function(input_table,
     reference_tb = 'output_caso_04'
   )
 
+  # update progress bar
+  if (isTRUE(showProgress)) {
+    ndone <- ndone + temp_n
+    utils::setTxtProgressBar(pb, ndone)
+  }
+
   # CASE 5  --------------------------------------------------------------------
-  match_case(
+  temp_n <- match_case(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
@@ -246,9 +280,11 @@ geocode_duck2 <- function(input_table,
     reference_tb = 'output_caso_05'
   )
 
+  # update progress bar
+  if (isTRUE(showProgress)) { utils::setTxtProgressBar(pb, ndone) }
 
   # CASE 6 --------------------------------------------------------------------
-  match_case(
+  temp_n <- match_case(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
@@ -264,9 +300,14 @@ geocode_duck2 <- function(input_table,
     reference_tb = 'output_caso_06'
   )
 
+  # update progress bar
+  if (isTRUE(showProgress)) {
+    ndone <- ndone + temp_n
+    utils::setTxtProgressBar(pb, ndone)
+  }
 
   # CASE 7 --------------------------------------------------------------------
-  match_case(
+  temp_n <- match_case(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
@@ -282,9 +323,14 @@ geocode_duck2 <- function(input_table,
     reference_tb = 'output_caso_07'
   )
 
+  # update progress bar
+  if (isTRUE(showProgress)) {
+    ndone <- ndone + temp_n
+    utils::setTxtProgressBar(pb, ndone)
+  }
 
   # CASE 8 --------------------------------------------------------------------
-  match_case(
+  temp_n <- match_case(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
@@ -300,9 +346,14 @@ geocode_duck2 <- function(input_table,
     reference_tb = 'output_caso_08'
   )
 
+  # update progress bar
+  if (isTRUE(showProgress)) {
+    ndone <- ndone + temp_n
+    utils::setTxtProgressBar(pb, ndone)
+  }
 
   # CASE 9 --------------------------------------------------------------------
-  match_case(
+  temp_n <- match_case(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
@@ -318,9 +369,14 @@ geocode_duck2 <- function(input_table,
     reference_tb = 'output_caso_09'
   )
 
+  # update progress bar
+  if (isTRUE(showProgress)) {
+    ndone <- ndone + temp_n
+    utils::setTxtProgressBar(pb, ndone)
+  }
 
   # CASE 10 --------------------------------------------------------------------
-  match_case(
+  temp_n <- match_case(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
@@ -336,8 +392,14 @@ geocode_duck2 <- function(input_table,
     reference_tb = 'output_caso_10'
   )
 
+  # update progress bar
+  if (isTRUE(showProgress)) {
+    ndone <- ndone + temp_n
+    utils::setTxtProgressBar(pb, ndone)
+  }
+
   # CASE 11 --------------------------------------------------------------------
-  match_case(
+  temp_n <- match_case(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
@@ -352,6 +414,14 @@ geocode_duck2 <- function(input_table,
     update_tb = 'input_padrao_db',
     reference_tb = 'output_caso_11'
   )
+
+  # update progress bar
+  if (isTRUE(showProgress)) {
+    ndone <- ndone + temp_n
+    utils::setTxtProgressBar(pb, ndone)
+
+    base::close(pb)
+  }
 
 
   # DBI::dbReadTable(con, 'input_padrao_db')

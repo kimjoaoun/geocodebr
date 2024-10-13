@@ -33,7 +33,8 @@ Imports:
     enderecopadrao,
     fs,
     parallel,
-    tools
+    tools,
+    utils
 Suggests:
     covr,
     DBI,

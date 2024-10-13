@@ -16,7 +16,6 @@ input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df
 input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df,input_df)
 input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df,input_df)
 input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df,input_df)
-input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df,input_df)
 
 # setDT(input_df)
 input_df$ID <-  1:nrow(input_df)
@@ -70,8 +69,9 @@ df_duck2 <- geocode_duck2(
   municipio = "nm_municipio",
   estado = "nm_uf",
   output_simple = F,
-  ncores=NULL
+  ncores=NULL,
+  showProgress = T
 )
 tictoc::toc()
 #> 18: 3.0
-#> 4mi: 40.2 sec elapsed
+#> 850K: 40.2 sec elapsed
