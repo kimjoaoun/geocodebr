@@ -73,6 +73,10 @@ geocode_duck2 <- function(input_table,
   input_padrao <- cbind(input_table['ID'], input_padrao) # REMOVER quando EP manter ID
   input_padrao$estado <- input_table$nm_uf # REMOVER quando EP concerntar estados
 
+  # sort input
+  data.table::setDT(input_padrao)
+  input_padrao <- input_padrao[order(estado, municipio, cep)]
+
   # create db connection
   db_path <- fs::file_temp(ext = '.duckdb')
   con <- duckdb::dbConnect(duckdb::duckdb(), dbdir=db_path)       # run on disk ?
@@ -89,6 +93,7 @@ geocode_duck2 <- function(input_table,
 
     # Set Memory limit
     # TODO
+
 
   # Convert input data frame to DuckDB table
   duckdb::dbWriteTable(con, "input_padrao_db", input_padrao,
@@ -281,7 +286,10 @@ geocode_duck2 <- function(input_table,
   )
 
   # update progress bar
-  if (isTRUE(showProgress)) { utils::setTxtProgressBar(pb, ndone) }
+  if (isTRUE(showProgress)) {
+    ndone <- ndone + temp_n
+    utils::setTxtProgressBar(pb, ndone)
+  }
 
   # CASE 6 --------------------------------------------------------------------
   temp_n <- match_case(
@@ -396,32 +404,42 @@ geocode_duck2 <- function(input_table,
   if (isTRUE(showProgress)) {
     ndone <- ndone + temp_n
     utils::setTxtProgressBar(pb, ndone)
+    base::close(pb)
   }
 
   # CASE 11 --------------------------------------------------------------------
-  temp_n <- match_case(
-    con,
-    x = 'input_padrao_db',
-    y = 'filtered_cnefe_cep',
-    output_tb = 'output_caso_11',
-    key_cols <- cols_11,
-    precision = 11L
-  )
+  # TO DO
+  # add to package a table with the coordinates of geobr::read_municipal_seat()
+  # and perform lookup
+        # temp_n <- match_case(
+        #   con,
+        #   x = 'input_padrao_db',
+        #   y = 'filtered_cnefe_cep',
+        #   output_tb = 'output_caso_11',
+        #   key_cols <- cols_11,
+        #   precision = 11L
+        # )
+        #
+        # # UPDATE input_padrao_db: Remove observations found in previous step
+        # update_input_db(
+        #   con,
+        #   update_tb = 'input_padrao_db',
+        #   reference_tb = 'output_caso_11'
+        # )
+        #
+        # # update progress bar
+        # if (isTRUE(showProgress)) {
+        #   ndone <- ndone + temp_n
+        #   utils::setTxtProgressBar(pb, ndone)
+        #
+        #   base::close(pb)
+        # }
 
-  # UPDATE input_padrao_db: Remove observations found in previous step
-  update_input_db(
-    con,
-    update_tb = 'input_padrao_db',
-    reference_tb = 'output_caso_11'
-  )
 
-  # update progress bar
-  if (isTRUE(showProgress)) {
-    ndone <- ndone + temp_n
-    utils::setTxtProgressBar(pb, ndone)
-
-    base::close(pb)
-  }
+  # CASE 999 --------------------------------------------------------------------
+  # TO DO
+  # WHAT SHOULD BE DONE FOR CASES NOT FOUND ?
+  # AND THEIR EFFECT ON THE PROGRESS BAR
 
 
   # DBI::dbReadTable(con, 'input_padrao_db')
@@ -458,8 +476,8 @@ geocode_duck2 <- function(input_table,
     'output_caso_07',
     'output_caso_08',
     'output_caso_09',
-    'output_caso_10',
-    'output_caso_11'
+    'output_caso_10'
+    #, 'output_caso_11'
   )
 
   # output with only ID and geocode columns
@@ -471,6 +489,15 @@ geocode_duck2 <- function(input_table,
       collapse = " UNION ALL ")
 
     output_deterministic <- DBI::dbGetQuery(con, outout_query)
+
+    # output_deterministic <- lapply(X = all_output_tbs,
+    #        FUN = function(x){
+    #          DBI::dbGetQuery(con, sprintf("SELECT * FROM %s", x))
+    #        }
+    #        )
+    # output_deterministic <- data.table::rbindlist(output_deterministic)
+
+
   }
 
   # output with all original columns
@@ -480,12 +507,12 @@ geocode_duck2 <- function(input_table,
     duckdb::dbWriteTable(con, "output_db", input_padrao,
                          temporary = TRUE, overwrite=TRUE)
 
-    #   merge_results(con,
-    #                 x='output_caso_01',
-    #                 y='output_db',
-    #                 key_column='ID',
-    #                 select_columns = "*"
-    #                )
+      # merge_results(con,
+      #               x='output_caso_01',
+      #               y='output_db',
+      #               key_column='ID',
+      #               select_columns = "*")
+
     # Combine all cases into one data.table
     output_deterministic <- lapply(
       X = all_output_tbs,

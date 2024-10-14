@@ -10,15 +10,18 @@ library(duckdb)
 # open input data
 data_path <- system.file("extdata/sample_1.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
-
 input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df,input_df)
 input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df,input_df)
 input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df,input_df)
 input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df,input_df)
 input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df,input_df)
-
-# setDT(input_df)
 input_df$ID <-  1:nrow(input_df)
+
+
+
+
+
+
 
 tic()
 df_arrow <- geocodebr::geocode(
@@ -59,7 +62,7 @@ toc()
 
 
 tictoc::tic()
-df_duck2 <- geocode_duck2(
+df_duck3 <- geocode_duck2(
   input_table = input_df,
   logradouro = "nm_logradouro",
   numero = "Numero",
@@ -68,10 +71,10 @@ df_duck2 <- geocode_duck2(
   bairro = "Bairro",
   municipio = "nm_municipio",
   estado = "nm_uf",
-  output_simple = F,
+  output_simple = T,
   ncores=NULL,
   showProgress = T
 )
 tictoc::toc()
-#> 18: 3.0
-#> 850K: 40.2 sec elapsed
+#> 28: 4 - 5
+#> 900K: 341 - 480

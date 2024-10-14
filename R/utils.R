@@ -325,7 +325,8 @@ merge_results <- function(con, x, y, key_column, select_columns){
 
 
   # Create the SELECT clause dynamically
-  select_x <- paste0(x, '.', c('lon', 'lat', 'precision '), collapse = ', ')
+  # select_x <- paste0(x, '.', c('lon', 'lat', 'precision '), collapse = ', ')
+  select_x <- paste0(x, '.', c('* '), collapse = ', ')
   select_clause <- paste0(
     select_x,
     paste0(", ", y, ".", select_columns, collapse = ", ")
@@ -345,6 +346,6 @@ merge_results <- function(con, x, y, key_column, select_columns){
   )
 
   # Execute the query and fetch the merged data
-  merged_data <- dbGetQuery(con, query)
+  merged_data <- DBI::dbGetQuery(con, query)
   return(merged_data)
-}
+  }
