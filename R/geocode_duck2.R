@@ -73,14 +73,11 @@ geocode_duck2 <- function(input_table,
   input_padrao <- cbind(input_table['ID'], input_padrao) # REMOVER quando EP manter ID
   input_padrao$estado <- input_table$nm_uf # REMOVER quando EP concerntar estados
 
-  # sort input
-  data.table::setDT(input_padrao)
-  input_padrao <- input_padrao[order(estado, municipio, cep)]
 
   # create db connection
   db_path <- fs::file_temp(ext = '.duckdb')
-  con <- duckdb::dbConnect(duckdb::duckdb(), dbdir=db_path)       # run on disk ?
-  # con <- duckdb::dbConnect(duckdb::duckdb(), dbdir=":memory:")  # run on memory
+  # con <- duckdb::dbConnect(duckdb::duckdb(), dbdir=db_path)       # run on disk ?
+  con <- duckdb::dbConnect(duckdb::duckdb(), dbdir=":memory:")  # run on memory
 
   ## configure db connection
     # Set Number of cores for parallel operation

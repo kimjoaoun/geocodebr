@@ -77,4 +77,4 @@ df_duck3 <- geocode_duck2(
 )
 tictoc::toc()
 #> 28: 4 - 5
-#> 900K: 341 - 480
+#> 900K: 299.28
