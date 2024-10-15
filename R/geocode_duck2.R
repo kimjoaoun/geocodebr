@@ -49,8 +49,8 @@ geocode_duck2 <- function(input_table,
   checkmate::assert_data_frame(input_table)
   checkmate::assert_logical(showProgress)
   checkmate::assert_logical(output_simple)
-  checkmate::assert_logical(cache)
   checkmate::assert_number(ncores, null.ok = TRUE)
+  checkmate::assert_logical(cache)
   checkmate::assert_names(
     names(input_table),
     must.include = "ID",
@@ -58,6 +58,7 @@ geocode_duck2 <- function(input_table,
   )
 
 
+  # normalize input data -------------------------------------------------------
 
   # correspondence of column names
   campos <- enderecopadrao::correspondencia_campos(
@@ -78,7 +79,10 @@ geocode_duck2 <- function(input_table,
 
   # 6666666666666666666666666666
   input_padrao <- cbind(input_table['ID'], input_padrao) # REMOVER quando EP manter ID
-  input_padrao$estado <- input_table$nm_uf # REMOVER quando EP concerntar estados
+
+
+
+  # create db connection -------------------------------------------------------
 
 
   # create db connection
@@ -99,6 +103,8 @@ geocode_duck2 <- function(input_table,
     # TODO
 
 
+    # add input and cnefe data sets to db --------------------------------------
+
   # Convert input data frame to DuckDB table
   duckdb::dbWriteTable(con, "input_padrao_db", input_padrao,
                        temporary = TRUE, overwrite=TRUE)
@@ -110,7 +116,7 @@ geocode_duck2 <- function(input_table,
   query <- "SELECT DISTINCT abbrev_state FROM input_padrao_db"
   input_states <- DBI::dbGetQuery(con, query)[[1]]
 
-  ### 1 download cnefe no cache
+  # download cnefe
   download_success <- download_cnefe(input_states)
 
   # check if download worked
@@ -143,7 +149,7 @@ geocode_duck2 <- function(input_table,
   # duckdb::dbSendQuery(con, query_ceps_municipios)
 
 
-  ### START DETERMINISTIC MATCHING
+  # START DETERMINISTIC MATCHING -----------------------------------------------
 
   # - case 01: match municipio, logradouro, numero, cep, bairro
   # - case 02: match municipio, logradouro, numero, cep
@@ -177,7 +183,7 @@ geocode_duck2 <- function(input_table,
     pb <- txtProgressBar(min = 0, max = total_n, style = 3)
     }
 
-  # CASE 1 --------------------------------------------------------------------
+  ## CASE 1 --------------------------------------------------------------------
  temp_n <- match_case(
     con,
     x = 'input_padrao_db',
@@ -203,7 +209,7 @@ geocode_duck2 <- function(input_table,
   # DBI::dbReadTable(con, 'output_caso_01')
   # DBI::dbRemoveTable(con, 'output_caso_01')
 
-  # CASE 2 --------------------------------------------------------------------
+  ## CASE 2 --------------------------------------------------------------------
   temp_n <- match_case(
     con,
     x = 'input_padrao_db',
@@ -226,7 +232,7 @@ geocode_duck2 <- function(input_table,
     utils::setTxtProgressBar(pb, ndone)
   }
 
-  # CASE 3 --------------------------------------------------------------------
+  ## CASE 3 --------------------------------------------------------------------
   temp_n <- match_case(
     con,
     x = 'input_padrao_db',
@@ -249,7 +255,7 @@ geocode_duck2 <- function(input_table,
     utils::setTxtProgressBar(pb, ndone)
   }
 
-  # CASE 4  --------------------------------------------------------------------
+  ## CASE 4  --------------------------------------------------------------------
   temp_n <- match_case(
     con,
     x = 'input_padrao_db',
@@ -272,7 +278,7 @@ geocode_duck2 <- function(input_table,
     utils::setTxtProgressBar(pb, ndone)
   }
 
-  # CASE 5  --------------------------------------------------------------------
+  ## CASE 5  --------------------------------------------------------------------
   temp_n <- match_case(
     con,
     x = 'input_padrao_db',
@@ -295,7 +301,7 @@ geocode_duck2 <- function(input_table,
     utils::setTxtProgressBar(pb, ndone)
   }
 
-  # CASE 6 --------------------------------------------------------------------
+  ## CASE 6 --------------------------------------------------------------------
   temp_n <- match_case(
     con,
     x = 'input_padrao_db',
@@ -318,7 +324,7 @@ geocode_duck2 <- function(input_table,
     utils::setTxtProgressBar(pb, ndone)
   }
 
-  # CASE 7 --------------------------------------------------------------------
+  ## CASE 7 --------------------------------------------------------------------
   temp_n <- match_case(
     con,
     x = 'input_padrao_db',
@@ -341,7 +347,7 @@ geocode_duck2 <- function(input_table,
     utils::setTxtProgressBar(pb, ndone)
   }
 
-  # CASE 8 --------------------------------------------------------------------
+  ## CASE 8 --------------------------------------------------------------------
   temp_n <- match_case(
     con,
     x = 'input_padrao_db',
@@ -364,7 +370,7 @@ geocode_duck2 <- function(input_table,
     utils::setTxtProgressBar(pb, ndone)
   }
 
-  # CASE 9 --------------------------------------------------------------------
+  ## CASE 9 --------------------------------------------------------------------
   temp_n <- match_case(
     con,
     x = 'input_padrao_db',
@@ -387,7 +393,7 @@ geocode_duck2 <- function(input_table,
     utils::setTxtProgressBar(pb, ndone)
   }
 
-  # CASE 10 --------------------------------------------------------------------
+  ## CASE 10 --------------------------------------------------------------------
   temp_n <- match_case(
     con,
     x = 'input_padrao_db',
@@ -411,7 +417,7 @@ geocode_duck2 <- function(input_table,
     base::close(pb)
   }
 
-  # CASE 11 --------------------------------------------------------------------
+  ## CASE 11 --------------------------------------------------------------------
   # TO DO
   # add to package a table with the coordinates of geobr::read_municipal_seat()
   # and perform lookup
@@ -440,7 +446,7 @@ geocode_duck2 <- function(input_table,
         # }
 
 
-  # CASE 999 --------------------------------------------------------------------
+  ## CASE 999 --------------------------------------------------------------------
   # TO DO
   # WHAT SHOULD BE DONE FOR CASES NOT FOUND ?
   # AND THEIR EFFECT ON THE PROGRESS BAR
@@ -464,8 +470,8 @@ geocode_duck2 <- function(input_table,
 
 
 
+  # prepare output -----------------------------------------------
 
-  # prepare output --------------------------------------------------------------------
   # THIS NEEDS TO BE IMPROVED / optimized
   # THIS NEEDS TO BE IMPROVED / optimized
 
