@@ -51,6 +51,13 @@ geocode_duck2 <- function(input_table,
   checkmate::assert_logical(output_simple)
   checkmate::assert_logical(cache)
   checkmate::assert_number(ncores, null.ok = TRUE)
+  checkmate::assert_names(
+    names(input_table),
+    must.include = "ID",
+    .var.name = "input_table"
+  )
+
+
 
   # correspondence of column names
   campos <- enderecopadrao::correspondencia_campos(
