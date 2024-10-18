@@ -1,3 +1,13 @@
+#' TODO
+#' instalar extensoes do duckdb
+#' - spatial
+#' - motherduck
+#' - arrow
+#'
+#' adicionar dados de POI da Meta /overture
+#' adicionar dados de enderecos Meta /overture
+
+
 # library(geocodebr)
 library(tictoc)
 library(enderecopadrao)
