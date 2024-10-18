@@ -1,4 +1,4 @@
-library(geocodebr)
+# library(geocodebr)
 library(tictoc)
 library(enderecopadrao)
 library(data.table)

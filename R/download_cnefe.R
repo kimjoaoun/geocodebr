@@ -70,26 +70,30 @@ download_cnefe <- function(abbrev_state = NULL,
 
     # ignore urls
     file_url <- file_url[! file_url %in% url_of_local_states]
-
-    # if all files already exist
-    if (length(file_url)==0) {return(TRUE)}
   }
 
 
   ### Download
-  download_success <- download_file(
-    file_url = file_url,
-    showProgress = showProgress,
-    cache = cache
-    )
+  if (length(file_url)>0){
+    download_success <- download_file(
+      file_url = file_url,
+      showProgress = showProgress,
+      cache = cache
+      )
+  }
 
   # check if download worked
   if (isFALSE(download_success)) { return(invisible(NULL)) }
 
   # unzip
-  zipped_locals <- list.files(geocodebr_env$cache_dir, pattern = '.zip')
+  zipped_locals <- list.files(
+    geocodebr_env$cache_dir,
+    pattern = '.zip',
+    full.names = TRUE
+    )
+
   if (length(zipped_locals)>0) {
-    lapply(X=local_files,
+    lapply(X=zipped_locals,
          FUN = archive::archive_extract,
          dir = fs::path(geocodebr_env$cache_dir))
 

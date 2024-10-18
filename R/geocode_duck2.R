@@ -121,7 +121,11 @@ geocode_duck2 <- function(input_table,
   input_states <- DBI::dbGetQuery(con, query)[[1]]
 
   # download cnefe
-  download_success <- download_cnefe(input_states)
+  download_success <- download_cnefe(
+    abbrev_state = input_states,
+    showProgress = showProgress,
+    cache = F
+    )
 
   # check if download worked
   if (isFALSE(download_success)) { return(invisible(NULL)) }
