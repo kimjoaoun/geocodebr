@@ -54,7 +54,6 @@ df_duck <- geocode_duck(
   municipio = "nm_municipio",
   estado = "nm_uf"
 )
-
 toc()
 #> 3.5
 
@@ -71,7 +70,7 @@ df_duck3 <- geocode_duck2(
   bairro = "Bairro",
   municipio = "nm_municipio",
   estado = "nm_uf",
-  output_simple = T,
+  output_simple = F,
   ncores=NULL,
   showProgress = T
 )

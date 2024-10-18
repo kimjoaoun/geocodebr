@@ -124,7 +124,7 @@ geocode_duck2 <- function(input_table,
   download_success <- download_cnefe(
     abbrev_state = input_states,
     showProgress = showProgress,
-    cache = F
+    cache = cache
     )
 
   # check if download worked
