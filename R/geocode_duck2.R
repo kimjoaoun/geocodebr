@@ -17,6 +17,8 @@
 #' @export
 #' @family Microdata
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
+#' library(geocodebr)
+#'
 #' # open input data
 #' data_path <- system.file("extdata/sample_1.csv", package = "geocodebr")
 #' input_df <- read.csv(data_path)
@@ -78,15 +80,16 @@ geocode_duck2 <- function(input_table,
   )
 
   # 6666666666666666666666666666
-  input_padrao <- cbind(input_table['ID'], input_padrao) # REMOVER quando EP manter ID
-
+  # REMOVER quando atualizar EP
+  input_padrao <- cbind(input_table['ID'], input_padrao)
+  input_padrao$estado <- input_df$nm_uf
 
 
   # create db connection -------------------------------------------------------
 
 
   # create db connection
-  db_path <- fs::file_temp(ext = '.duckdb')
+  # db_path <- fs::file_temp(ext = '.duckdb')
   # con <- duckdb::dbConnect(duckdb::duckdb(), dbdir=db_path)       # run on disk ?
   con <- duckdb::dbConnect(duckdb::duckdb(), dbdir=":memory:")  # run on memory
 
@@ -96,8 +99,9 @@ geocode_duck2 <- function(input_table,
       ncores <- parallel::detectCores()
       ncores <- ncores-1
       if (ncores<1) {ncores <- 1}
-      }
-    DBI::dbExecute(con, sprintf("PRAGMA threads=%s", ncores))
+    }
+
+    DBI::dbExecute(con, sprintf("PRAGMA threads=%s;", ncores))
 
     # Set Memory limit
     # TODO
@@ -184,7 +188,7 @@ geocode_duck2 <- function(input_table,
     }
 
   ## CASE 1 --------------------------------------------------------------------
- temp_n <- match_case(
+  temp_n <- match_case(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
