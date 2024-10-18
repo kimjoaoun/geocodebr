@@ -80,7 +80,7 @@ download_cnefe <- function(abbrev_state = NULL,
       showProgress = showProgress,
       cache = cache
       )
-  }
+  } else { download_success <- TRUE}
 
   # check if download worked
   if (isFALSE(download_success)) { return(invisible(NULL)) }
