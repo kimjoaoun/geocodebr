@@ -250,14 +250,14 @@ match_case <- function(con, x, y, output_tb, key_cols, precision){
                               x,                  # Left table
                               y,                  # Right table
                               match_conditions,   # Dynamic matching conditions based on key columns
-                              x                  # Group by ID
+                              x                   # Group by ID
   )
 
   # Construct the SQL match query
   query_remove_null_lon <- sprintf("
   DELETE FROM %s
   WHERE lon IS NULL;",
-                              output_tb          # Name of output table
+                                   output_tb          # Name of output table
   )
 
   # parse(query_match_case)
@@ -358,3 +358,7 @@ merge_results <- function(con, x, y, key_column, select_columns){
   merged_data <- DBI::dbGetQuery(con, query)
   return(merged_data)
   }
+
+
+
+
