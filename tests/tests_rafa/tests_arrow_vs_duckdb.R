@@ -1,8 +1,13 @@
 #' TODO
 #' instalar extensoes do duckdb
 #' - spatial
-#' - motherduck
 #' - arrow
+#' - jemalloc (memory allocation) / not available on windows
+#'
+#' #' (non-deterministic search)
+#' - fts - Adds support for Full-Text Search Indexes / "https://medium.com/@havus.it/enhancing-database-search-full-text-search-fts-in-mysql-1bb548f4b9ba"
+#'
+#'
 #'
 #' adicionar dados de POI da Meta /overture
 #' adicionar dados de enderecos Meta /overture

@@ -189,6 +189,10 @@ add_abbrev_state_col <- function(con, update_tb = "input_padrao_db"){
 #' @keywords internal
 update_input_db <- function(con, update_tb = 'input_padrao_db', reference_tb){
 
+  # 6666666666 possible improvment
+  # the filter could be done in the query join
+  # withou the need to update the table, which requires more io operations
+
   # update_tb = 'input_padrao_db'
   # reference_tb = 'output_caso_1'
 
@@ -233,27 +237,32 @@ match_case <- function(con, x, y, output_tb, key_cols, precision){
     collapse = " AND "
   )
 
-  # Construct the SQL query
+  # Construct the SQL match query
   query_match_case <- sprintf("
   CREATE TEMPORARY TABLE %s AS
   SELECT %s
   FROM %s
   LEFT JOIN %s
   ON %s
-  WHERE %s.lon IS NOT NULL
-  GROUP BY %s.ID",
+  GROUP BY %s.ID;",
                               output_tb,          # Name of output table
                               cols_select,        # Columns to select (ID, lon, lat)
                               x,                  # Left table
                               y,                  # Right table
                               match_conditions,   # Dynamic matching conditions based on key columns
-                              y,                  # Exclude NULLs for lon
-                              x                   # Group by ID
+                              x                  # Group by ID
   )
 
+  # Construct the SQL match query
+  query_remove_null_lon <- sprintf("
+  DELETE FROM %s
+  WHERE lon IS NULL;",
+                              output_tb          # Name of output table
+  )
 
   # parse(query_match_case)
   DBI::dbExecute(con, query_match_case)
+  DBI::dbExecute(con, query_remove_null_lon)
 
   # add precision column to output
   add_precision_col(

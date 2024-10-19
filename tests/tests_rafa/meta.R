@@ -3,6 +3,7 @@ library(arrow)
 library(sf)
 library(dplyr)
 library(geobr)
+library(duckdb)
 
 
 
@@ -10,10 +11,10 @@ library(geobr)
 
 con <- duckdb::dbConnect(duckdb::duckdb(), dbdir=":memory:")  # run on memory
 DBI::dbExecute(con, "FORCE INSTALL httpfs")
-dbExecute(con, "LOAD httpfs")
+DBI::dbExecute(con, "LOAD httpfs")
 
 
-DBI::dbGetQuery(con, "FROM duckdb_extensions()")
+ext <- DBI::dbGetQuery(con, "FROM duckdb_extensions()")
 
 
 
@@ -43,24 +44,15 @@ t <- overturemapsr::get_all_overture_types()
 
 d <- overturemapsr::dataset_path(overture_type = 'locality')
 
-df <- overturemapsr::record_batch_reader(overture_type = 'locality', bbox = bb)
+df <- overturemapsr::record_batch_reader(overture_type = 'place', bbox = bb)
+
+df$bbox <- NULL
+df$sources <- NULL
+df$names <- NULL
+sapply(df, class)
 
 
 
 
-library(duckdb)
-library(DBI)
 
-
-
-
-q <- "COPY(
-  SELECT
-    *
-  FROM read_parquet('s3://overturemaps-us-west-2/release/2024-08-20.0/theme=places/type=place/*', filename=true, hive_partitioning=1)
-  LIMIT 100000
-) TO 'places.parquet';"
-
-
-DBI::dbExecute(con, statement = q)
 
