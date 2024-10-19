@@ -134,10 +134,10 @@ geocode_duck2 <- function(input_table,
   cnefe <- arrow_open_dataset(geocodebr_env$cache_dir)
   duckdb::duckdb_register_arrow(con, "cnefe", cnefe)
 
-  ## more than 2x SLOWER
-  # dir <- paste0(geocodebr_env$cache_dir, "/**/*.parquet")
+  # # more than 2x SLOWER
+  # dir <- fs::path(geocodebr_env$cache_dir, "/**/*.parquet")
   # DBI::dbExecute(con,
-  #           sprintf("CREATE TABLE cnefe AS SELECT * FROM parquet_scan('%s')",
+  #           sprintf("CREATE TEMPORARY TABLE cnefe AS SELECT * FROM read_parquet('%s')",
   #                   dir))
 
   ##  DBI::dbRemoveTable(con, 'cnefe')
@@ -548,7 +548,7 @@ geocode_duck2 <- function(input_table,
   }
 
   # Disconnect from DuckDB when done
-  duckdb::dbDisconnect(con)
+  duckdb::dbDisconnect(con, shutdown=TRUE)
 
   # Return the result
   return(output_deterministic)

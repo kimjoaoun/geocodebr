@@ -1,5 +1,6 @@
 #' TODO
 #' instalar extensoes do duckdb
+#' - allocate memory
 #' - spatial
 #' - arrow
 #' - jemalloc (memory allocation) / not available on windows
@@ -92,3 +93,4 @@ df_duck3 <- geocode_duck2(
 tictoc::toc()
 #> 28: 4 - 5
 #> 900K: 299.28
+#> FILTER 266.63 sec elapsed 884K
