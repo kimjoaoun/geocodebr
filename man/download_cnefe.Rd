@@ -33,7 +33,7 @@ download_cnefe(abbrev_state = "AC",
                showProgress = FALSE)
 
 # download CNEFE for multiple states
-download_cnefe(abbrev_state = c("AC", "AL"),
+download_cnefe(abbrev_state = c("AC", "AL", "RJ"),
                showProgress = FALSE)
 
 # download CNEFE for all states
