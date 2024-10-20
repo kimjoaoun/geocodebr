@@ -244,7 +244,8 @@ match_case <- function(con, x, y, output_tb, key_cols, precision){
   FROM %s
   LEFT JOIN %s
   ON %s
-  GROUP BY %s.ID;",
+  GROUP BY %s.ID
+  HAVING AVG(lon) IS NOT NULL;",
                               output_tb,          # Name of output table
                               cols_select,        # Columns to select (ID, lon, lat)
                               x,                  # Left table
@@ -253,16 +254,9 @@ match_case <- function(con, x, y, output_tb, key_cols, precision){
                               x                   # Group by ID
   )
 
-  # Construct the SQL match query
-  query_remove_null_lon <- sprintf("
-  DELETE FROM %s
-  WHERE lon IS NULL;",
-                                   output_tb          # Name of output table
-  )
-
   # parse(query_match_case)
+
   DBI::dbExecute(con, query_match_case)
-  DBI::dbExecute(con, query_remove_null_lon)
 
   # add precision column to output
   add_precision_col(

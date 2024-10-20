@@ -64,13 +64,13 @@ geocode_duck2 <- function(input_table,
 
   # correspondence of column names
   campos <- enderecopadrao::correspondencia_campos(
-    logradouro = {logradouro},
-    numero = {numero},
-    complemento = {complemento},
-    cep = {cep},
-    bairro = {bairro},
-    municipio = {municipio},
-    estado = {estado}
+    logradouro = logradouro,
+    numero = numero,
+    complemento = complemento,
+    cep = cep,
+    bairro = bairro,
+    municipio = municipio,
+    estado = estado
   )
 
   # padroniza input do usuario
@@ -105,6 +105,7 @@ geocode_duck2 <- function(input_table,
 
     # Set Memory limit
     # TODO
+    # DBI::dbExecute(con, "SET memory_limit = '20GB'")
 
 
     # add input and cnefe data sets to db --------------------------------------
@@ -192,7 +193,8 @@ geocode_duck2 <- function(input_table,
     }
 
   ## CASE 1 --------------------------------------------------------------------
-  temp_n <- match_case(
+
+  temp_n <- match_case( # 5.13 sec elapsed
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
@@ -200,6 +202,7 @@ geocode_duck2 <- function(input_table,
     key_cols <- cols_01,
     precision = 1L
     )
+
 
   # UPDATE input_padrao_db: Remove observations found in previous step
   update_input_db(
