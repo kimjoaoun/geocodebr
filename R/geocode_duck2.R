@@ -194,7 +194,7 @@ geocode_duck2 <- function(input_table,
 
   ## CASE 1 --------------------------------------------------------------------
 
-  temp_n <- match_case( # 5.13 sec elapsed
+  temp_n <- match_case(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',

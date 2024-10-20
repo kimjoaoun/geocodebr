@@ -17,10 +17,10 @@
 # library(geocodebr)
 library(tictoc)
 library(enderecopadrao)
-library(data.table)
-library(dplyr)
-library(arrow)
-library(duckdb)
+# library(data.table)
+# library(dplyr)
+# library(arrow)
+# library(duckdb)
 
 
 # open input data
@@ -33,36 +33,20 @@ input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df
 input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df,input_df)
 input_df$ID <-  1:nrow(input_df)
 
-
-input_table = input_df
-logradouro = "nm_logradouro"
-numero = "Numero"
-complemento = "Complemento"
-cep = "Cep"
-bairro = "Bairro"
-municipio = "nm_municipio"
-estado = "nm_uf"
-showProgress = TRUE
-output_simple = TRUE
-ncores = NULL
-cache = TRUE
-
-
-
-
-tic()
-df_duck <- geocode_duck(
-  input_table = input_df,
-  logradouro = "nm_logradouro",
-  numero = "Numero",
-  complemento = "Complemento",
-  cep = "Cep",
-  bairro = "Bairro",
-  municipio = "nm_municipio",
-  estado = "nm_uf"
-)
-toc()
-#> 3.5
+#
+# input_table = input_df
+# logradouro = "nm_logradouro"
+# numero = "Numero"
+# complemento = "Complemento"
+# cep = "Cep"
+# bairro = "Bairro"
+# municipio = "nm_municipio"
+# estado = "nm_uf"
+# showProgress = TRUE
+# output_simple = TRUE
+# ncores = NULL
+# cache = TRUE
+#
 
 
 
@@ -83,4 +67,5 @@ df_duck3 <- geocode_duck2(
 )
 tictoc::toc()
 #> 28: 4 - 5
-#> 900K: 299.28
+#> 900K: 221.17 sec elapsed
+

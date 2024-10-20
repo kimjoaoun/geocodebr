@@ -251,12 +251,19 @@ match_case <- function(con, x, y, output_tb, key_cols, precision){
                               x,                  # Left table
                               y,                  # Right table
                               match_conditions,   # Dynamic matching conditions based on key columns
-                              x                   # Group by ID
+                              x                  # Group by ID
   )
 
   # parse(query_match_case)
-
   DBI::dbExecute(con, query_match_case)
+
+  # # REMOVE cases not found
+  # query_remove_null_lon <- sprintf("
+  # DELETE FROM %s
+  # WHERE lon IS NULL;",
+  #                     output_tb # Name of output table
+  # )
+  # DBI::dbExecute(con, query_remove_null_lon)
 
   # add precision column to output
   add_precision_col(
