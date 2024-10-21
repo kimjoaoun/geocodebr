@@ -33,7 +33,7 @@ input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df
 input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df,input_df)
 input_df$ID <-  1:nrow(input_df)
 
-#
+
 # input_table = input_df
 # logradouro = "nm_logradouro"
 # numero = "Numero"
@@ -46,7 +46,7 @@ input_df$ID <-  1:nrow(input_df)
 # output_simple = TRUE
 # ncores = NULL
 # cache = TRUE
-#
+
 
 
 
@@ -67,5 +67,6 @@ df_duck3 <- geocode_duck2(
 )
 tictoc::toc()
 #> 28: 4 - 5
-#> 900K: 221.17 sec elapsed
+#> 900K: 221 - 244
 
+#> 900K: 44.56

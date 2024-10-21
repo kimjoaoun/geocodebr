@@ -405,6 +405,26 @@ geocode_duck2 <- function(input_table,
   }
 
   ## CASE 10 --------------------------------------------------------------------
+
+
+  # delete cases where Bairro is missing
+  delete_null_bairro <- function(tb){
+    query_delete_bairro_from_input <-
+    sprintf('DELETE FROM "%s" WHERE "bairro" IS NOT NULL;', tb)
+    DBI::dbExecute(con, query_delete_bairro_from_input)
+    # DBI::dbGetQuery(con, 'SELECT COUNT(*) FROM "input_padrao_db"')
+    }
+  delete_null_bairro('input_padrao_db')
+  delete_null_bairro('filtered_cnefe_cep')
+
+  # narrow down search scope to Bairro
+  query_narrow_bairros <-
+  'DELETE FROM "filtered_cnefe_cep"
+  WHERE "bairro" NOT IN (SELECT DISTINCT "bairro" FROM "input_padrao_db");'
+  DBI::dbExecute(con, query_narrow_bairros)
+  # DBI::dbGetQuery(con, 'SELECT COUNT(*) FROM "filtered_cnefe_cep"')
+
+
   temp_n <- match_case(
     con,
     x = 'input_padrao_db',
