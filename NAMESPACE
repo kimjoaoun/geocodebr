@@ -2,8 +2,6 @@
 
 export(download_cnefe)
 export(geocode)
-export(geocode_duck)
-export(geocode_duck2)
 export(geocodebr_cache)
 export(set_geocodebr_cache_dir)
 importFrom(data.table,"%chin%")

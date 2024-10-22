@@ -8,7 +8,7 @@ library(geocodebr)
 data_path <- system.file("extdata/sample_1.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
 
-geo_duck <- geocode_duck2(
+geo_duck <- geocode(
   input_table = input_df,
   logradouro = "nm_logradouro",
   numero = "Numero",

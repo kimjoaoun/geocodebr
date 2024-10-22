@@ -14,6 +14,8 @@ geocode(
   municipio = NULL,
   estado = NULL,
   showProgress = TRUE,
+  output_simple = TRUE,
+  ncores = NULL,
   cache = TRUE
 )
 }
@@ -21,6 +23,11 @@ geocode(
 \item{showProgress}{Logical. Defaults to \code{TRUE} display download progress
 bar. The progress bar only reflects only the downloading
 time, not the time to load the data to memory.}
+
+\item{output_simple}{Logic. Defaults to \code{TRUE}}
+
+\item{ncores}{Number of cores to be used in parallel execution. Defaults to
+the number of available cores minus 1.}
 
 \item{cache}{Logical. Whether the function should read the data cached
 locally, which is much faster. Defaults to \code{TRUE}. The first time the
@@ -36,10 +43,6 @@ columns are not read. Defaults to \code{NULL} and read all columns.}
 \item{add_labels}{Character. Whether the function should add labels to the
 responses of categorical variables. When \code{add_labels = "pt"}, the
 function adds labels in Portuguese. Defaults to \code{NULL}.}
-
-\item{as_data_frame}{Logical. When \code{FALSE} (Default), the function returns an
-Arrow Dataset, which allows users to work with larger-than-memory data.
-If \code{TRUE}, the function returns \code{data.frame}.}
 }
 \value{
 An arrow \code{Dataset} or a \code{"data.frame"} object.
@@ -50,11 +53,13 @@ in the sample component of the questionnaire.
 }
 \examples{
 \dontshow{if (identical(tolower(Sys.getenv("NOT_CRAN")), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+library(geocodebr)
+
 # open input data
 data_path <- system.file("extdata/sample_1.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
 
-df <- geocodebr::geocode(
+df <- geocodebr::geocode_duck(
   input_table = input_df,
   logradouro = "nm_logradouro",
   numero = "Numero",
@@ -65,10 +70,5 @@ df <- geocodebr::geocode(
   estado = "nm_uf"
   )
 \dontshow{\}) # examplesIf}
-}
-\seealso{
-Other Microdata: 
-\code{\link{geocode_duck}()},
-\code{\link{geocode_duck2}()}
 }
 \concept{Microdata}

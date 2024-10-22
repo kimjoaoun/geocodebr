@@ -52,7 +52,7 @@ input_df$ID <-  1:nrow(input_df)
 
 
 tictoc::tic()
-df_duck3 <- geocode_duck2(
+df_duck3 <- geocode(
   input_table = input_df,
   logradouro = "nm_logradouro",
   numero = "Numero",
@@ -66,7 +66,11 @@ df_duck3 <- geocode_duck2(
   showProgress = T
 )
 tictoc::toc()
-#> 28: 4 - 5
-#> 900K: 221 - 244
-
-#> 900K: 44.56
+#> 28: 4 - 5  (in memory)
+#> 28: 4 - 5  (disk)
+#>
+#> 900K: 37.11 - 44.56  (in memory)
+#> 900K: 39.34          (disk)
+#>
+#> 7.3 milhoes: 113.01 (in memory)
+#> 7.3 milhoes: 101.31 (disk)
