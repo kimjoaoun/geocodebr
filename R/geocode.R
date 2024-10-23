@@ -92,8 +92,13 @@ geocode <- function(input_table,
   db_path <- fs::file_temp(ext = '.duckdb')
   con <- duckdb::dbConnect(duckdb::duckdb(), dbdir=db_path)
 
-  # **in memory** database which is limited by RAM
+  ## **in memory** database which is limited by RAM
   # con <- duckdb::dbConnect(duckdb::duckdb(), dbdir=":memory:")
+  #
+  ## Set Memory limit
+  # TODO
+  # DBI::dbExecute(con, "SET memory_limit = '20GB'")
+
 
   ## configure db connection
     # Set Number of cores for parallel operation
@@ -103,11 +108,8 @@ geocode <- function(input_table,
       if (ncores<1) {ncores <- 1}
     }
 
-    DBI::dbExecute(con, sprintf("PRAGMA threads=%s;", ncores))
+    DBI::dbExecute(con, sprintf("SET threads = %s;", ncores))
 
-    # Set Memory limit
-    # TODO
-    # DBI::dbExecute(con, "SET memory_limit = '20GB'")
 
 
     # add input and cnefe data sets to db --------------------------------------
@@ -149,6 +151,7 @@ geocode <- function(input_table,
   # Narrow search scope in cnefe to municipalities and zip codes present in input
   input_ceps <- unique(input_padrao$cep)
   input_municipio <- unique(input_padrao$municipio)
+
   query_filter_cnefe_municipios <- sprintf("
   CREATE TEMPORARY TABLE filtered_cnefe_cep AS
   SELECT * FROM cnefe
@@ -156,6 +159,7 @@ geocode <- function(input_table,
                                    paste(input_ceps, collapse = "', '"),
                                    paste(input_municipio, collapse = "', '")
   )
+
   DBI::dbExecute(con, query_filter_cnefe_municipios)
   # duckdb::dbSendQuery(con, query_ceps_municipios)
 
@@ -196,7 +200,7 @@ geocode <- function(input_table,
 
   ## CASE 1 --------------------------------------------------------------------
 
-  temp_n <- match_case(
+  temp_n <- match_aggregated_cases(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
@@ -223,7 +227,7 @@ geocode <- function(input_table,
   # DBI::dbRemoveTable(con, 'output_caso_01')
 
   ## CASE 2 --------------------------------------------------------------------
-  temp_n <- match_case(
+  temp_n <- match_aggregated_cases(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
@@ -246,7 +250,7 @@ geocode <- function(input_table,
   }
 
   ## CASE 3 --------------------------------------------------------------------
-  temp_n <- match_case(
+  temp_n <- match_aggregated_cases(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
@@ -269,7 +273,7 @@ geocode <- function(input_table,
   }
 
   ## CASE 4  --------------------------------------------------------------------
-  temp_n <- match_case(
+  temp_n <- match_aggregated_cases(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
@@ -292,7 +296,7 @@ geocode <- function(input_table,
   }
 
   ## CASE 5  --------------------------------------------------------------------
-  temp_n <- match_case(
+  temp_n <- match_aggregated_cases(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
@@ -315,7 +319,7 @@ geocode <- function(input_table,
   }
 
   ## CASE 6 --------------------------------------------------------------------
-  temp_n <- match_case(
+  temp_n <- match_aggregated_cases(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
@@ -338,7 +342,7 @@ geocode <- function(input_table,
   }
 
   ## CASE 7 --------------------------------------------------------------------
-  temp_n <- match_case(
+  temp_n <- match_aggregated_cases(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
@@ -361,7 +365,7 @@ geocode <- function(input_table,
   }
 
   ## CASE 8 --------------------------------------------------------------------
-  temp_n <- match_case(
+  temp_n <- match_aggregated_cases(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
@@ -384,7 +388,7 @@ geocode <- function(input_table,
   }
 
   ## CASE 9 --------------------------------------------------------------------
-  temp_n <- match_case(
+  temp_n <- match_aggregated_cases(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
@@ -427,7 +431,7 @@ geocode <- function(input_table,
   # DBI::dbGetQuery(con, 'SELECT COUNT(*) FROM "filtered_cnefe_cep"')
 
 
-  temp_n <- match_case(
+  temp_n <- match_aggregated_cases(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
@@ -454,7 +458,7 @@ geocode <- function(input_table,
   # TO DO
   # add to package a table with the coordinates of geobr::read_municipal_seat()
   # and perform lookup
-        # temp_n <- match_case(
+        # temp_n <- match_aggregated_cases(
         #   con,
         #   x = 'input_padrao_db',
         #   y = 'filtered_cnefe_cep',

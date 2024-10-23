@@ -70,7 +70,9 @@ tictoc::toc()
 #> 28: 4 - 5  (disk)
 #>
 #> 900K: 37.11 - 44.56  (in memory)
-#> 900K: 39.34          (disk)
+#> 900K: 39.34          (disk) match_case
+#> 900K: 16             (disk) match_aggregated_cases
 #>
 #> 7.3 milhoes: 113.01 (in memory)
-#> 7.3 milhoes: 101.31 (disk)
+#> 7.3 milhoes: 101.31 (disk) match_case
+#> 7.3 milhoes: 57.36 (disk) match_aggregated_cases
