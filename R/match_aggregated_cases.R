@@ -1,21 +1,3 @@
-query_t <- "WITH pre_aggregated_cnefe AS (
-    SELECT estado, municipio, logradouro, numero, cep, bairro,
-           AVG(lon) AS lon, AVG(lat) AS lat
-    FROM filtered_cnefe_cep
-    GROUP BY estado, municipio, logradouro, numero, cep, bairro
-)
-SELECT input_padrao_db.ID, pre_aggregated_cnefe.lon, pre_aggregated_cnefe.lat
-FROM input_padrao_db
-LEFT JOIN pre_aggregated_cnefe
-ON input_padrao_db.estado = pre_aggregated_cnefe.estado
-   AND input_padrao_db.municipio = pre_aggregated_cnefe.municipio
-   AND input_padrao_db.logradouro = pre_aggregated_cnefe.logradouro
-   AND input_padrao_db.numero = pre_aggregated_cnefe.numero
-   AND input_padrao_db.cep = pre_aggregated_cnefe.cep
-   AND input_padrao_db.bairro = pre_aggregated_cnefe.bairro
-WHERE pre_aggregated_cnefe.lon IS NOT NULL;"
-
-
 #' Match aggregated cases with left_join
 #'
 #' @param con A db connection
