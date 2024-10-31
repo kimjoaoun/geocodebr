@@ -63,7 +63,7 @@ geocode <- function(input_table,
   # normalize input data -------------------------------------------------------
 
   # correspondence of column names
-  campos <- enderecopadrao::correspondencia_campos(
+  campos <- enderecobr::correspondencia_campos(
     logradouro = logradouro,
     numero = numero,
     complemento = complemento,
@@ -74,16 +74,16 @@ geocode <- function(input_table,
   )
 
   # padroniza input do usuario
-  input_padrao <- enderecopadrao::padronizar_enderecos(
+  input_padrao_raw <- enderecobr::padronizar_enderecos(
     enderecos = input_table,
     campos_do_endereco = campos
   )
 
-  # 6666666666666666666666666666
-  # REMOVER quando atualizar EP
-  input_padrao <- cbind(input_table['ID'], input_padrao)
-  input_padrao$estado <- input_df$nm_uf
-
+  # subset and rename colunms of input_padrao
+  # keeping same column names used in our cnefe data set
+  cols_padr <- grep("_padr", names(input_padrao_raw), value = TRUE)
+  input_padrao <- input_padrao_raw[, .SD, .SDcols = c("ID", cols_padr)]
+  names(input_padrao) <- c("ID", gsub("_padr", "", cols_padr))
 
   # create db connection -------------------------------------------------------
 
@@ -112,7 +112,7 @@ geocode <- function(input_table,
 
 
 
-    # add input and cnefe data sets to db --------------------------------------
+  # add input and cnefe data sets to db --------------------------------------
 
   # Convert input data frame to DuckDB table
   duckdb::dbWriteTable(con, "input_padrao_db", input_padrao,

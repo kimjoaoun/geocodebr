@@ -1,7 +1,7 @@
 Type: Package
 Package: geocodebr
 Title: Geocode Brazilian Addresses with CNEFE
-Version: 0.0.1
+Version: 0.0.2
 Authors@R: 
     c(person(given = "Daniel",
              family = "Herszenhut",
@@ -30,7 +30,7 @@ Imports:
     curl (>= 5.0.0),
     data.table,
     dplyr,
-    enderecopadrao,
+    enderecobr,
     fs,
     parallel,
     tools,

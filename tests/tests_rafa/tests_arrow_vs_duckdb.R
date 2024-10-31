@@ -16,7 +16,7 @@
 
 # library(geocodebr)
 library(tictoc)
-library(enderecopadrao)
+# library(enderecobr)
 # library(data.table)
 # library(dplyr)
 # library(arrow)
