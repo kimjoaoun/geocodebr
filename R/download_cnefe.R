@@ -1,16 +1,21 @@
-#' Download the geocodebr version of the CNEFE data set
+#' Download the CNEFE data set
 #'
-#' @description
-#' Downloads an enriched version of the CNEFE data set that has been
-#' purposefully built to be used in the geocodebr package.
+#' Downloads an enriched version of the CNEFE (National Registry of Addresses
+#' for Statistical Purposes, in portuguese) data set, purposefully built to be
+#' used with this package.
 #'
-#' @param abbrev_state description year
+#' @param abbrev_state A character vector. The states whose CNEFE data should be
+#'   downloaded. Either `"all"` (the default), in which case the data for all
+#'   states is downloaded, or a vector with the state abbreviations (e.g.
+#'   `c("RJ", "DF")` to download the data for Rio de Janeiro and the Federal
+#'   District).
 #' @template showProgress
 #' @template cache
 #'
 #' @return A directory path where the data was saved.
-#' @export
+#'
 #' @family Support
+#'
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 #' # download CNEFE for a single state
 #' download_cnefe(abbrev_state = "AC",
@@ -24,25 +29,13 @@
 #' # download_cnefe(abbrev_state = "all",
 #' #                showProgress = FALSE)
 #'
-download_cnefe <- function(abbrev_state = NULL,
+#' @export
+download_cnefe <- function(abbrev_state = "all",
                            showProgress = TRUE,
-                           cache = TRUE
-                           ){
-
-  ### check inputs
-  checkmate::assert_logical(showProgress)
-  checkmate::assert_logical(cache)
-
-  all_abbrev_states <- c("RO", "AC", "AM", "RR", "PA", "AP", "TO", "MA", "PI",
-                         "CE", "RN", "PB", "PE", "AL", "SE", "BA", "MG", "ES",
-                         "RJ", "SP", "PR", "SC", "RS", "MS", "MT", "GO", "DF")
-
-  # data available for the states:
-  if (isFALSE(all(abbrev_state %in% all_abbrev_states))) { stop(paste0("Data currently only available for the states ",
-                                             paste(all_abbrev_states, collapse = " ")))}
-
-  # if null, get all states
-  if (is.null(abbrev_state)) {abbrev_state <- all_abbrev_states}
+                           cache = TRUE){
+  checkmate::assert_logical(showProgress, any.missing = FALSE, len = 1)
+  checkmate::assert_logical(cache, any.missing = FALSE, len = 1)
+  abbrev_state <- assert_and_assign_abbrev_state(abbrev_state)
 
   ### build url of requested states
   file_url <- paste0("https://github.com/ipeaGIT/geocodebr/releases/download/data_",
@@ -104,3 +97,19 @@ download_cnefe <- function(abbrev_state = NULL,
   return(download_success)
 }
 
+assert_and_assign_abbrev_state <- function(abbrev_state) {
+  all_abbrev_states <- c(
+    "RO", "AC", "AM", "RR", "PA", "AP", "TO", "MA", "PI", "CE", "RN", "PB",
+    "PE", "AL", "SE", "BA", "MG", "ES", "RJ", "SP", "PR", "SC", "RS", "MS",
+    "MT", "GO", "DF"
+  )
+
+  checkmate::assert_names(
+    abbrev_state,
+    subset.of = c("all", all_abbrev_states)
+  )
+
+  if ("all" %in% abbrev_state) abbrev_state <- all_abbrev_states
+
+  return(abbrev_state)
+}
