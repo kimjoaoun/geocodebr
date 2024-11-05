@@ -228,29 +228,6 @@ add_precision_col <- function(con, update_tb = NULL, precision = NULL){
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-#' Merge results of spatial coordinates and precision info for output
-#'
-#' @param con A db connection
-#' @param x String. Name of a table written in con
-#' @param y String. Name of a table written in con
-#' @param output_tb Name of the new table to be written in con
-#' @param key_cols Vector. Vector with the names of columns to perform left join
-#' @param precision Integer. An integer
-#'
-#' @return Writes the result of the left join as a new table in con
-#'
-#' @keywords internal
 merge_results <- function(con, x, y, key_column, select_columns){
 
   # x = 'output_db'
@@ -302,7 +279,7 @@ create_index <- function(con, tb, cols, operation, overwrite=TRUE){
     sprintf("SELECT * FROM duckdb_indexes WHERE table_name = '%s';", tb)
   )
 
-  if (nrow(i) > 0 & isFALSE(overwrite)) { return(null) }
+  if (nrow(i) > 0 & isFALSE(overwrite)) { return(NULL) }
   if (nrow(i) > 0 & isTRUE(overwrite)) {
     DBI::dbExecute(con, sprintf('DROP INDEX IF EXISTS %s',idx))
   }

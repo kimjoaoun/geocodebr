@@ -36,9 +36,9 @@ download_cnefe(abbrev_state = "AC",
 download_cnefe(abbrev_state = c("AC", "AL", "RJ"),
                showProgress = FALSE)
 
-# download CNEFE for all states
-download_cnefe(abbrev_state = "all",
-               showProgress = FALSE)
+# # download CNEFE for all states
+# download_cnefe(abbrev_state = "all",
+#                showProgress = FALSE)
 \dontshow{\}) # examplesIf}
 }
 \concept{Support}

@@ -20,6 +20,22 @@ geocode(
 )
 }
 \arguments{
+\item{input_table}{A data frame.}
+
+\item{logradouro}{A string.}
+
+\item{numero}{A string.}
+
+\item{complemento}{A string.}
+
+\item{cep}{A string.}
+
+\item{bairro}{A string.}
+
+\item{municipio}{A string.}
+
+\item{estado}{A string.}
+
 \item{showProgress}{Logical. Defaults to \code{TRUE} display download progress
 bar. The progress bar only reflects only the downloading
 time, not the time to load the data to memory.}
@@ -34,15 +50,6 @@ locally, which is much faster. Defaults to \code{TRUE}. The first time the
 user runs the function, \code{censobr} will download the file and store it
 locally so that the file only needs to be download once. If \code{FALSE},
 the function will download the data again and overwrite the local file.}
-
-\item{year}{Numeric. Year of reference in the format \code{yyyy}. Defaults to \code{2010}.}
-
-\item{columns}{String. A vector of column names to keep. The rest of the
-columns are not read. Defaults to \code{NULL} and read all columns.}
-
-\item{add_labels}{Character. Whether the function should add labels to the
-responses of categorical variables. When \code{add_labels = "pt"}, the
-function adds labels in Portuguese. Defaults to \code{NULL}.}
 }
 \value{
 An arrow \code{Dataset} or a \code{"data.frame"} object.
@@ -53,13 +60,12 @@ in the sample component of the questionnaire.
 }
 \examples{
 \dontshow{if (identical(tolower(Sys.getenv("NOT_CRAN")), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
-library(geocodebr)
 
 # open input data
 data_path <- system.file("extdata/sample_1.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
 
-df <- geocodebr::geocode_duck(
+df <- geocodebr::geocode(
   input_table = input_df,
   logradouro = "nm_logradouro",
   numero = "Numero",

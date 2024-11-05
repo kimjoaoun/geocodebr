@@ -4,9 +4,14 @@
 #' Download microdata of population records from Brazil's census. Data collected
 #' in the sample component of the questionnaire.
 #'
-#' @template year
-#' @template columns
-#' @template add_labels
+#' @param input_table A data frame.
+#' @param logradouro A string.
+#' @param numero A string.
+#' @param complemento A string.
+#' @param cep A string.
+#' @param bairro A string.
+#' @param municipio A string.
+#' @param estado A string.
 #' @template showProgress
 #' @param output_simple Logic. Defaults to `TRUE`
 #' @param ncores Number of cores to be used in parallel execution. Defaults to
@@ -17,13 +22,12 @@
 #' @export
 #' @family Microdata
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
-#' library(geocodebr)
 #'
 #' # open input data
 #' data_path <- system.file("extdata/sample_1.csv", package = "geocodebr")
 #' input_df <- read.csv(data_path)
 #'
-#' df <- geocodebr::geocode_duck(
+#' df <- geocodebr::geocode(
 #'   input_table = input_df,
 #'   logradouro = "nm_logradouro",
 #'   numero = "Numero",
@@ -194,8 +198,8 @@ geocode <- function(input_table,
 
   # start progress bar
   if (isTRUE(showProgress)) {
-    total_n <- nrow(input_df)
-    pb <- txtProgressBar(min = 0, max = total_n, style = 3)
+    total_n <- nrow(input_table)
+    pb <- utils::txtProgressBar(min = 0, max = total_n, style = 3)
     }
 
   ## CASE 1 --------------------------------------------------------------------

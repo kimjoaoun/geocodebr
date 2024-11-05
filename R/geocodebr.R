@@ -9,7 +9,7 @@
 #' @aliases geocodebr-package
 #'
 #' @importFrom dplyr mutate select across case_when all_of
-#' @importFrom data.table := .I .SD %chin% .GRP .N
+#' @importFrom data.table := .I .SD %chin% .GRP .N %like%
 #'
 #' @keywords internal
 "_PACKAGE"

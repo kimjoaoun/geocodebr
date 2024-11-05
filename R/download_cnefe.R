@@ -20,9 +20,9 @@
 #' download_cnefe(abbrev_state = c("AC", "AL", "RJ"),
 #'                showProgress = FALSE)
 #'
-#' # download CNEFE for all states
-#' download_cnefe(abbrev_state = "all",
-#'                showProgress = FALSE)
+#' # # download CNEFE for all states
+#' # download_cnefe(abbrev_state = "all",
+#' #                showProgress = FALSE)
 #'
 download_cnefe <- function(abbrev_state = NULL,
                            showProgress = TRUE,
