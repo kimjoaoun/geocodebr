@@ -1,7 +1,18 @@
+data_release <- "v0.1.0"
+cache_dir <- fs::path(
+  tools::R_user_dir("geocodebr", which = "cache"),
+  glue::glue("data_release_{data_release}")
+)
+
+# TODO: remove this environment after transition to new structure is done
 # package global variables
 geocodebr_env <- new.env(parent = emptyenv()) # nocov start
 
 .onLoad <- function(libname, pkgname){
+  fs::dir_create(cache_dir)
+
+  # TODO: remove calls related to custom environment after transition to new
+  # structure is done
 
   # data release
   geocodebr_env$data_release <- 'v0.0.1'
@@ -17,4 +28,4 @@ geocodebr_env <- new.env(parent = emptyenv()) # nocov start
   old_cache <- all_cache[!grepl(geocodebr_env$data_release, all_cache)]
   if(length(old_cache)>0){ unlink(old_cache, recursive = TRUE) }
 
-} # nocov end
+}

@@ -4,12 +4,13 @@
 #' for Statistical Purposes, in portuguese) data set, purposefully built to be
 #' used with this package.
 #'
-#' @param abbrev_state A character vector. The states whose CNEFE data should be
+#' @param state A character vector. The states whose CNEFE data should be
 #'   downloaded. Either `"all"` (the default), in which case the data for all
-#'   states is downloaded, or a vector with the state abbreviations (e.g.
+#'   states is downloaded, or a vector with the states abbreviations (e.g.
 #'   `c("RJ", "DF")` to download the data for Rio de Janeiro and the Federal
 #'   District).
-#' @template showProgress
+#' @param progress A logical. Whether to display a download progress bar.
+#'   Defaults to `TRUE`.
 #' @template cache
 #'
 #' @return A directory path where the data was saved.
@@ -18,98 +19,102 @@
 #'
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 #' # download CNEFE for a single state
-#' download_cnefe(abbrev_state = "AC",
+#' download_cnefe(state = "AC",
 #'                showProgress = FALSE)
 #'
 #' # download CNEFE for multiple states
-#' download_cnefe(abbrev_state = c("AC", "AL", "RJ"),
+#' download_cnefe(state = c("AC", "AL", "RJ"),
 #'                showProgress = FALSE)
 #'
 #' # # download CNEFE for all states
-#' # download_cnefe(abbrev_state = "all",
+#' # download_cnefe(state = "all",
 #' #                showProgress = FALSE)
 #'
 #' @export
-download_cnefe <- function(abbrev_state = "all",
-                           showProgress = TRUE,
-                           cache = TRUE){
+download_cnefe <- function(state = "all", progress = TRUE, cache = TRUE) {
   checkmate::assert_logical(showProgress, any.missing = FALSE, len = 1)
   checkmate::assert_logical(cache, any.missing = FALSE, len = 1)
-  abbrev_state <- assert_and_assign_abbrev_state(abbrev_state)
+  state <- assert_and_assign_state(state)
 
-  ### build url of requested states
-  file_url <- paste0("https://github.com/ipeaGIT/geocodebr/releases/download/data_",
-                     geocodebr_env$data_release, "/abbrev_state_",abbrev_state, ".zip")
+  data_url <- glue::glue(
+    "https://github.com/ipeaGIT/padronizacao_cnefe/releases/",
+    "download/{data_release}/estado.{state}.zip"
+  )
 
-
-  # determine states that have already been downloaded
-  existing_local_dirs <- fs::path(list.files(geocodebr_env$cache_dir, full.names = TRUE))
-  existing_local_states <- substring(basename(existing_local_dirs), 14,15)
-
-
-  ## if cache == FALSE, remove subfolders of states that exist locally
-  # remove directories with parquet files
-  if (isFALSE(cache)) {
-    for (i in abbrev_state){
-      temp <- existing_local_dirs[which(existing_local_dirs %like% i)]
-      unlink(temp, recursive = TRUE)
-    }
+  if (!cache) {
+    data_dir <- tempfile("standardized_cnefe")
+    fs::dir_create(data_dir)
+  } else {
+    data_dir <- cache_dir
   }
 
-  # if cache == TRUE, ignore urls of states that exist locally
-  if (isTRUE(cache)) {
-    url_of_local_states <- paste0("https://github.com/ipeaGIT/geocodebr/releases/download/data_",
-              geocodebr_env$data_release, "/abbrev_state_",existing_local_states, ".zip")
+  # we only need to download data that hasn't been downloaded yet. note that if
+  # cache=FALSE data_dir is always empty, so we download all required data
 
-    # ignore urls
-    file_url <- file_url[! file_url %in% url_of_local_states]
-  }
+  existing_data <- list.files(data_dir)
+  existing_states <- substr(existing_data, start = 8, stop = 9)
 
+  states_to_download <- setdiff(state, existing_states)
+  files_to_download <- data_url[state %in% states_to_download]
 
-  ### Download
-  if (length(file_url)>0){
-    download_success <- download_file(
-      file_url = file_url,
-      showProgress = showProgress,
-      cache = cache
-      )
-  } else { download_success <- TRUE}
+  zip_paths <- download_files2(files_to_download)
 
-  # check if download worked
-  if (isFALSE(download_success)) { return(invisible(NULL)) }
+  purrr::map(
+    zip_paths,
+    function(zipfile) zip::unzip(zipfile, exdir = data_dir)
+  )
 
-  # unzip
-  zipped_locals <- list.files(
-    geocodebr_env$cache_dir,
-    pattern = '.zip',
-    full.names = TRUE
-    )
+  parquet_files <- list.files(data_dir, recursive = TRUE, full.names = TRUE)
 
-  if (length(zipped_locals)>0) {
-    lapply(X=zipped_locals,
-         FUN = archive::archive_extract,
-         dir = fs::path(geocodebr_env$cache_dir))
-
-    # remove zipped files
-    unlink(zipped_locals, recursive = TRUE)
-  }
-
-  return(download_success)
+  return(parquet_files)
 }
 
-assert_and_assign_abbrev_state <- function(abbrev_state) {
-  all_abbrev_states <- c(
+assert_and_assign_state <- function(state) {
+  all_states <- c(
     "RO", "AC", "AM", "RR", "PA", "AP", "TO", "MA", "PI", "CE", "RN", "PB",
     "PE", "AL", "SE", "BA", "MG", "ES", "RJ", "SP", "PR", "SC", "RS", "MS",
     "MT", "GO", "DF"
   )
 
-  checkmate::assert_names(
-    abbrev_state,
-    subset.of = c("all", all_abbrev_states)
+  checkmate::assert_names(state, subset.of = c("all", all_states))
+
+  if ("all" %in% state) state <- all_states
+
+  return(state)
+}
+
+download_files2 <- function(files_to_download, progress) {
+  # we always download the files to a temporary directory to prevent any
+  # potential "garbage" in our cache dir (in case the download fails for some
+  # reason or the unzipping process crashes mid-operation)
+
+  download_dir <- tempfile("zipped_standardized_cnefe")
+  fs::dir_create(download_dir)
+
+  requests <- lapply(files_to_download, httr2::request)
+
+  dest_files <- fs::path(download_dir, basename(files_to_download))
+
+  responses <- httr2::req_perform_parallel(
+    requests,
+    paths = dest_files,
+    progress = ifelse(progress == TRUE, "Downloading CNEFE data", FALSE)
   )
 
-  if ("all" %in% abbrev_state) abbrev_state <- all_abbrev_states
+  response_errored <- purrr::map_lgl(
+    responses,
+    function(r) inherits(r, "error")
+  )
 
-  return(abbrev_state)
+  # TODO: improve this error
+  if (any(response_errored)) {
+    invalid_dest_files <- dest_files[response_errored]
+    fs::file_delete(invalid_dest_files)
+
+    stop("Could not download data for one of the states, uh-oh!")
+  }
+
+  return(dest_files)
 }
+
+
