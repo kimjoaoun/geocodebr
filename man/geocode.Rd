@@ -13,7 +13,7 @@ geocode(
   bairro = NULL,
   municipio = NULL,
   estado = NULL,
-  showProgress = TRUE,
+  progress = TRUE,
   output_simple = TRUE,
   ncores = NULL,
   cache = TRUE
@@ -36,9 +36,8 @@ geocode(
 
 \item{estado}{A string.}
 
-\item{showProgress}{Logical. Defaults to \code{TRUE} display download progress
-bar. The progress bar only reflects only the downloading
-time, not the time to load the data to memory.}
+\item{progress}{A logical. Whether to display a download progress bar.
+Defaults to \code{TRUE}.}
 
 \item{output_simple}{Logic. Defaults to \code{TRUE}}
 
@@ -65,16 +64,16 @@ in the sample component of the questionnaire.
 data_path <- system.file("extdata/sample_1.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
 
-df <- geocodebr::geocode(
-  input_table = input_df,
-  logradouro = "nm_logradouro",
-  numero = "Numero",
-  complemento = "Complemento",
-  cep = "Cep",
-  bairro = "Bairro",
-  municipio = "nm_municipio",
-  estado = "nm_uf"
-  )
+# df <- geocodebr::geocode(
+#   input_table = input_df,
+#   logradouro = "nm_logradouro",
+#   numero = "Numero",
+#   complemento = "Complemento",
+#   cep = "Cep",
+#   bairro = "Bairro",
+#   municipio = "nm_municipio",
+#   estado = "nm_uf"
+#   )
 \dontshow{\}) # examplesIf}
 }
 \concept{Microdata}

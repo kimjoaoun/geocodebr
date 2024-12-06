@@ -24,7 +24,6 @@ BugReports: https://github.com/ipeaGIT/geocodebr/issues
 Depends: 
     R (>= 4.1.0)
 Imports:
-    archive,
     arrow (>= 15.0.1),
     checkmate,
     curl (>= 5.0.0),
@@ -32,9 +31,13 @@ Imports:
     dplyr,
     enderecobr,
     fs,
+    glue,
+    httr2,
     parallel,
+    purrr,
     tools,
-    utils
+    utils,
+    zip
 Suggests:
     covr,
     DBI,

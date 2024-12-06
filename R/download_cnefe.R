@@ -19,20 +19,17 @@
 #'
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 #' # download CNEFE for a single state
-#' download_cnefe(state = "AC",
-#'                showProgress = FALSE)
+#' download_cnefe(state = "AC", progress = FALSE)
 #'
 #' # download CNEFE for multiple states
-#' download_cnefe(state = c("AC", "AL", "RJ"),
-#'                showProgress = FALSE)
+#' download_cnefe(state = c("AC", "AL", "RJ"), progress = FALSE)
 #'
-#' # # download CNEFE for all states
-#' # download_cnefe(state = "all",
-#' #                showProgress = FALSE)
+#' # download CNEFE for all states
+#' download_cnefe(state = "all", progress = FALSE)
 #'
 #' @export
 download_cnefe <- function(state = "all", progress = TRUE, cache = TRUE) {
-  checkmate::assert_logical(showProgress, any.missing = FALSE, len = 1)
+  checkmate::assert_logical(progress, any.missing = FALSE, len = 1)
   checkmate::assert_logical(cache, any.missing = FALSE, len = 1)
   state <- assert_and_assign_state(state)
 
@@ -57,9 +54,9 @@ download_cnefe <- function(state = "all", progress = TRUE, cache = TRUE) {
   states_to_download <- setdiff(state, existing_states)
   files_to_download <- data_url[state %in% states_to_download]
 
-  zip_paths <- download_files2(files_to_download)
+  zip_paths <- download_files2(files_to_download, progress)
 
-  purrr::map(
+  purrr::walk(
     zip_paths,
     function(zipfile) zip::unzip(zipfile, exdir = data_dir)
   )
