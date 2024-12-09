@@ -12,6 +12,6 @@
 .RData
 ^_pkgdown\.yml$
 ^pkgdown$
-
 ^\.pre-commit-config\.yaml$
 ^README\.Rmd$
+^codemeta\.json$
