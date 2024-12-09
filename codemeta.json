@@ -165,6 +165,7 @@
       "@type": "SoftwareApplication",
       "identifier": "testthat",
       "name": "testthat",
+      "version": ">= 3.0.0",
       "provider": {
         "@id": "https://cran.r-project.org",
         "@type": "Organization",
@@ -208,6 +209,18 @@
     },
     "4": {
       "@type": "SoftwareApplication",
+      "identifier": "cli",
+      "name": "cli",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=cli"
+    },
+    "5": {
+      "@type": "SoftwareApplication",
       "identifier": "curl",
       "name": "curl",
       "version": ">= 5.0.0",
@@ -219,7 +232,7 @@
       },
       "sameAs": "https://CRAN.R-project.org/package=curl"
     },
-    "5": {
+    "6": {
       "@type": "SoftwareApplication",
       "identifier": "data.table",
       "name": "data.table",
@@ -231,7 +244,7 @@
       },
       "sameAs": "https://CRAN.R-project.org/package=data.table"
     },
-    "6": {
+    "7": {
       "@type": "SoftwareApplication",
       "identifier": "dplyr",
       "name": "dplyr",
@@ -243,7 +256,7 @@
       },
       "sameAs": "https://CRAN.R-project.org/package=dplyr"
     },
-    "7": {
+    "8": {
       "@type": "SoftwareApplication",
       "identifier": "enderecobr",
       "name": "enderecobr",
@@ -255,7 +268,7 @@
       },
       "sameAs": "https://CRAN.R-project.org/package=enderecobr"
     },
-    "8": {
+    "9": {
       "@type": "SoftwareApplication",
       "identifier": "fs",
       "name": "fs",
@@ -267,7 +280,7 @@
       },
       "sameAs": "https://CRAN.R-project.org/package=fs"
     },
-    "9": {
+    "10": {
       "@type": "SoftwareApplication",
       "identifier": "glue",
       "name": "glue",
@@ -279,7 +292,7 @@
       },
       "sameAs": "https://CRAN.R-project.org/package=glue"
     },
-    "10": {
+    "11": {
       "@type": "SoftwareApplication",
       "identifier": "httr2",
       "name": "httr2",
@@ -291,12 +304,12 @@
       },
       "sameAs": "https://CRAN.R-project.org/package=httr2"
     },
-    "11": {
+    "12": {
       "@type": "SoftwareApplication",
       "identifier": "parallel",
       "name": "parallel"
     },
-    "12": {
+    "13": {
       "@type": "SoftwareApplication",
       "identifier": "purrr",
       "name": "purrr",
@@ -308,17 +321,17 @@
       },
       "sameAs": "https://CRAN.R-project.org/package=purrr"
     },
-    "13": {
+    "14": {
       "@type": "SoftwareApplication",
       "identifier": "tools",
       "name": "tools"
     },
-    "14": {
+    "15": {
       "@type": "SoftwareApplication",
       "identifier": "utils",
       "name": "utils"
     },
-    "15": {
+    "16": {
       "@type": "SoftwareApplication",
       "identifier": "zip",
       "name": "zip",
@@ -332,7 +345,7 @@
     },
     "SystemRequirements": null
   },
-  "fileSize": "189.576KB",
+  "fileSize": "190.115KB",
   "citation": [
     {
       "@type": "SoftwareSourceCode",
@@ -348,5 +361,7 @@
     }
   ],
   "releaseNotes": "https://github.com/ipeaGIT/geocodebr/blob/master/NEWS.md",
-  "readme": "https://github.com/ipeaGIT/geocodebr/blob/main/README.md"
+  "readme": "https://github.com/ipeaGIT/geocodebr/blob/main/README.md",
+  "contIntegration": ["https://github.com/ipeaGIT/geocodebr/actions", "https://app.codecov.io/gh/ipeaGIT/geocodebr?branch=main"],
+  "developmentStatus": "https://lifecycle.r-lib.org/articles/stages.html"
 }

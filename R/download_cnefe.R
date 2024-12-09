@@ -37,7 +37,7 @@ download_cnefe <- function(state = "all", progress = TRUE, cache = TRUE) {
     data_dir <- tempfile("standardized_cnefe")
     fs::dir_create(data_dir)
   } else {
-    data_dir <- cache_dir
+    data_dir <- default_cache_dir
   }
 
   # we only need to download data that hasn't been downloaded yet. note that if
