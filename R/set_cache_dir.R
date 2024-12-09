@@ -26,10 +26,8 @@ set_cache_dir <- function(path = NULL) {
   }
 
   cli::cli_inform(
-    c(
-      "i" = "Setting cache directory to {.file {cache_dir}}.",
-      class = "geocodebr_cache_dir"
-    )
+    c("i" = "Setting cache directory to {.file {cache_dir}}."),
+    class = "geocodebr_cache_dir"
   )
 
   if (!fs::file_exists(cache_config_file)) {
