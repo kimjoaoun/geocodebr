@@ -9,10 +9,12 @@ Authors@R: c(
            comment = c(ORCID = "0000-0003-2125-7465")),
     person("Ipea - Institute for Applied Economic Research", role = c("cph", "fnd"))
   )
-Description: Geocode Brazilian addresses based on a modified version of
-    the Cadastro Nacional de Endereços para Fins Estatísticos (CNEFE),
-    published by Brazil official statistics and geography office IBGE
-    <https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html>.
+Description: Enables one to geocode Brazilian addresses using the National
+    Registry of Addresses for Statistical Purposes (english for Cadastro
+    Nacional de Endereços para Fins Estatísticos, CNEFE). CNEFE is
+    published by the Brazilian official statistics and geography office,
+    IBGE
+    (<https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html>).
 License: MIT + file LICENSE
 URL: https://github.com/ipeaGIT/geocodebr,
     https://ipeagit.github.io/geocodebr/
