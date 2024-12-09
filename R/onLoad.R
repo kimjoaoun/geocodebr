@@ -6,7 +6,7 @@ cache_dir <- fs::path(
 
 # TODO: remove this environment after transition to new structure is done
 # package global variables
-geocodebr_env <- new.env(parent = emptyenv()) # nocov start
+geocodebr_env <- new.env(parent = emptyenv())
 
 .onLoad <- function(libname, pkgname){
   fs::dir_create(cache_dir)

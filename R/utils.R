@@ -9,7 +9,7 @@
 #' @keywords internal
 download_file <- function(file_url = parent.frame()$file_url,
                           showProgress = parent.frame()$showProgress,
-                          cache = parent.frame()$cache){ # nocov start
+                          cache = parent.frame()$cache){
 
   # check input
   checkmate::assert_logical(showProgress)
@@ -52,7 +52,7 @@ download_file <- function(file_url = parent.frame()$file_url,
 
 
   return(TRUE)
-  } # nocov end
+  }
 
 
 #' Safely use arrow to open a Parquet file
@@ -88,7 +88,7 @@ arrow_open_dataset <- function(filename){
 #'
 #' @keywords internal
 cache_message <- function(local_file = parent.frame()$local_file,
-                          cache = parent.frame()$cache){ # nocov start
+                          cache = parent.frame()$cache){
 
 #  local_file <- 'C:\\Users\\user\\AppData\\Local/R/cache/R/geocodebr_v0.1/2010_deaths.parquet'
 
@@ -117,7 +117,7 @@ cache_message <- function(local_file = parent.frame()$local_file,
   if (!file.exists(local_file) & isFALSE(cache)) {
      message(paste("Downloading data. Setting 'cache = TRUE' is strongly recommended to speed up future use. File will be stored locally at:", dir_name))
      }
-  } # nocov end
+  }
 
 
 
