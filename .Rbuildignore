@@ -14,3 +14,4 @@
 ^pkgdown$
 
 ^\.pre-commit-config\.yaml$
+^README\.Rmd$
