@@ -18,14 +18,9 @@
 #' @family Support
 #'
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
-#' # download CNEFE for a single state
 #' download_cnefe(state = "AC", progress = FALSE)
 #'
-#' # download CNEFE for multiple states
-#' download_cnefe(state = c("AC", "AL", "RJ"), progress = FALSE)
-#'
-#' # download CNEFE for all states
-#' download_cnefe(state = "all", progress = FALSE)
+#' download_cnefe(state = c("AC", "AL"), progress = FALSE)
 #'
 #' @export
 download_cnefe <- function(state = "all", progress = TRUE, cache = TRUE) {

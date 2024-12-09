@@ -32,14 +32,9 @@ used with this package.
 }
 \examples{
 \dontshow{if (identical(tolower(Sys.getenv("NOT_CRAN")), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
-# download CNEFE for a single state
 download_cnefe(state = "AC", progress = FALSE)
 
-# download CNEFE for multiple states
-download_cnefe(state = c("AC", "AL", "RJ"), progress = FALSE)
-
-# download CNEFE for all states
-download_cnefe(state = "all", progress = FALSE)
+download_cnefe(state = c("AC", "AL"), progress = FALSE)
 \dontshow{\}) # examplesIf}
 }
 \concept{Support}
