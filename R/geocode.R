@@ -12,7 +12,8 @@
 #' @param bairro A string.
 #' @param municipio A string.
 #' @param estado A string.
-#' @template showProgress
+#' @param progress A logical. Whether to display a download progress bar.
+#'   Defaults to `TRUE`.
 #' @param output_simple Logic. Defaults to `TRUE`
 #' @param ncores Number of cores to be used in parallel execution. Defaults to
 #'        the number of available cores minus 1.
@@ -27,16 +28,16 @@
 #' data_path <- system.file("extdata/sample_1.csv", package = "geocodebr")
 #' input_df <- read.csv(data_path)
 #'
-#' df <- geocodebr::geocode(
-#'   input_table = input_df,
-#'   logradouro = "nm_logradouro",
-#'   numero = "Numero",
-#'   complemento = "Complemento",
-#'   cep = "Cep",
-#'   bairro = "Bairro",
-#'   municipio = "nm_municipio",
-#'   estado = "nm_uf"
-#'   )
+#' # df <- geocodebr::geocode(
+#' #   input_table = input_df,
+#' #   logradouro = "nm_logradouro",
+#' #   numero = "Numero",
+#' #   complemento = "Complemento",
+#' #   cep = "Cep",
+#' #   bairro = "Bairro",
+#' #   municipio = "nm_municipio",
+#' #   estado = "nm_uf"
+#' #   )
 #'
 geocode <- function(input_table,
                     logradouro = NULL,
@@ -46,14 +47,14 @@ geocode <- function(input_table,
                     bairro = NULL,
                     municipio = NULL,
                     estado = NULL,
-                    showProgress = TRUE,
+                    progress = TRUE,
                     output_simple = TRUE,
                     ncores = NULL,
                     cache = TRUE){
 
   # check input
   checkmate::assert_data_frame(input_table)
-  checkmate::assert_logical(showProgress)
+  checkmate::assert_logical(progress)
   checkmate::assert_logical(output_simple)
   checkmate::assert_number(ncores, null.ok = TRUE)
   checkmate::assert_logical(cache)
@@ -131,8 +132,8 @@ geocode <- function(input_table,
 
   # download cnefe
   download_success <- download_cnefe(
-    abbrev_state = input_states,
-    showProgress = showProgress,
+    state = input_states,
+    progress = progress,
     cache = cache
     )
 
@@ -197,7 +198,7 @@ geocode <- function(input_table,
   cols_11 <- c("estado", "municipio")
 
   # start progress bar
-  if (isTRUE(showProgress)) {
+  if (isTRUE(progress)) {
     total_n <- nrow(input_table)
     pb <- utils::txtProgressBar(min = 0, max = total_n, style = 3)
     }
@@ -222,7 +223,7 @@ geocode <- function(input_table,
     )
 
   # update progress bar
-  if (isTRUE(showProgress)) {
+  if (isTRUE(progress)) {
     ndone <- temp_n
     utils::setTxtProgressBar(pb, ndone)
     }
@@ -248,7 +249,7 @@ geocode <- function(input_table,
   )
 
   # update progress bar
-  if (isTRUE(showProgress)) {
+  if (isTRUE(progress)) {
     ndone <- ndone + temp_n
     utils::setTxtProgressBar(pb, ndone)
   }
@@ -271,7 +272,7 @@ geocode <- function(input_table,
   )
 
   # update progress bar
-  if (isTRUE(showProgress)) {
+  if (isTRUE(progress)) {
     ndone <- ndone + temp_n
     utils::setTxtProgressBar(pb, ndone)
   }
@@ -294,7 +295,7 @@ geocode <- function(input_table,
   )
 
   # update progress bar
-  if (isTRUE(showProgress)) {
+  if (isTRUE(progress)) {
     ndone <- ndone + temp_n
     utils::setTxtProgressBar(pb, ndone)
   }
@@ -317,7 +318,7 @@ geocode <- function(input_table,
   )
 
   # update progress bar
-  if (isTRUE(showProgress)) {
+  if (isTRUE(progress)) {
     ndone <- ndone + temp_n
     utils::setTxtProgressBar(pb, ndone)
   }
@@ -340,7 +341,7 @@ geocode <- function(input_table,
   )
 
   # update progress bar
-  if (isTRUE(showProgress)) {
+  if (isTRUE(progress)) {
     ndone <- ndone + temp_n
     utils::setTxtProgressBar(pb, ndone)
   }
@@ -363,7 +364,7 @@ geocode <- function(input_table,
   )
 
   # update progress bar
-  if (isTRUE(showProgress)) {
+  if (isTRUE(progress)) {
     ndone <- ndone + temp_n
     utils::setTxtProgressBar(pb, ndone)
   }
@@ -386,7 +387,7 @@ geocode <- function(input_table,
   )
 
   # update progress bar
-  if (isTRUE(showProgress)) {
+  if (isTRUE(progress)) {
     ndone <- ndone + temp_n
     utils::setTxtProgressBar(pb, ndone)
   }
@@ -409,7 +410,7 @@ geocode <- function(input_table,
   )
 
   # update progress bar
-  if (isTRUE(showProgress)) {
+  if (isTRUE(progress)) {
     ndone <- ndone + temp_n
     utils::setTxtProgressBar(pb, ndone)
   }
@@ -452,7 +453,7 @@ geocode <- function(input_table,
   )
 
   # update progress bar
-  if (isTRUE(showProgress)) {
+  if (isTRUE(progress)) {
     ndone <- ndone + temp_n
     utils::setTxtProgressBar(pb, ndone)
     base::close(pb)

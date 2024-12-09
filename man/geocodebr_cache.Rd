@@ -33,8 +33,4 @@ geocodebr_cache(list_files = TRUE)
 geocodebr_cache(delete_file = '2010_deaths')
 \dontshow{\}) # examplesIf}
 }
-\seealso{
-Other Cache data: 
-\code{\link{set_geocodebr_cache_dir}()}
-}
 \concept{Cache data}
