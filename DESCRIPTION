@@ -25,7 +25,6 @@ Imports:
     arrow (>= 15.0.1),
     checkmate,
     cli,
-    curl (>= 5.0.0),
     data.table,
     dplyr,
     enderecobr,

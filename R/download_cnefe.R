@@ -49,7 +49,7 @@ download_cnefe <- function(state = "all", progress = TRUE, cache = TRUE) {
   states_to_download <- setdiff(state, existing_states)
   files_to_download <- data_url[state %in% states_to_download]
 
-  zip_paths <- download_files2(files_to_download, progress)
+  zip_paths <- download_files(files_to_download, progress)
 
   purrr::walk(
     zip_paths,
@@ -75,7 +75,7 @@ assert_and_assign_state <- function(state) {
   return(state)
 }
 
-download_files2 <- function(files_to_download, progress) {
+download_files <- function(files_to_download, progress) {
   # we always download the files to a temporary directory to prevent any
   # potential "garbage" in our cache dir (in case the download fails for some
   # reason or the unzipping process crashes mid-operation)

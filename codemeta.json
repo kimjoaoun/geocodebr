@@ -221,19 +221,6 @@
     },
     "5": {
       "@type": "SoftwareApplication",
-      "identifier": "curl",
-      "name": "curl",
-      "version": ">= 5.0.0",
-      "provider": {
-        "@id": "https://cran.r-project.org",
-        "@type": "Organization",
-        "name": "Comprehensive R Archive Network (CRAN)",
-        "url": "https://cran.r-project.org"
-      },
-      "sameAs": "https://CRAN.R-project.org/package=curl"
-    },
-    "6": {
-      "@type": "SoftwareApplication",
       "identifier": "data.table",
       "name": "data.table",
       "provider": {
@@ -244,7 +231,7 @@
       },
       "sameAs": "https://CRAN.R-project.org/package=data.table"
     },
-    "7": {
+    "6": {
       "@type": "SoftwareApplication",
       "identifier": "dplyr",
       "name": "dplyr",
@@ -256,7 +243,7 @@
       },
       "sameAs": "https://CRAN.R-project.org/package=dplyr"
     },
-    "8": {
+    "7": {
       "@type": "SoftwareApplication",
       "identifier": "enderecobr",
       "name": "enderecobr",
@@ -268,7 +255,7 @@
       },
       "sameAs": "https://CRAN.R-project.org/package=enderecobr"
     },
-    "9": {
+    "8": {
       "@type": "SoftwareApplication",
       "identifier": "fs",
       "name": "fs",
@@ -280,7 +267,7 @@
       },
       "sameAs": "https://CRAN.R-project.org/package=fs"
     },
-    "10": {
+    "9": {
       "@type": "SoftwareApplication",
       "identifier": "glue",
       "name": "glue",
@@ -292,7 +279,7 @@
       },
       "sameAs": "https://CRAN.R-project.org/package=glue"
     },
-    "11": {
+    "10": {
       "@type": "SoftwareApplication",
       "identifier": "httr2",
       "name": "httr2",
@@ -304,12 +291,12 @@
       },
       "sameAs": "https://CRAN.R-project.org/package=httr2"
     },
-    "12": {
+    "11": {
       "@type": "SoftwareApplication",
       "identifier": "parallel",
       "name": "parallel"
     },
-    "13": {
+    "12": {
       "@type": "SoftwareApplication",
       "identifier": "purrr",
       "name": "purrr",
@@ -321,17 +308,17 @@
       },
       "sameAs": "https://CRAN.R-project.org/package=purrr"
     },
-    "14": {
+    "13": {
       "@type": "SoftwareApplication",
       "identifier": "tools",
       "name": "tools"
     },
-    "15": {
+    "14": {
       "@type": "SoftwareApplication",
       "identifier": "utils",
       "name": "utils"
     },
-    "16": {
+    "15": {
       "@type": "SoftwareApplication",
       "identifier": "zip",
       "name": "zip",
@@ -345,7 +332,7 @@
     },
     "SystemRequirements": null
   },
-  "fileSize": "190.115KB",
+  "fileSize": "176.64KB",
   "citation": [
     {
       "@type": "SoftwareSourceCode",
