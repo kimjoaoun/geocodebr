@@ -9,7 +9,7 @@ set_cache_dir(path = NULL)
 \arguments{
 \item{path}{A string. The path to the directory used to cache the data. If
 \code{NULL} (the default), the package will use a versioned directory saved
-inside the directory returned by \link[tools:userdir]{tools::R_user_dir}.}
+inside the directory returned by \code{\link[tools:userdir]{tools::R_user_dir()}}.}
 }
 \value{
 Invisibly returns the cache directory path.
