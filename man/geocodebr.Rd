@@ -8,12 +8,6 @@
 \description{
 Enables one to geocode Brazilian addresses using the National Registry of Addresses for Statistical Purposes (english for Cadastro Nacional de Endereços para Fins Estatísticos, CNEFE). CNEFE is published by the Brazilian official statistics and geography office, IBGE (\url{https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html}).
 }
-\section{Usage}{
-
-Please check the vignettes and data documentation on the
-\href{https://ipeagit.github.io/geocodebr/}{website}.
-}
-
 \seealso{
 Useful links:
 \itemize{
