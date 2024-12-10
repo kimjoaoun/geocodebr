@@ -207,7 +207,6 @@ geocode <- function(input_table,
     }
 
   ## CASE 1 --------------------------------------------------------------------
-  tictoc::tic()
   temp_n <- exact_match_case(
     con,
     x = 'input_padrao_db',
@@ -216,7 +215,6 @@ geocode <- function(input_table,
     key_cols <- cols_01,
     precision = 1L
     )
-  tictoc::toc()
 
   # UPDATE input_padrao_db: Remove observations found in previous step
   update_input_db(
