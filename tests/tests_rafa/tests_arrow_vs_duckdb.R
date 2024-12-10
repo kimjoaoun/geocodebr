@@ -13,12 +13,12 @@
 #' adicionar dados de POI da Meta /overture
 #' adicionar dados de enderecos Meta /overture
 
-
-# library(geocodebr)
+devtools::load_all('.')
 library(tictoc)
+library(dplyr)
+# library(geocodebr)
 # library(enderecobr)
 # library(data.table)
-# library(dplyr)
 # library(arrow)
 # library(duckdb)
 
@@ -42,7 +42,7 @@ input_df$ID <-  1:nrow(input_df)
 # bairro = "Bairro"
 # municipio = "nm_municipio"
 # estado = "nm_uf"
-# showProgress = TRUE
+# progress = TRUE
 # output_simple = TRUE
 # ncores = NULL
 # cache = TRUE
@@ -63,7 +63,7 @@ df_duck3 <- geocode(
   estado = "nm_uf",
   output_simple = F,
   ncores=NULL,
-  showProgress = T
+  progress = T
 )
 tictoc::toc()
 #> 28: 4 - 5  (in memory)

@@ -76,13 +76,13 @@ cache_message <- function(local_file = parent.frame()$local_file,
 add_abbrev_state_col <- function(con, update_tb = "input_padrao_db"){
   # Assuming `con` is your DuckDB connection and `input_padrao` already exists as a table
 
-  # Step 1: Add a new empty column to the existing table
-  DBI::dbExecute(con, sprintf("ALTER TABLE %s ADD COLUMN abbrev_state VARCHAR", update_tb))
+  # # Step 1: Add a new empty column to the existing table
+  # DBI::dbExecute(con, sprintf("ALTER TABLE %s ADD COLUMN abbrev_state VARCHAR", update_tb))
 
   # Step 2: Update the new column with the state abbreviations using CASE WHEN
   query_update <- sprintf("
   UPDATE %s
-  SET abbrev_state = CASE
+  SET estado = CASE
     WHEN estado = 'RONDONIA' THEN 'RO'
     WHEN estado = 'ACRE' THEN 'AC'
     WHEN estado = 'AMAZONAS' THEN 'AM'

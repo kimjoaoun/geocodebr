@@ -21,7 +21,7 @@ geocodebr_env <- new.env(parent = emptyenv())
   # structure is done
 
   # data release
-  geocodebr_env$data_release <- 'v0.0.1'
+  geocodebr_env$data_release <- 'v0.1.0'
 
   # local cache dir
   cache_d <- paste0('geocodebr/data_release_', geocodebr_env$data_release)

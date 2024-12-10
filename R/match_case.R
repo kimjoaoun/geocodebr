@@ -15,7 +15,7 @@ match_case <- function(con, x, y, output_tb, key_cols, precision){
   # x = 'input_padrao_db'
   # y = 'filtered_cnefe_cep'
   # output_tb = 'output_caso_01'
-  # key_cols <- c("estado", "municipio", "logradouro", "numero", "cep", "bairro")
+  # key_cols <- c("estado", "municipio", "logradouro_sem_numero", "numero", "cep", "bairro")
 
   # Build the dynamic select statement to keep ID and key columns from `x`
   cols_select <- paste(paste0(x, ".ID"),
@@ -90,7 +90,7 @@ exact_match_case <- function(con, x, y, output_tb, key_cols, precision){
   # x = 'input_padrao_db'
   # y = 'filtered_cnefe_cep'
   # output_tb = 'output_caso_01'
-  # key_cols <- c("estado", "municipio", "logradouro", "numero", "cep", "bairro")
+  # key_cols <- c("estado", "municipio", "logradouro_sem_numero", "numero", "cep", "bairro")
 
   # Build the dynamic select statement to keep ID and key columns from `x`
   cols_select <- paste(paste0(x, ".ID"),

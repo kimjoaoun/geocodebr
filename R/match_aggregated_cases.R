@@ -15,7 +15,7 @@ match_aggregated_cases <- function(con, x, y, output_tb, key_cols, precision){
   # x = 'input_padrao_db'
   # y = 'filtered_cnefe_cep'
   # output_tb = 'output_caso_01'
-  # key_cols <- c("estado", "municipio", "logradouro", "numero", "cep", "bairro")
+  # key_cols <- c("estado", "municipio", "logradouro_sem_numero", "numero", "cep", "bairro")
 
 
   # Create the JOIN condition by concatenating the key columns
