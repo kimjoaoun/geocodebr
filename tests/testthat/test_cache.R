@@ -66,11 +66,11 @@ test_that("behaves correctly", {
   # if the cache config file exists, return its content. otherwise, returns the
   # default cache dir
 
+  if (fs::file_exists(cache_config_file)) fs::file_delete(cache_config_file)
+  expect_identical(get_cache_dir(), as.character(default_cache_dir))
+
   writeLines("aaa", cache_config_file)
   expect_identical(get_cache_dir(), "aaa")
-
-  fs::file_delete(cache_config_file)
-  expect_identical(get_cache_dir(), as.character(default_cache_dir))
 })
 
 # list_cached_data --------------------------------------------------------
