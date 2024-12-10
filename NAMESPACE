@@ -2,7 +2,6 @@
 
 export(download_cnefe)
 export(geocode)
-export(geocodebr_cache)
 export(get_cache_dir)
 export(list_cached_data)
 export(set_cache_dir)
