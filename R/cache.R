@@ -35,6 +35,8 @@ set_cache_dir <- function(path = NULL) {
     fs::file_create(cache_config_file)
   }
 
+  cache_dir <- as.character(cache_dir)
+
   writeLines(cache_dir, con = cache_config_file)
 
   return(invisible(cache_dir))
@@ -60,5 +62,36 @@ get_cache_dir <- function() {
     cache_dir <- default_cache_dir
   }
 
+  cache_dir <- as.character(cache_dir)
+
   return(cache_dir)
+}
+
+#' List cached data
+#'
+#' Lists the data saved inside the cached directory.
+#'
+#' @param print_tree A logical. Whether to print the contents of the cache
+#'   directory in a tree-like format. Defaults to `FALSE`.
+#'
+#' @return The path to the cached data.
+#'
+#' @examples
+#' list_cached_data()
+#'
+#' list_cached_data(print_tree = TRUE)
+#'
+#' @export
+list_cached_data <- function(print_tree = FALSE) {
+  checkmate::assert_logical(print_tree, any.missing = FALSE, len = 1)
+
+  cache_dir <- get_cache_dir()
+
+  if (!fs::dir_exists(cache_dir)) return(character(0))
+
+  cached_data <- list.files(cache_dir, recursive = TRUE, full.names = TRUE)
+
+  if (print_tree) fs::dir_tree(cache_dir)
+
+  return(cached_data)
 }

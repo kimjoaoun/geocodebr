@@ -35,10 +35,10 @@ download_cnefe <- function(state = "all", progress = TRUE, cache = TRUE) {
 
   if (!cache) {
     data_dir <- tempfile("standardized_cnefe")
-    fs::dir_create(data_dir)
   } else {
-    data_dir <- default_cache_dir
+    data_dir <- get_cache_dir()
   }
+  fs::dir_create(data_dir)
 
   # we only need to download data that hasn't been downloaded yet. note that if
   # cache=FALSE data_dir is always empty, so we download all required data
@@ -58,7 +58,11 @@ download_cnefe <- function(state = "all", progress = TRUE, cache = TRUE) {
 
   parquet_files <- list.files(data_dir, recursive = TRUE, full.names = TRUE)
 
-  return(parquet_files)
+  state_parquet_files <- parquet_files[
+    grepl(glue::glue("estado=({paste(state, collapse = '|')})"), parquet_files)
+  ]
+
+  return(state_parquet_files)
 }
 
 assert_and_assign_state <- function(state) {
