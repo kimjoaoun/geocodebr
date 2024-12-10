@@ -91,6 +91,7 @@ geocode <- function(input_table,
   names(input_padrao) <- c("ID", gsub("_padr", "", cols_padr))
 
   data.table::setnames(input_padrao, old = 'logradouro', new = 'logradouro_sem_numero')
+  data.table::setnames(input_padrao, old = 'bairro', new = 'localidade')
 
 
   # create db connection -------------------------------------------------------
@@ -158,7 +159,10 @@ geocode <- function(input_table,
 
   # Narrow search scope in cnefe to municipalities and zip codes present in input
   input_ceps <- unique(input_padrao$cep)
+  input_ceps <- input_ceps[!is.na(input_ceps)]
+
   input_municipio <- unique(input_padrao$municipio)
+  input_municipio <- input_municipio[!is.na(input_municipio)]
 
   query_filter_cnefe_municipios <- sprintf("
   CREATE TEMPORARY TABLE filtered_cnefe_cep AS
@@ -174,30 +178,30 @@ geocode <- function(input_table,
 
   # START DETERMINISTIC MATCHING -----------------------------------------------
 
-  # - case 01: match municipio, logradouro, numero, cep, bairro
+  # - case 01: match municipio, logradouro, numero, cep, localidade
   # - case 02: match municipio, logradouro, numero, cep
-  # - case 03: match municipio, logradouro, cep, bairro
+  # - case 03: match municipio, logradouro, cep, localidade
   # - case 04: match municipio, logradouro, numero
   # - case 05: match municipio, logradouro, cep
-  # - case 06: match municipio, logradouro, bairro
+  # - case 06: match municipio, logradouro, localidade
   # - case 07: match municipio, logradouro
-  # - case 08: match municipio, cep, bairro
+  # - case 08: match municipio, cep, localidade
   # - case 09: match municipio, cep
-  # - case 10: match municipio, bairro
+  # - case 10: match municipio, localidade
   # - case 11: match municipio
 
 
   # key columns
-  cols_01 <- c("estado", "municipio", "logradouro_sem_numero", "numero", "cep", "bairro")
+  cols_01 <- c("estado", "municipio", "logradouro_sem_numero", "numero", "cep", "localidade")
   cols_02 <- c("estado", "municipio", "logradouro_sem_numero", "numero", "cep")
-  cols_03 <- c("estado", "municipio", "logradouro_sem_numero", "cep", "bairro")
+  cols_03 <- c("estado", "municipio", "logradouro_sem_numero", "cep", "localidade")
   cols_04 <- c("estado", "municipio", "logradouro_sem_numero", "numero")
   cols_05 <- c("estado", "municipio", "logradouro_sem_numero", "cep")
-  cols_06 <- c("estado", "municipio", "logradouro_sem_numero", "bairro")
+  cols_06 <- c("estado", "municipio", "logradouro_sem_numero", "localidade")
   cols_07 <- c("estado", "municipio", "logradouro_sem_numero")
-  cols_08 <- c("estado", "municipio", "cep", "bairro")
+  cols_08 <- c("estado", "municipio", "cep", "localidade")
   cols_09 <- c("estado", "municipio", "cep")
-  cols_10 <- c("estado", "municipio", "bairro")
+  cols_10 <- c("estado", "municipio", "localidade")
   cols_11 <- c("estado", "municipio")
 
   # start progress bar
@@ -207,7 +211,7 @@ geocode <- function(input_table,
     }
 
   ## CASE 1 --------------------------------------------------------------------
-  temp_n <- exact_match_case(
+  temp_n <- match_aggregated_cases(
     con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe_cep',
@@ -418,49 +422,47 @@ geocode <- function(input_table,
 
   ## CASE 10 --------------------------------------------------------------------
 
-  # 666 o cnefe padronizado preciza manter a coluna de bairro
+  # delete cases where localidade is missing
+  delete_null_localidade <- function(tb){
+    query_delete_localidade_from_input <-
+    sprintf('DELETE FROM "%s" WHERE "localidade" IS NOT NULL;', tb)
+    DBI::dbExecute(con, query_delete_localidade_from_input)
+    # DBI::dbGetQuery(con, 'SELECT COUNT(*) FROM "input_padrao_db"')
+    }
+  delete_null_localidade('input_padrao_db')
+  delete_null_localidade('filtered_cnefe_cep')
 
-#   # delete cases where Bairro is missing
-#   delete_null_bairro <- function(tb){
-#     query_delete_bairro_from_input <-
-#     sprintf('DELETE FROM "%s" WHERE "bairro" IS NOT NULL;', tb)
-#     DBI::dbExecute(con, query_delete_bairro_from_input)
-#     # DBI::dbGetQuery(con, 'SELECT COUNT(*) FROM "input_padrao_db"')
-#     }
-#   delete_null_bairro('input_padrao_db')
-# #  delete_null_bairro('filtered_cnefe_cep')
-#
-#
-#   # narrow down search scope to Bairro
-#   query_narrow_bairros <-
-#   'DELETE FROM "filtered_cnefe_cep"
-#   WHERE "bairro" NOT IN (SELECT DISTINCT "bairro" FROM "input_padrao_db");'
-#   DBI::dbExecute(con, query_narrow_bairros)
-#   # DBI::dbGetQuery(con, 'SELECT COUNT(*) FROM "filtered_cnefe_cep"')
-#
-#
-#   temp_n <- match_aggregated_cases(
-#     con,
-#     x = 'input_padrao_db',
-#     y = 'filtered_cnefe_cep',
-#     output_tb = 'output_caso_10',
-#     key_cols <- cols_10,
-#     precision = 10L
-#   )
-#
-#   # UPDATE input_padrao_db: Remove observations found in previous step
-#   update_input_db(
-#     con,
-#     update_tb = 'input_padrao_db',
-#     reference_tb = 'output_caso_10'
-#   )
-#
-#   # update progress bar
-#   if (isTRUE(progress)) {
-#     ndone <- ndone + temp_n
-#     utils::setTxtProgressBar(pb, ndone)
-#     base::close(pb)
-#   }
+
+  # narrow down search scope to localidade
+  query_narrow_localidades <-
+  'DELETE FROM "filtered_cnefe_cep"
+  WHERE "localidade" NOT IN (SELECT DISTINCT "localidade" FROM "input_padrao_db");'
+  DBI::dbExecute(con, query_narrow_localidades)
+  # DBI::dbGetQuery(con, 'SELECT COUNT(*) FROM "filtered_cnefe_cep"')
+
+
+  temp_n <- match_aggregated_cases(
+    con,
+    x = 'input_padrao_db',
+    y = 'filtered_cnefe_cep',
+    output_tb = 'output_caso_10',
+    key_cols <- cols_10,
+    precision = 10L
+  )
+
+  # UPDATE input_padrao_db: Remove observations found in previous step
+  update_input_db(
+    con,
+    update_tb = 'input_padrao_db',
+    reference_tb = 'output_caso_10'
+  )
+
+  # update progress bar
+  if (isTRUE(progress)) {
+    ndone <- ndone + temp_n
+    utils::setTxtProgressBar(pb, ndone)
+    base::close(pb)
+  }
 
   ## CASE 11 --------------------------------------------------------------------
   # TO DO
