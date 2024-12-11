@@ -34,7 +34,7 @@ download_cnefe <- function(state = "all", progress = TRUE, cache = TRUE) {
   )
 
   if (!cache) {
-    data_dir <- tempfile("standardized_cnefe")
+    data_dir <- fs::path_norm(tempfile("standardized_cnefe"))
   } else {
     data_dir <- get_cache_dir()
   }
@@ -91,11 +91,7 @@ download_files <- function(files_to_download, progress) {
 
   dest_files <- fs::path(download_dir, basename(files_to_download))
 
-  responses <- httr2::req_perform_parallel(
-    requests,
-    paths = dest_files,
-    progress = ifelse(progress == TRUE, "Downloading CNEFE data", FALSE)
-  )
+  responses <- perform_requests_in_parallel(requests, dest_files, progress)
 
   response_errored <- purrr::map_lgl(
     responses,
@@ -104,13 +100,28 @@ download_files <- function(files_to_download, progress) {
 
   # TODO: improve this error
   if (any(response_errored)) {
-    invalid_dest_files <- dest_files[response_errored]
-    fs::file_delete(invalid_dest_files)
-
     stop("Could not download data for one of the states, uh-oh!")
   }
 
   return(dest_files)
 }
 
+perform_requests_in_parallel <- function(requests, dest_files, progress) {
+  # we create this wrapper around httr2::req_perform_parallel just for testing
+  # purposes. it's easier to mock this function when testing than to mock a
+  # function from another package.
+  #
+  # related test: "errors if could not download the data for one or more states"
+  # in test-download_cnefe
+  #
+  # related help page:
+  # https://testthat.r-lib.org/reference/local_mocked_bindings.html
+
+  httr2::req_perform_parallel(
+    requests,
+    paths = dest_files,
+    on_error = "continue",
+    progress = ifelse(progress == TRUE, "Downloading CNEFE data", FALSE)
+  )
+}
 
