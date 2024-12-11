@@ -160,9 +160,11 @@ geocode <- function(input_table,
   # Narrow search scope in cnefe to municipalities and zip codes present in input
   input_ceps <- unique(input_padrao$cep)
   input_ceps <- input_ceps[!is.na(input_ceps)]
+  if(is.null(input_ceps)){ input_ceps <- "*"}
 
   input_municipio <- unique(input_padrao$municipio)
   input_municipio <- input_municipio[!is.na(input_municipio)]
+  if(is.null(input_municipio)){ input_municipio <- "*"}
 
   query_filter_cnefe_municipios <- sprintf("
   CREATE TEMPORARY TABLE filtered_cnefe_cep AS
