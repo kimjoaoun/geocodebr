@@ -75,10 +75,7 @@ setup_address_fields <- function(logradouro = NULL,
 
 error_null_address_fields <- function() {
   geocodebr_error(
-    paste0(
-      "At least one of {.fn address_fields_const} ",
-      "arguments must not be {.code NULL}."
-    ),
+    "At least one of the arguments must not be {.code NULL}.",
     call = rlang::caller_env()
   )
 }
