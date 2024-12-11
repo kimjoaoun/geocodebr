@@ -221,7 +221,7 @@ geocode <- function(input_table,
 
   # check if we have all required inputs
   inputs <- list(estado, municipio, logradouro, numero, cep, bairro)
-  all_required_inputs <- !any(unlist(lapply(inputs, is.null)))
+  all_required_inputs <- !any(sapply(inputs, is.null))
 
   if(all_required_inputs){
 
@@ -255,7 +255,7 @@ geocode <- function(input_table,
 
   # check if we have all required inputs
   inputs <- list(estado, municipio, logradouro, numero, cep)
-  all_required_inputs <- !any(unlist(lapply(inputs, is.null)))
+  all_required_inputs <- !any(sapply(inputs, is.null))
 
   if(all_required_inputs){
 
@@ -288,7 +288,7 @@ geocode <- function(input_table,
 
   # check if we have all required inputs
   inputs <- list(estado, municipio, logradouro, cep, bairro)
-  all_required_inputs <- !any(unlist(lapply(inputs, is.null)))
+  all_required_inputs <- !any(sapply(inputs, is.null))
 
   if(all_required_inputs){
 
@@ -320,7 +320,7 @@ geocode <- function(input_table,
 
   # check if we have all required inputs
   inputs <- list(estado, municipio, logradouro, numero)
-  all_required_inputs <- !any(unlist(lapply(inputs, is.null)))
+  all_required_inputs <- !any(sapply(inputs, is.null))
 
   if(all_required_inputs){
 
@@ -354,7 +354,7 @@ geocode <- function(input_table,
 
   # check if we have all required inputs
   inputs <- list(estado, municipio, logradouro, cep)
-  all_required_inputs <- !any(unlist(lapply(inputs, is.null)))
+  all_required_inputs <- !any(sapply(inputs, is.null))
 
   if(all_required_inputs){
 
@@ -385,7 +385,7 @@ geocode <- function(input_table,
 
   # check if we have all required inputs
   inputs <- list(estado, municipio, logradouro, bairro)
-  all_required_inputs <- !any(unlist(lapply(inputs, is.null)))
+  all_required_inputs <- !any(sapply(inputs, is.null))
 
   if(all_required_inputs){
 
@@ -417,7 +417,7 @@ geocode <- function(input_table,
 
   # check if we have all required inputs
   inputs <- list(estado, municipio, logradouro)
-  all_required_inputs <- !any(unlist(lapply(inputs, is.null)))
+  all_required_inputs <- !any(sapply(inputs, is.null))
 
   if(all_required_inputs){
 
@@ -448,7 +448,7 @@ geocode <- function(input_table,
 
   # check if we have all required inputs
   inputs <- list(estado, municipio, cep, bairro)
-  all_required_inputs <- !any(unlist(lapply(inputs, is.null)))
+  all_required_inputs <- !any(sapply(inputs, is.null))
 
   if(all_required_inputs){
 
@@ -479,7 +479,7 @@ geocode <- function(input_table,
 
   # check if we have all required inputs
   inputs <- list(estado, municipio, cep)
-  all_required_inputs <- !any(unlist(lapply(inputs, is.null)))
+  all_required_inputs <- !any(sapply(inputs, is.null))
 
   if(all_required_inputs){
 
@@ -510,7 +510,7 @@ geocode <- function(input_table,
 
   # check if we have all required inputs
   inputs <- list(estado, municipio, bairro)
-  all_required_inputs <- !any(unlist(lapply(inputs, is.null)))
+  all_required_inputs <- !any(sapply(inputs, is.null))
 
   if(all_required_inputs){
 
