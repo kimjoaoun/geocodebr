@@ -53,7 +53,12 @@ test_that("errors if could not download the data for one or more states", {
     }
   )
 
-  expect_error(tester("AL", cache = FALSE))
+  expect_error(
+    tester("AL", cache = FALSE),
+    class = "geocodebr_error_cnefe_download_failed"
+  )
+
+  expect_snapshot(tester("AL", cache = FALSE), error = TRUE, cnd_class = TRUE)
 })
 
 test_that("would download the data of all states if state='all'", {

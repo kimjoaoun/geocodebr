@@ -33,6 +33,7 @@ Imports:
     httr2,
     parallel,
     purrr,
+    rlang,
     tools,
     utils,
     zip

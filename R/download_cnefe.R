@@ -98,10 +98,7 @@ download_files <- function(files_to_download, progress) {
     function(r) inherits(r, "error")
   )
 
-  # TODO: improve this error
-  if (any(response_errored)) {
-    stop("Could not download data for one of the states, uh-oh!")
-  }
+  if (any(response_errored)) error_cnefe_download_failed()
 
   return(dest_files)
 }
@@ -125,3 +122,12 @@ perform_requests_in_parallel <- function(requests, dest_files, progress) {
   )
 }
 
+error_cnefe_download_failed <- function() {
+  geocodebr_error(
+    c(
+      "Could not download CNEFE data for one or more states.",
+      "i" = "Please try again later."
+    ),
+    call = rlang::caller_env(n = 2)
+  )
+}

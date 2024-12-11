@@ -310,15 +310,27 @@
     },
     "13": {
       "@type": "SoftwareApplication",
+      "identifier": "rlang",
+      "name": "rlang",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=rlang"
+    },
+    "14": {
+      "@type": "SoftwareApplication",
       "identifier": "tools",
       "name": "tools"
     },
-    "14": {
+    "15": {
       "@type": "SoftwareApplication",
       "identifier": "utils",
       "name": "utils"
     },
-    "15": {
+    "16": {
       "@type": "SoftwareApplication",
       "identifier": "zip",
       "name": "zip",
@@ -332,7 +344,7 @@
     },
     "SystemRequirements": null
   },
-  "fileSize": "176.64KB",
+  "fileSize": "181.875KB",
   "citation": [
     {
       "@type": "SoftwareSourceCode",
