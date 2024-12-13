@@ -65,7 +65,13 @@ geocode2 <- function(addresses_table,
 
   DBI::dbExecute(con, glue::glue("SET threads = {n_cores}"))
 
-  duckdb::duckdb_register(con, "standard_locations", standard_locations)
+  duckdb::dbWriteTable(
+    con,
+    name = "standard_locations",
+    value = standard_locations,
+    temporary = TRUE
+  )
+  #duckdb::duckdb_register(con, "standard_locations", standard_locations)
 
   unique_muns <- unique(standard_locations$municipio_padr)
   muns_list <- paste(glue::glue("'{unique_muns}'"), collapse = ", ")
@@ -95,63 +101,51 @@ geocode2 <- function(addresses_table,
     "estado_padr",       "estado"         # INCLUDE, NOT IN CNEFE YET
   )
 
+  lookup_vector <- equivalent_colnames$cnefe
+  names(lookup_vector) <- equivalent_colnames$standard_locations
 
+  # when merging the data, we have several different cases with different confidence
+  # levels. from best to worst, they are:
+  #
+  # - case 01: match municipio, logradouro, numero, cep, localidade
+  # - case 02: match municipio, logradouro, numero, cep
+  # - case 03: match municipio, logradouro, numero, localidade
+  # - case 04: match municipio, logradouro, cep, localidade
+  # - case 05: match municipio, logradouro, numero
+  # - case 06: match municipio, logradouro, cep
+  # - case 07: match municipio, logradouro, localidade
+  # - case 08: match municipio, logradouro
+  # - case 09: match municipio, cep, localidade
+  # - case 10: match municipio, cep
+  # - case 11: match municipio, localidade
+  # - case 12: match municipio
 
+  for (case in 1:12) {
+    relevant_cols <- get_relevant_cols(case)
+
+    if (all(relevant_cols %in% names(standard_locations))) {
+      join_condition <- paste(
+        glue::glue("standard_locations.{relevant_cols} = aggregated_cnefe.{lookup_vector[relevant_cols]}"),
+        collapse = " AND "
+      )
+
+      cnefe_cols <- paste(lookup_vector[relevant_cols], collapse = ", ")
+
+      DBI::dbExecute(
+        con,
+        glue::glue(
+          "CREATE OR REPLACE TABLE oie AS ",
+          "SELECT * FROM standard_locations ",
+          "LEFT JOIN ",
+          "  (SELECT {cnefe_cols}, AVG(lon) AS lon, AVG(lat) AS lat FROM filtered_cnefe GROUP BY {cnefe_cols}) AS aggregated_cnefe ",
+          "ON {join_condition}"
+        )
+      )
+    }
+  }
 
   return()
 
-
-
-
-
-
-
-  # keep and rename colunms of input_padrao
-  # keeping same column names used in our cnefe data set
-  cols_padr <- grep("_padr", names(input_padrao_raw), value = TRUE)
-  input_padrao <- input_padrao_raw[, .SD, .SDcols = c("ID", cols_padr)]
-  names(input_padrao) <- c("ID", gsub("_padr", "", cols_padr))
-
-  data.table::setnames(input_padrao, old = 'logradouro', new = 'logradouro_sem_numero')
-  data.table::setnames(input_padrao, old = 'bairro', new = 'localidade')
-
-
-  # START DETERMINISTIC MATCHING -----------------------------------------------
-
-  # - case 01: match municipio, logradouro, numero, cep, localidade
-  # - case 02: match municipio, logradouro, numero, cep
-  # - case 03: match municipio, logradouro, cep, localidade
-  # - case 04: match municipio, logradouro, numero
-  # - case 05: match municipio, logradouro, cep
-  # - case 06: match municipio, logradouro, localidade
-  # - case 07: match municipio, logradouro
-  # - case 08: match municipio, cep, localidade
-  # - case 09: match municipio, cep
-  # - case 10: match municipio, localidade
-  # - case 11: match municipio
-
-
-  # key columns
-  cols_01 <- c("estado", "municipio", "logradouro_sem_numero", "numero", "cep", "localidade")
-  cols_02 <- c("estado", "municipio", "logradouro_sem_numero", "numero", "cep")
-  cols_03 <- c("estado", "municipio", "logradouro_sem_numero", "cep", "localidade")
-  cols_04 <- c("estado", "municipio", "logradouro_sem_numero", "numero")
-  cols_05 <- c("estado", "municipio", "logradouro_sem_numero", "cep")
-  cols_06 <- c("estado", "municipio", "logradouro_sem_numero", "localidade")
-  cols_07 <- c("estado", "municipio", "logradouro_sem_numero")
-  cols_08 <- c("estado", "municipio", "cep", "localidade")
-  cols_09 <- c("estado", "municipio", "cep")
-  cols_10 <- c("estado", "municipio", "localidade")
-  cols_11 <- c("estado", "municipio")
-
-  # start progress bar
-  if (isTRUE(progress)) {
-    total_n <- nrow(input_table)
-    pb <- utils::txtProgressBar(min = 0, max = total_n, style = 3)
-
-    ndone <- 0
-    utils::setTxtProgressBar(pb, ndone)
-  }
 
 
 
@@ -656,4 +650,34 @@ assert_address_fields <- function(address_fields, addresses_table) {
   checkmate::reportAssertions(col)
 
   return(invisible(TRUE))
+}
+
+get_relevant_cols <- function(case) {
+  relevant_cols <- if (case == 1) {
+    c("municipio_padr", "logradouro_padr", "numero_padr", "cep_padr", "bairro_padr")
+  } else if (case == 2) {
+    c("municipio_padr", "logradouro_padr", "numero_padr", "cep_padr")
+  } else if (case == 3) {
+    c("municipio_padr", "logradouro_padr", "numero_padr", "bairro_padr")
+  } else if (case == 4) {
+    c("municipio_padr", "logradouro_padr", "cep_padr", "bairro_padr")
+  } else if (case == 5) {
+    c("municipio_padr", "logradouro_padr", "numero_padr")
+  } else if (case == 6) {
+    c("municipio_padr", "logradouro_padr", "cep_padr")
+  } else if (case == 7) {
+    c("municipio_padr", "logradouro_padr", "bairro_padr")
+  } else if (case == 8) {
+    c("municipio_padr", "logradouro_padr")
+  } else if (case == 9) {
+    c("municipio_padr", "cep_padr", "bairro_padr")
+  } else if (case == 10) {
+    c("municipio_padr", "cep_padr")
+  } else if (case == 11) {
+    c("municipio_padr", "bairro_padr")
+  } else if (case == 12) {
+    c("municipio_padr")
+  }
+
+  return(relevant_cols)
 }
