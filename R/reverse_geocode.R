@@ -5,10 +5,8 @@
 #' closely matches the input coordinates.
 #'
 #' @param input_table A data frame. It must contain the columns `'id'`, `'lon'`, `'lat'`
-#' @param ncores Number of cores to be used in parallel execution. Defaults to
-#'        the number of available cores minus 1.
-#' @param progress A logical. Whether to display a download progress bar.
-#'   Defaults to `TRUE`.
+#' @template ncores
+#' @template progress
 #' @template cache
 #'
 #' @return A `"data.frame"` object.
@@ -57,6 +55,7 @@ reverse_geocode <- function(input_table,
   # prep input -------------------------------------------------------
 
   # create a small range around coordinates
+
   data.table::setDT(input_table)
   margin <- 0.001 # 0.0001
   input_table[, lon_min := lon - margin]
@@ -64,7 +63,9 @@ reverse_geocode <- function(input_table,
   input_table[, lat_min := lat - margin]
   input_table[, lat_max  :=  lat + margin]
 
+
   # Narrow search scope in cnefe to bounding box
+
   bbox_lon_min <- min(input_table$lon_min)
   bbox_lon_max <- max(input_table$lon_max)
   bbox_lat_min <- min(input_table$lat_min)
@@ -83,7 +84,7 @@ reverse_geocode <- function(input_table,
 
 
 
-  # comeca cada linha -------------------------------------------------------
+  # find each row in the input data -------------------------------------------------------
 
   # function to reverse geocode one row of the data
   reverse_geocode_single_row <- function(df, row_number){
@@ -134,7 +135,7 @@ reverse_geocode <- function(input_table,
     return(temp_output)
   }
 
-
+  # apply function to all rows in the input table
   output <- pbapply::pblapply(
     X = 1:nrow(input_table),
     FUN = reverse_geocode_single_row,
