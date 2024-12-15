@@ -12,9 +12,7 @@
 #'
 #' @family Support
 #'
-#' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
-#'
-#' create_geocodebr_db()
+#' @keywords internal
 #'
 create_geocodebr_db <- function(db_path = tempdir(),
                                 ncores = NULL
@@ -59,6 +57,7 @@ create_geocodebr_db <- function(db_path = tempdir(),
 
   if (DBI::dbExistsTable(con, 'cnefe')){
     duckdb::duckdb_unregister_arrow(con, 'cnefe')
+    gc()
   }
 
   # Load CNEFE data and write it to DuckDB

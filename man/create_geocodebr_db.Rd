@@ -20,14 +20,9 @@ A duckdb connection.
 \description{
 Builds a duckdb connection with the CNEFE data set in the cache direcotry.
 }
-\examples{
-\dontshow{if (identical(tolower(Sys.getenv("NOT_CRAN")), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
-
-create_geocodebr_db()
-\dontshow{\}) # examplesIf}
-}
 \seealso{
 Other Support: 
 \code{\link{download_cnefe}()}
 }
 \concept{Support}
+\keyword{internal}

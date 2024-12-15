@@ -150,6 +150,7 @@ reverse_geocode <- function(input_table,
   output <- data.table::rbindlist(output)
 
   # Disconnect from DuckDB when done
+  duckdb::duckdb_unregister_arrow(con, 'cnefe')
   duckdb::dbDisconnect(con, shutdown=TRUE)
   gc()
 
