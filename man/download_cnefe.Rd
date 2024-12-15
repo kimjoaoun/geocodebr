@@ -18,9 +18,9 @@ Defaults to \code{TRUE}.}
 
 \item{cache}{Logical. Whether the function should read the data cached
 locally, which is much faster. Defaults to \code{TRUE}. The first time the
-user runs the function, \code{censobr} will download the file and store it
-locally so that the file only needs to be download once. If \code{FALSE},
-the function will download the data again and overwrite the local file.}
+user runs the function, \code{geocodebr} will download CNEFE data and store
+it locally so that the data only needs to be download once. If \code{FALSE},
+the function will download the data again and overwrite the local files.}
 }
 \value{
 A directory path where the data was saved.
@@ -36,5 +36,9 @@ download_cnefe(state = "AC", progress = FALSE)
 
 download_cnefe(state = c("AC", "AL"), progress = FALSE)
 \dontshow{\}) # examplesIf}
+}
+\seealso{
+Other Support: 
+\code{\link{create_geocodebr_db}()}
 }
 \concept{Support}

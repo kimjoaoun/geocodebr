@@ -36,19 +36,20 @@ geocode(
 
 \item{estado}{A string.}
 
-\item{progress}{A logical. Whether to display a download progress bar.
-Defaults to \code{TRUE}.}
+\item{progress}{Logical. Defaults to \code{TRUE} display the progress bar.
+This includes both the progress bar of downloading CNEFE as well as of
+processing data records.}
 
 \item{output_simple}{Logic. Defaults to \code{TRUE}}
 
-\item{ncores}{Number of cores to be used in parallel execution. Defaults to
-the number of available cores minus 1.}
+\item{ncores}{Numeric. The number of cores to be used in parallel execution.
+Defaults to the number of available cores minus 1.}
 
 \item{cache}{Logical. Whether the function should read the data cached
 locally, which is much faster. Defaults to \code{TRUE}. The first time the
-user runs the function, \code{censobr} will download the file and store it
-locally so that the file only needs to be download once. If \code{FALSE},
-the function will download the data again and overwrite the local file.}
+user runs the function, \code{geocodebr} will download CNEFE data and store
+it locally so that the data only needs to be download once. If \code{FALSE},
+the function will download the data again and overwrite the local files.}
 }
 \value{
 An arrow \code{Dataset} or a \code{"data.frame"} object.

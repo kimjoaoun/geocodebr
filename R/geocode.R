@@ -12,11 +12,9 @@
 #' @param bairro A string.
 #' @param municipio A string.
 #' @param estado A string.
-#' @param progress A logical. Whether to display a download progress bar.
-#'   Defaults to `TRUE`.
 #' @param output_simple Logic. Defaults to `TRUE`
-#' @param ncores Number of cores to be used in parallel execution. Defaults to
-#'        the number of available cores minus 1.
+#' @template ncores
+#' @template progress
 #' @template cache
 #'
 #' @return An arrow `Dataset` or a `"data.frame"` object.
@@ -95,29 +93,7 @@ geocode <- function(input_table,
 
 
   # create db connection -------------------------------------------------------
-
-  ## this creates a persistent database which allows DuckDB to
-  ## perform **larger-than-memory** workloads
-  db_path <- fs::file_temp(ext = '.duckdb')
-  con <- duckdb::dbConnect(duckdb::duckdb(), dbdir=db_path)
-
-  ## **in memory** database which is limited by RAM
-  # con <- duckdb::dbConnect(duckdb::duckdb(), dbdir=":memory:")
-  #
-  ## Set Memory limit
-  # TODO
-  # DBI::dbExecute(con, "SET memory_limit = '20GB'")
-
-
-  ## configure db connection
-    # Set Number of cores for parallel operation
-    if (is.null(ncores)) {
-      ncores <- parallel::detectCores()
-      ncores <- ncores-1
-      if (ncores<1) {ncores <- 1}
-    }
-
-    DBI::dbExecute(con, sprintf("SET threads = %s;", ncores))
+  con <- create_geocodebr_db(ncores = ncores)
 
 
 
