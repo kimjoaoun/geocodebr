@@ -9,7 +9,16 @@
 "_PACKAGE"
 
 ## quiets concerns of R CMD check:
-utils::globalVariables(c("year", "temp_local_file"))
+utils::globalVariables(c('year',
+                         'temp_local_file',
+                         'lon_min',
+                         'lon_max',
+                         'lat_min',
+                         'lat_min',
+                         'lon_diff',
+                         'lat_diff',
+                         'lon',
+                         'lat'))
 
 data_release <- "v0.1.0"
 
