@@ -2,7 +2,7 @@
 % Please edit documentation in R/geocode.R
 \name{geocode}
 \alias{geocode}
-\title{Download microdata of population records from Brazil's census}
+\title{Geocoding addresses based on CNEFE data}
 \usage{
 geocode(
   input_table,
@@ -55,8 +55,8 @@ the function will download the data again and overwrite the local files.}
 An arrow \code{Dataset} or a \code{"data.frame"} object.
 }
 \description{
-Download microdata of population records from Brazil's census. Data collected
-in the sample component of the questionnaire.
+Takes a data frame containing addresses as an input and returns the spatial
+coordinates found based on CNEFE data.
 }
 \examples{
 \dontshow{if (identical(tolower(Sys.getenv("NOT_CRAN")), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
@@ -65,16 +65,16 @@ in the sample component of the questionnaire.
 data_path <- system.file("extdata/sample_1.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
 
-# df <- geocodebr::geocode(
-#   input_table = input_df,
-#   logradouro = "nm_logradouro",
-#   numero = "Numero",
-#   complemento = "Complemento",
-#   cep = "Cep",
-#   bairro = "Bairro",
-#   municipio = "nm_municipio",
-#   estado = "nm_uf"
-#   )
+df <- geocodebr::geocode(
+  input_table = input_df,
+  logradouro = "nm_logradouro",
+  numero = "Numero",
+  complemento = "Complemento",
+  cep = "Cep",
+  bairro = "Bairro",
+  municipio = "nm_municipio",
+  estado = "nm_uf"
+  )
 \dontshow{\}) # examplesIf}
 }
 \concept{Microdata}

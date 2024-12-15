@@ -2,7 +2,7 @@
 % Please edit documentation in R/reverse_geocode.R
 \name{reverse_geocode}
 \alias{reverse_geocode}
-\title{Reverse geocoding}
+\title{Reverse geocoding coordinates based on CNEFE data}
 \usage{
 reverse_geocode(input_table, progress = TRUE, ncores = NULL, cache = TRUE)
 }
@@ -26,21 +26,26 @@ the function will download the data again and overwrite the local files.}
 A \code{"data.frame"} object.
 }
 \description{
-Reverse geocode coordinate pairs to find the address in CNEFE that most
-closely matches the input coordinates.
+Takes a data frame containing coordinates (latitude and longitude) and
+returns  the address in CNEFE that is the closest to the input coordinates.
+Latitude and longitude inputs are limited to possible values. Latitudes must
+be between -90 and 90 and longitudes must be between -180 and 180.
 }
 \examples{
 \dontshow{if (identical(tolower(Sys.getenv("NOT_CRAN")), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 
 # input data
-lonlat_df <- data.frame(
+df_coords <- data.frame(
   id = 1:6,
   lon = c(-67.83112, -67.83559, -67.81918, -43.47110, -51.08934, -67.8191),
   lat = c(-9.962392, -9.963436, -9.972736, -22.695578, -30.05981, -9.97273)
 )
 
 # reverse geocode
-df_addresses <- geocodebr::reverse_geocode(input_table = lonlat_df)
+df_addresses <- geocodebr::reverse_geocode(
+  input_table = df_coords,
+  progress = TRUE
+  )
 \dontshow{\}) # examplesIf}
 }
 \concept{Reverse geocoding}

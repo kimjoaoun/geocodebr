@@ -1,8 +1,10 @@
-#' Reverse geocoding
+#' Reverse geocoding coordinates based on CNEFE data
 #'
 #' @description
-#' Reverse geocode coordinate pairs to find the address in CNEFE that most
-#' closely matches the input coordinates.
+#' Takes a data frame containing coordinates (latitude and longitude) and
+#' returns  the address in CNEFE that is the closest to the input coordinates.
+#' Latitude and longitude inputs are limited to possible values. Latitudes must
+#' be between -90 and 90 and longitudes must be between -180 and 180.
 #'
 #' @param input_table A data frame. It must contain the columns `'id'`, `'lon'`, `'lat'`
 #' @template ncores
@@ -15,14 +17,17 @@
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 #'
 #' # input data
-#' lonlat_df <- data.frame(
+#' df_coords <- data.frame(
 #'   id = 1:6,
 #'   lon = c(-67.83112, -67.83559, -67.81918, -43.47110, -51.08934, -67.8191),
 #'   lat = c(-9.962392, -9.963436, -9.972736, -22.695578, -30.05981, -9.97273)
 #' )
 #'
 #' # reverse geocode
-#' df_addresses <- geocodebr::reverse_geocode(input_table = lonlat_df)
+#' df_addresses <- geocodebr::reverse_geocode(
+#'   input_table = df_coords,
+#'   progress = TRUE
+#'   )
 #'
 reverse_geocode <- function(input_table,
                             progress = TRUE,
@@ -146,6 +151,7 @@ reverse_geocode <- function(input_table,
 
   # Disconnect from DuckDB when done
   duckdb::dbDisconnect(con, shutdown=TRUE)
+  gc()
 
   return(output)
 }

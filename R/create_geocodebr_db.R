@@ -57,6 +57,10 @@ create_geocodebr_db <- function(db_path = tempdir(),
   # DBI::dbExecute(con, "SET memory_limit = '20GB'")
 
 
+  if (DBI::dbExistsTable(con, 'cnefe')){
+    duckdb::duckdb_unregister_arrow(con, 'cnefe')
+  }
+
   # Load CNEFE data and write it to DuckDB
   cnefe <- arrow_open_dataset(cache_dir)
   duckdb::duckdb_register_arrow(con, "cnefe", cnefe)

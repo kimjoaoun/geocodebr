@@ -1,8 +1,8 @@
-#' Download microdata of population records from Brazil's census
+#' Geocoding addresses based on CNEFE data
 #'
 #' @description
-#' Download microdata of population records from Brazil's census. Data collected
-#' in the sample component of the questionnaire.
+#' Takes a data frame containing addresses as an input and returns the spatial
+#' coordinates found based on CNEFE data.
 #'
 #' @param input_table A data frame.
 #' @param logradouro A string.
@@ -26,16 +26,16 @@
 #' data_path <- system.file("extdata/sample_1.csv", package = "geocodebr")
 #' input_df <- read.csv(data_path)
 #'
-#' # df <- geocodebr::geocode(
-#' #   input_table = input_df,
-#' #   logradouro = "nm_logradouro",
-#' #   numero = "Numero",
-#' #   complemento = "Complemento",
-#' #   cep = "Cep",
-#' #   bairro = "Bairro",
-#' #   municipio = "nm_municipio",
-#' #   estado = "nm_uf"
-#' #   )
+#' df <- geocodebr::geocode(
+#'   input_table = input_df,
+#'   logradouro = "nm_logradouro",
+#'   numero = "Numero",
+#'   complemento = "Complemento",
+#'   cep = "Cep",
+#'   bairro = "Bairro",
+#'   municipio = "nm_municipio",
+#'   estado = "nm_uf"
+#'   )
 #'
 geocode <- function(input_table,
                     logradouro = NULL,
@@ -657,6 +657,7 @@ geocode <- function(input_table,
 
   # Disconnect from DuckDB when done
   duckdb::dbDisconnect(con, shutdown=TRUE)
+  gc()
 
   # Return the result
   return(output_deterministic)
