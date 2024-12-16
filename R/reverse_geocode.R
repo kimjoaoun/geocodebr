@@ -61,12 +61,11 @@ reverse_geocode <- function(input_table,
 
   # create a small range around coordinates
 
-  data.table::setDT(input_table)
   margin <- 0.001 # 0.0001
-  input_table[, lon_min := lon - margin]
-  input_table[, lon_max  :=  lon + margin]
-  input_table[, lat_min := lat - margin]
-  input_table[, lat_max  :=  lat + margin]
+
+  data.table::setDT(input_table)
+  input_table[, c("lon_min", "lon_max", "lat_min", "lat_max") :=
+                .(lon - margin, lon + margin, lat - margin, lat + margin)]
 
 
   # Narrow search scope in cnefe to bounding box
@@ -117,13 +116,13 @@ reverse_geocode <- function(input_table,
     cnefe_nearby <- duckdb::dbSendQuery(con, query_filter_cases_nearby)
     cnefe_nearby <- duckdb::dbFetch(cnefe_nearby)
 
-    # find closest point
+    # find closest points
     data.table::setDT(cnefe_nearby)
     cnefe_nearby[, lon_diff := abs(lon_inp - lon)]
     cnefe_nearby[, lat_diff := abs(lat_inp - lat)]
 
     cnefe_nearest <- cnefe_nearby[, .SD[which.min(lon_diff)]]
-    cnefe_nearest <- cnefe_nearest[, .SD[which.min(lon_diff)]]
+    cnefe_nearest <- cnefe_nearest[, .SD[which.min(lat_diff)]]
 
     # organize output
     cnefe_nearest[, c('lon_diff', 'lat_diff') := NULL]
