@@ -24,10 +24,10 @@
 #' )
 #'
 #' # reverse geocode
-#' df_addresses <- geocodebr::reverse_geocode(
-#'   input_table = df_coords,
-#'   progress = TRUE
-#'   )
+#' # df_addresses <- geocodebr::reverse_geocode(
+#' #   input_table = df_coords,
+#' #   progress = TRUE
+#' #   )
 #'
 reverse_geocode <- function(input_table,
                             progress = TRUE,

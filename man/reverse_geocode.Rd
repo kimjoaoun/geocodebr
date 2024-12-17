@@ -42,10 +42,10 @@ df_coords <- data.frame(
 )
 
 # reverse geocode
-df_addresses <- geocodebr::reverse_geocode(
-  input_table = df_coords,
-  progress = TRUE
-  )
+# df_addresses <- geocodebr::reverse_geocode(
+#   input_table = df_coords,
+#   progress = TRUE
+#   )
 \dontshow{\}) # examplesIf}
 }
 \concept{Reverse geocoding}
