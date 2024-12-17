@@ -34,6 +34,7 @@ input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df
 input_df$ID <-  1:nrow(input_df)
 
 
+
 # input_table = input_df
 # logradouro = "nm_logradouro"
 # numero = "Numero"
@@ -76,3 +77,55 @@ tictoc::toc()
 #> 7.3 milhoes: 113.01 (in memory)
 #> 7.3 milhoes: 101.31 (disk) match_case
 #> 7.3 milhoes: 57.36 (disk) match_aggregated_cases
+
+
+
+
+
+input_df <- input_table <- data.frame(
+  ID=666,
+  nm_logradouro = 'SQS 308 Bloco C',
+  Numero = 204,
+  Complemento = 'Bloco C',
+  Cep = 70355030,
+  Bairro = 'Asa sul',
+  nm_municipio = 'Brasilia',
+  nm_uf = 'DF'
+)
+
+cnefe_cep <- arrow::open_dataset( geocodebr::get_cache_dir())
+df <- filter(cnefe_cep, cep =='70355-030') |> collect()
+
+
+
+################## calculate precision as the area in m2
+range_lon <- max(df$lon) - min(df$lon)
+range_lat <- max(df$lat) - min(df$lat)
+
+lon_meters <- 111320 * range_lon * cos(mean(df$lat))
+lat_meters <- 111320 * range_lat
+
+area = pi * lon_meters * lat_meters
+area
+##################
+range_lon <- sd(df$lon) *2
+range_lat <- sd(df$lat) *2
+
+
+
+query_aggregate_and_match <- glue::glue(
+  "CREATE TABLE {output_tb} AS
+  WITH pre_aggregated_cnefe AS (
+    SELECT {cols_select}, AVG(lon) AS lon, AVG(lat) AS lat,
+    MAX(lon) - MIN(lon) as range_lon, MAX(lat) - MIN(lat) as range_lat,
+    FROM {y}
+    GROUP BY {cols_group}
+  )
+  SELECT {x}.ID, pre_aggregated_cnefe.lon, pre_aggregated_cnefe.lat
+  FROM {x} AS {x}
+  LEFT JOIN pre_aggregated_cnefe
+  ON {join_condition}
+  WHERE pre_aggregated_cnefe.lon IS NOT NULL;"
+)
+
+

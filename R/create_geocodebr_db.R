@@ -18,6 +18,8 @@ create_geocodebr_db <- function(db_path = tempdir(),
                                 ncores = NULL
                                 ){
 
+
+
   ## check input -------------------------------------------------------
 
   checkmate::assert_directory_exists(db_path)
@@ -34,10 +36,18 @@ create_geocodebr_db <- function(db_path = tempdir(),
 
   ## create db connection -------------------------------------------------------
 
+  # remove traces of previous db
+  old_duckdb <- list.files( db_path, pattern = '.duckdb', full.names = TRUE)
+
+  if (length(old_duckdb)>0) {
+    unlink(old_duckdb, recursive = TRUE, force = TRUE, expand = TRUE)
+    }
+
+
   ## this creates a persistent database which allows DuckDB to
   ## perform **larger-than-memory** workloads
   db_path <- fs::file_temp(tmp_dir = db_path, ext = '.duckdb')
-  con <- duckdb::dbConnect(duckdb::duckdb(), dbdir=db_path)
+  con <- duckdb::dbConnect(duckdb::duckdb(), dbdir= db_path ) # db_path ":memory:"
 
   ## configure db connection  -------------------------------------------------------
 
@@ -60,9 +70,9 @@ create_geocodebr_db <- function(db_path = tempdir(),
     gc()
   }
 
-  # Load CNEFE data and write it to DuckDB
-  cnefe <- arrow_open_dataset(cache_dir)
-  duckdb::duckdb_register_arrow(con, "cnefe", cnefe)
+  # # Load CNEFE data and write it to DuckDB
+  # cnefe <- arrow_open_dataset(cache_dir)
+  # duckdb::duckdb_register_arrow(con, "cnefe", cnefe)
 
   return(con)
   }

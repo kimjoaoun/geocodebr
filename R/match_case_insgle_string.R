@@ -11,7 +11,7 @@
 #' @return Writes the result of the left join as a new table in con
 #'
 #' @keywords internal
-match_case_insgle_string <- function(con, x, y, output_tb, key_cols, precision){
+match_case_single_string <- function(con, x, y, output_tb, key_cols, precision){
 
   # x = 'input_padrao_db'
   # y = 'filtered_cnefe_cep'

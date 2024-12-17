@@ -121,16 +121,16 @@ geocode <- function(input_table,
   if (isFALSE(download_success)) { return(invisible(NULL)) }
 
   # Load CNEFE data and write to DuckDB
-  cnefe <- arrow_open_dataset(geocodebr_env$cache_dir)
+  cnefe <- arrow_open_dataset(geocodebr::get_cache_dir())
   duckdb::duckdb_register_arrow(con, "cnefe", cnefe)
 
-  # # more than 2x SLOWER
-  # dir <- fs::path(geocodebr_env$cache_dir, "/**/*.parquet")
-  # DBI::dbExecute(con,
-  #           sprintf("CREATE TEMPORARY TABLE cnefe AS SELECT * FROM read_parquet('%s')",
-  #                   dir))
-
-  ##  DBI::dbRemoveTable(con, 'cnefe')
+  # # # more than 2x SLOWER
+  # # dir <- fs::path(geocodebr_env$cache_dir, "/**/*.parquet")
+  # # DBI::dbExecute(con,
+  # #           sprintf("CREATE VIEW cnefe AS SELECT * FROM read_parquet('%s')",
+  # #                   dir))
+  #
+  # ##  DBI::dbRemoveTable(con, 'cnefe')
 
 
   # Narrow search scope in cnefe to municipalities and zip codes present in input
