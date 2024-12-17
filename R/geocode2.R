@@ -71,7 +71,6 @@ geocode2 <- function(addresses_table,
     value = standard_locations,
     temporary = TRUE
   )
-  #duckdb::duckdb_register(con, "standard_locations", standard_locations)
 
   unique_muns <- unique(standard_locations$municipio_padr)
   muns_list <- paste(glue::glue("'{unique_muns}'"), collapse = ", ")
@@ -120,8 +119,31 @@ geocode2 <- function(addresses_table,
   # - case 11: match municipio, localidade
   # - case 12: match municipio
 
+  DBI::dbExecute(con, "ALTER TABLE standard_locations ADD COLUMN match_type VARCHAR DEFAULT NULL")
+  DBI::dbExecute(con, "ALTER TABLE standard_locations ADD COLUMN lon DOUBLE DEFAULT NULL")
+  DBI::dbExecute(con, "ALTER TABLE standard_locations ADD COLUMN lat DOUBLE DEFAULT NULL")
+
+  if (progress) {
+    cli::cli_progress_bar(
+      total = nrow(standard_locations),
+      format = "Matched addresses: {formatC(cli::pb_current, big.mark = ',', format = 'd')}/{formatC(cli::pb_total, big.mark = ',', format = 'd')} {cli::pb_bar} {cli::pb_percent} - {cli::pb_status}",
+      clear = FALSE
+    )
+    n_rows_affected <- 0
+  }
+
+
   for (case in 1:12) {
     relevant_cols <- get_relevant_cols(case)
+    formatted_case <- formatC(case, width = 2, flag = "0")
+
+    if (progress) {
+      cli::cli_progress_update(
+        inc = n_rows_affected,
+        status = glue::glue("Looking for case {formatted_case} matches"),
+        force = TRUE
+      )
+    }
 
     if (all(relevant_cols %in% names(standard_locations))) {
       join_condition <- paste(
@@ -131,499 +153,39 @@ geocode2 <- function(addresses_table,
 
       cnefe_cols <- paste(lookup_vector[relevant_cols], collapse = ", ")
 
-      DBI::dbExecute(
+      n_rows_affected <- DBI::dbExecute(
         con,
         glue::glue(
-          "CREATE OR REPLACE TABLE oie AS ",
-          "SELECT * FROM standard_locations ",
-          "LEFT JOIN ",
+          "UPDATE standard_locations ",
+          "SET lat = aggregated_cnefe.lat, lon = aggregated_cnefe.lon, match_type = 'case_{formatted_case}' ",
+          "FROM ",
           "  (SELECT {cnefe_cols}, AVG(lon) AS lon, AVG(lat) AS lat FROM filtered_cnefe GROUP BY {cnefe_cols}) AS aggregated_cnefe ",
-          "ON {join_condition}"
+          "WHERE match_type IS NULL AND {join_condition}"
         )
       )
     }
   }
 
-  return()
-
-
-
-
-  ## CASE 1 --------------------------------------------------------------------
-
-  # check if we have all required inputs
-  inputs <- list(estado, municipio, logradouro, numero, cep, bairro)
-  all_required_inputs <- !any(sapply(inputs, is.null))
-
-  if(all_required_inputs){
-
-    temp_n <- match_aggregated_cases(
-      con,
-      x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
-      output_tb = 'output_caso_01',
-      key_cols <- cols_01,
-      precision = 1L
+  if (progress) {
+    cli::cli_progress_update(
+      inc = n_rows_affected,
+      status = "Done!",
+      force = TRUE
     )
-
-    # UPDATE input_padrao_db: Remove observations found in previous step
-    update_input_db(
-      con,
-      update_tb = 'input_padrao_db',
-      reference_tb = 'output_caso_01'
-    )
-
-    # update progress bar
-    if (isTRUE(progress)) {
-      ndone <- temp_n
-      utils::setTxtProgressBar(pb, ndone)
-    }
-  }
-  # DBI::dbReadTable(con, 'output_caso_01')
-  # DBI::dbRemoveTable(con, 'output_caso_01')
-
-
-  ## CASE 2 --------------------------------------------------------------------
-
-  # check if we have all required inputs
-  inputs <- list(estado, municipio, logradouro, numero, cep)
-  all_required_inputs <- !any(sapply(inputs, is.null))
-
-  if(all_required_inputs){
-
-    temp_n <- match_aggregated_cases(
-      con,
-      x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
-      output_tb = 'output_caso_02',
-      key_cols <- cols_02,
-      precision = 2L
-    )
-
-    # UPDATE input_padrao_db: Remove observations found in previous step
-    update_input_db(
-      con,
-      update_tb = 'input_padrao_db',
-      reference_tb = 'output_caso_02'
-    )
-
-    # update progress bar
-    if (isTRUE(progress)) {
-      ndone <- ndone + temp_n
-      utils::setTxtProgressBar(pb, ndone)
-    }
   }
 
-
-  ## CASE 3 --------------------------------------------------------------------
-
-
-  # check if we have all required inputs
-  inputs <- list(estado, municipio, logradouro, cep, bairro)
-  all_required_inputs <- !any(sapply(inputs, is.null))
-
-  if(all_required_inputs){
-
-    temp_n <- match_aggregated_cases(
-      con,
-      x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
-      output_tb = 'output_caso_03',
-      key_cols <- cols_03,
-      precision = 3L
-    )
-
-    # UPDATE input_padrao_db: Remove observations found in previous step
-    update_input_db(
-      con,
-      update_tb = 'input_padrao_db',
-      reference_tb = 'output_caso_03'
-    )
-
-    # update progress bar
-    if (isTRUE(progress)) {
-      ndone <- ndone + temp_n
-      utils::setTxtProgressBar(pb, ndone)
-    }
-  }
-
-
-  ## CASE 4  --------------------------------------------------------------------
-
-  # check if we have all required inputs
-  inputs <- list(estado, municipio, logradouro, numero)
-  all_required_inputs <- !any(sapply(inputs, is.null))
-
-  if(all_required_inputs){
-
-
-    temp_n <- match_aggregated_cases(
-      con,
-      x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
-      output_tb = 'output_caso_04',
-      key_cols <- cols_04,
-      precision = 4L
-    )
-
-    # UPDATE input_padrao_db: Remove observations found in previous step
-    update_input_db(
-      con,
-      update_tb = 'input_padrao_db',
-      reference_tb = 'output_caso_04'
-    )
-
-    # update progress bar
-    if (isTRUE(progress)) {
-      ndone <- ndone + temp_n
-      utils::setTxtProgressBar(pb, ndone)
-    }
-  }
-
-
-
-  ## CASE 5  --------------------------------------------------------------------
-
-  # check if we have all required inputs
-  inputs <- list(estado, municipio, logradouro, cep)
-  all_required_inputs <- !any(sapply(inputs, is.null))
-
-  if(all_required_inputs){
-
-    temp_n <- match_aggregated_cases(
-      con,
-      x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
-      output_tb = 'output_caso_05',
-      key_cols <- cols_05,
-      precision = 5L
-    )
-
-    # UPDATE input_padrao_db: Remove observations found in previous step
-    update_input_db(
-      con,
-      update_tb = 'input_padrao_db',
-      reference_tb = 'output_caso_05'
-    )
-
-    # update progress bar
-    if (isTRUE(progress)) {
-      ndone <- ndone + temp_n
-      utils::setTxtProgressBar(pb, ndone)
-    }
-  }
-
-  ## CASE 6 --------------------------------------------------------------------
-
-  # check if we have all required inputs
-  inputs <- list(estado, municipio, logradouro, bairro)
-  all_required_inputs <- !any(sapply(inputs, is.null))
-
-  if(all_required_inputs){
-
-    temp_n <- match_aggregated_cases(
-      con,
-      x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
-      output_tb = 'output_caso_06',
-      key_cols <- cols_06,
-      precision = 6L
-    )
-
-    # UPDATE input_padrao_db: Remove observations found in previous step
-    update_input_db(
-      con,
-      update_tb = 'input_padrao_db',
-      reference_tb = 'output_caso_06'
-    )
-
-    # update progress bar
-    if (isTRUE(progress)) {
-      ndone <- ndone + temp_n
-      utils::setTxtProgressBar(pb, ndone)
-    }
-  }
-
-  ## CASE 7 --------------------------------------------------------------------
-
-
-  # check if we have all required inputs
-  inputs <- list(estado, municipio, logradouro)
-  all_required_inputs <- !any(sapply(inputs, is.null))
-
-  if(all_required_inputs){
-
-    temp_n <- match_aggregated_cases(
-      con,
-      x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
-      output_tb = 'output_caso_07',
-      key_cols <- cols_07,
-      precision = 7L
-    )
-
-    # UPDATE input_padrao_db: Remove observations found in previous step
-    update_input_db(
-      con,
-      update_tb = 'input_padrao_db',
-      reference_tb = 'output_caso_07'
-    )
-
-    # update progress bar
-    if (isTRUE(progress)) {
-      ndone <- ndone + temp_n
-      utils::setTxtProgressBar(pb, ndone)
-    }
-  }
-
-  ## CASE 8 --------------------------------------------------------------------
-
-  # check if we have all required inputs
-  inputs <- list(estado, municipio, cep, bairro)
-  all_required_inputs <- !any(sapply(inputs, is.null))
-
-  if(all_required_inputs){
-
-    temp_n <- match_aggregated_cases(
-      con,
-      x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
-      output_tb = 'output_caso_08',
-      key_cols <- cols_08,
-      precision = 8L
-    )
-
-    # UPDATE input_padrao_db: Remove observations found in previous step
-    update_input_db(
-      con,
-      update_tb = 'input_padrao_db',
-      reference_tb = 'output_caso_08'
-    )
-
-    # update progress bar
-    if (isTRUE(progress)) {
-      ndone <- ndone + temp_n
-      utils::setTxtProgressBar(pb, ndone)
-    }
-  }
-
-  ## CASE 9 --------------------------------------------------------------------
-
-  # check if we have all required inputs
-  inputs <- list(estado, municipio, cep)
-  all_required_inputs <- !any(sapply(inputs, is.null))
-
-  if(all_required_inputs){
-
-    temp_n <- match_aggregated_cases(
-      con,
-      x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
-      output_tb = 'output_caso_09',
-      key_cols <- cols_09,
-      precision = 9L
-    )
-
-    # UPDATE input_padrao_db: Remove observations found in previous step
-    update_input_db(
-      con,
-      update_tb = 'input_padrao_db',
-      reference_tb = 'output_caso_09'
-    )
-
-    # update progress bar
-    if (isTRUE(progress)) {
-      ndone <- ndone + temp_n
-      utils::setTxtProgressBar(pb, ndone)
-    }
-  }
-
-  ## CASE 10 --------------------------------------------------------------------
-
-  # check if we have all required inputs
-  inputs <- list(estado, municipio, bairro)
-  all_required_inputs <- !any(sapply(inputs, is.null))
-
-  if(all_required_inputs){
-
-    # delete cases where localidade is missing
-    delete_null_localidade <- function(tb){
-      query_delete_localidade_from_input <-
-        sprintf('DELETE FROM "%s" WHERE "localidade" IS NOT NULL;', tb)
-      DBI::dbExecute(con, query_delete_localidade_from_input)
-      # DBI::dbGetQuery(con, 'SELECT COUNT(*) FROM "input_padrao_db"')
-    }
-    delete_null_localidade('input_padrao_db')
-    delete_null_localidade('filtered_cnefe_cep')
-
-
-    # narrow down search scope to localidade
-    query_narrow_localidades <-
-      'DELETE FROM "filtered_cnefe_cep"
-      WHERE "localidade" NOT IN (SELECT DISTINCT "localidade" FROM "input_padrao_db");'
-    DBI::dbExecute(con, query_narrow_localidades)
-    # DBI::dbGetQuery(con, 'SELECT COUNT(*) FROM "filtered_cnefe_cep"')
-
-
-    temp_n <- match_aggregated_cases(
-      con,
-      x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
-      output_tb = 'output_caso_10',
-      key_cols <- cols_10,
-      precision = 10L
-    )
-
-    # UPDATE input_padrao_db: Remove observations found in previous step
-    update_input_db(
-      con,
-      update_tb = 'input_padrao_db',
-      reference_tb = 'output_caso_10'
-    )
-
-    # update progress bar
-    if (isTRUE(progress)) {
-      ndone <- ndone + temp_n
-      utils::setTxtProgressBar(pb, ndone)
-      base::close(pb)
-    }
-  }
-
-  ## CASE 11 --------------------------------------------------------------------
-  # TO DO
-  # add to package a table with the coordinates of geobr::read_municipal_seat()
-  # and perform lookup
-  # temp_n <- match_aggregated_cases(
-  #   con,
-  #   x = 'input_padrao_db',
-  #   y = 'filtered_cnefe_cep',
-  #   output_tb = 'output_caso_11',
-  #   key_cols <- cols_11,
-  #   precision = 11L
-  # )
-  #
-  # # UPDATE input_padrao_db: Remove observations found in previous step
-  # update_input_db(
-  #   con,
-  #   update_tb = 'input_padrao_db',
-  #   reference_tb = 'output_caso_11'
-  # )
-  #
-  # # update progress bar
-  # if (isTRUE(showProgress)) {
-  #   ndone <- ndone + temp_n
-  #   utils::setTxtProgressBar(pb, ndone)
-  #
-  #   base::close(pb)
-  # }
-
-
-  ## CASE 999 --------------------------------------------------------------------
-  # TO DO
-  # WHAT SHOULD BE DONE FOR CASES NOT FOUND ?
-  # AND THEIR EFFECT ON THE PROGRESS BAR
-
-
-  # DBI::dbReadTable(con, 'input_padrao_db')
-  # DBI::dbReadTable(con, 'output_caso_01')
-
-  # DBI::dbRemoveTable(con, 'output_caso_01')
-  # DBI::dbRemoveTable(con, 'output_caso_02')
-  # DBI::dbRemoveTable(con, 'output_caso_03')
-  # DBI::dbRemoveTable(con, 'output_caso_04')
-  # DBI::dbRemoveTable(con, 'output_caso_05')
-  # DBI::dbRemoveTable(con, 'output_caso_06')
-  # DBI::dbRemoveTable(con, 'output_caso_07')
-  # DBI::dbRemoveTable(con, 'output_caso_08')
-  # DBI::dbRemoveTable(con, 'output_caso_09')
-  # DBI::dbRemoveTable(con, 'output_caso_10')
-  # DBI::dbRemoveTable(con, 'output_caso_11')
-
-
-
-
-  # prepare output -----------------------------------------------
-
-  # THIS NEEDS TO BE IMPROVED / optimized
-  # THIS NEEDS TO BE IMPROVED / optimized
-
-  # list all table outputs
-  all_output_tbs <- c(
-    ifelse( DBI::dbExistsTable(con, 'output_caso_01'), 'output_caso_01', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_02'), 'output_caso_02', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_03'), 'output_caso_03', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_04'), 'output_caso_04', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_05'), 'output_caso_05', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_06'), 'output_caso_06', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_07'), 'output_caso_07', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_08'), 'output_caso_08', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_09'), 'output_caso_09', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_10'), 'output_caso_10', 'empty')
+  cols_to_keep <- names(standard_locations)
+  cols_to_keep <- cols_to_keep[!grepl("_padr$", cols_to_keep)]
+  cols_to_keep <- c(cols_to_keep, "match_type", "lon", "lat")
+  cols_to_keep <- paste(cols_to_keep, collapse = ", ")
+
+  output <- dplyr::tbl(
+    con,
+    dplyr::sql(glue::glue("SELECT {cols_to_keep} FROM standard_locations"))
   )
-  all_output_tbs <- all_output_tbs[!grepl('empty', all_output_tbs)]
+  output <- dplyr::collect(output)
 
-  # output with only ID and geocode columns
-  if (isTRUE(output_simple)) {
-
-    # build query
-    outout_query <- paste(
-      paste0("SELECT ", paste0('*', collapse = ', '), " FROM ", all_output_tbs),
-      collapse = " UNION ALL ")
-
-    output_deterministic <- DBI::dbGetQuery(con, outout_query)
-
-    # output_deterministic <- lapply(X = all_output_tbs,
-    #        FUN = function(x){
-    #          DBI::dbGetQuery(con, sprintf("SELECT * FROM %s", x))
-    #        }
-    #        )
-    # output_deterministic <- data.table::rbindlist(output_deterministic)
-
-
-  }
-
-  # output with all original columns
-  if (isFALSE(output_simple)){
-
-    # Convert input data frame to DuckDB table
-    duckdb::dbWriteTable(con, "output_db", input_padrao,
-                         temporary = TRUE, overwrite=TRUE)
-
-    # merge_results(con,
-    #               x='output_caso_01',
-    #               y='output_db',
-    #               key_column='ID',
-    #               select_columns = "*")
-
-    # Combine all cases into one data.table
-    output_deterministic <- lapply(
-      X = all_output_tbs,
-      FUN = function(x){
-        merge_results(
-          con,
-          x = x,
-          y='output_db',
-          key_column='ID',
-          select_columns = "*")
-      }
-    )
-
-    output_deterministic <- data.table::rbindlist(output_deterministic)
-  }
-
-  # Disconnect from DuckDB when done
-  duckdb::dbDisconnect(con, shutdown=TRUE)
-
-  # Return the result
-  return(output_deterministic)
-
-  #   # NEXT STEPS
-  #   - optimize disk and parallel operations in duckdb
-  #   - cases that matche first 7 digits of CEP
-  #   - exceptional cases (no info on municipio input)
-  #   - join probabilistico
-  #   - interpolar numeros na mesma rua
-
+  return(output)
 }
 
 assert_address_fields <- function(address_fields, addresses_table) {
