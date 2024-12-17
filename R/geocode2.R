@@ -169,6 +169,8 @@ geocode2 <- function(addresses_table,
   )
   output <- dplyr::collect(output)
 
+  duckdb::dbDisconnect(con, shutdown = TRUE)
+
   return(output)
 }
 
