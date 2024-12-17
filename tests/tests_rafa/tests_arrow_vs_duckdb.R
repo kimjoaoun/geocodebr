@@ -113,19 +113,28 @@ range_lat <- sd(df$lat) *2
 
 
 
-query_aggregate_and_match <- glue::glue(
-  "CREATE TABLE {output_tb} AS
-  WITH pre_aggregated_cnefe AS (
-    SELECT {cols_select}, AVG(lon) AS lon, AVG(lat) AS lat,
-    MAX(lon) - MIN(lon) as range_lon, MAX(lat) - MIN(lat) as range_lat,
-    FROM {y}
-    GROUP BY {cols_group}
-  )
-  SELECT {x}.ID, pre_aggregated_cnefe.lon, pre_aggregated_cnefe.lat
-  FROM {x} AS {x}
-  LEFT JOIN pre_aggregated_cnefe
-  ON {join_condition}
-  WHERE pre_aggregated_cnefe.lon IS NOT NULL;"
+query_aggregate_and_match <- sprintf(
+  "CREATE TABLE %s AS
+    WITH pre_aggregated_cnefe AS (
+      SELECT %s AVG(lon) AS lon, AVG(lat) AS lat,
+      2 * STDDEV_SAMP(lon) as range_lon, 2 * STDDEV_SAMP(lat) as range_lat
+      FROM %s
+      GROUP BY %s
+    )
+    SELECT %s.ID, pre_aggregated_cnefe.lon, pre_aggregated_cnefe.lat,
+    pre_aggregated_cnefe.range_lon, pre_aggregated_cnefe.range_lat
+    FROM %s AS %s
+    LEFT JOIN pre_aggregated_cnefe
+    ON %s
+    WHERE pre_aggregated_cnefe.lon IS NOT NULL;",
+  output_tb,     # new table
+  cols_select,   # select
+  y,             # from
+  cols_group,    # group
+  x,             # select
+  x, x,          # from
+  join_condition # on
 )
+
 
 

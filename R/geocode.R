@@ -58,8 +58,7 @@ geocode <- function(input_table,
   checkmate::assert_logical(cache)
   checkmate::assert_names(
     names(input_table),
-    must.include = "ID",
-    .var.name = "input_table"
+    must.include = "ID"
   )
 
 
@@ -572,16 +571,7 @@ geocode <- function(input_table,
   # DBI::dbReadTable(con, 'output_caso_01')
 
   # DBI::dbRemoveTable(con, 'output_caso_01')
-  # DBI::dbRemoveTable(con, 'output_caso_02')
-  # DBI::dbRemoveTable(con, 'output_caso_03')
-  # DBI::dbRemoveTable(con, 'output_caso_04')
-  # DBI::dbRemoveTable(con, 'output_caso_05')
-  # DBI::dbRemoveTable(con, 'output_caso_06')
-  # DBI::dbRemoveTable(con, 'output_caso_07')
-  # DBI::dbRemoveTable(con, 'output_caso_08')
-  # DBI::dbRemoveTable(con, 'output_caso_09')
-  # DBI::dbRemoveTable(con, 'output_caso_10')
-  # DBI::dbRemoveTable(con, 'output_caso_11')
+
 
 
 
