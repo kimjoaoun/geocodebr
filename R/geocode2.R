@@ -124,11 +124,7 @@ geocode2 <- function(addresses_table,
   DBI::dbExecute(con, "ALTER TABLE standard_locations ADD COLUMN lat DOUBLE DEFAULT NULL")
 
   if (progress) {
-    cli::cli_progress_bar(
-      total = nrow(standard_locations),
-      format = "Matched addresses: {formatC(cli::pb_current, big.mark = ',', format = 'd')}/{formatC(cli::pb_total, big.mark = ',', format = 'd')} {cli::pb_bar} {cli::pb_percent} - {cli::pb_status}",
-      clear = FALSE
-    )
+    prog <- create_progress_bar(standard_locations)
     n_rows_affected <- 0
   }
 
@@ -137,13 +133,7 @@ geocode2 <- function(addresses_table,
     relevant_cols <- get_relevant_cols(case)
     formatted_case <- formatC(case, width = 2, flag = "0")
 
-    if (progress) {
-      cli::cli_progress_update(
-        inc = n_rows_affected,
-        status = glue::glue("Looking for case {formatted_case} matches"),
-        force = TRUE
-      )
-    }
+    if (progress) update_progress_bar(n_rows_affected, formatted_case)
 
     if (all(relevant_cols %in% names(standard_locations))) {
       join_condition <- paste(
@@ -166,13 +156,7 @@ geocode2 <- function(addresses_table,
     }
   }
 
-  if (progress) {
-    cli::cli_progress_update(
-      inc = n_rows_affected,
-      status = "Done!",
-      force = TRUE
-    )
-  }
+  if (progress) finish_progress_bar(n_rows_affected)
 
   cols_to_keep <- names(standard_locations)
   cols_to_keep <- cols_to_keep[!grepl("_padr$", cols_to_keep)]
@@ -243,3 +227,33 @@ get_relevant_cols <- function(case) {
 
   return(relevant_cols)
 }
+
+create_progress_bar <- function(standard_locations, .envir = parent.frame()) {
+  cli::cli_progress_bar(
+    total = nrow(standard_locations),
+    format = "Matched addresses: {formatC(cli::pb_current, big.mark = ',', format = 'd')}/{formatC(cli::pb_total, big.mark = ',', format = 'd')} {cli::pb_bar} {cli::pb_percent} - {cli::pb_status}",
+    clear = FALSE,
+    .envir = .envir
+  )
+}
+
+update_progress_bar <- function(n_rows_affected,
+                                formatted_case,
+                                .envir = parent.frame()) {
+  cli::cli_progress_update(
+    inc = n_rows_affected,
+    status = glue::glue("Looking for case {formatted_case} matches"),
+    force = TRUE,
+    .envir = .envir
+  )
+}
+
+finish_progress_bar <- function(n_rows_affected, .envir = parent.frame()) {
+  cli::cli_progress_update(
+    inc = n_rows_affected,
+    status = "Done!",
+    force = TRUE,
+    .envir = .envir
+  )
+}
+
