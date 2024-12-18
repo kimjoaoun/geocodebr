@@ -64,7 +64,8 @@ df_duck_dani <- geocodebr:::geocode2(
   addresses_table = input_df,
   address_fields = fields,
   n_cores = 7,
-  progress = T )
+  progress = T
+  )
 tictoc::toc()
 # 900K: 13 secs
 
