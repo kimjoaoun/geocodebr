@@ -165,6 +165,7 @@ add_precision_col <- function(con, update_tb = NULL, precision = NULL){
                  sprintf("ALTER TABLE %s ADD COLUMN precision INTEGER", update_tb)
   )
 
+
   DBI::dbExecute(con,
                  sprintf("UPDATE %s SET precision = %s", update_tb, precision)
                  )
@@ -176,15 +177,16 @@ merge_results <- function(con, x, y, key_column, select_columns){
   # x = 'output_db'
   # y = 'output_caso_01'
   # key_column = 'ID'
-  # select_columns = c('lon', 'lat', 'precision')
+  select_columns = c('lon', 'lat', 'precision')
 
+  x_columns <- names(input_padrao)
 
   # Create the SELECT clause dynamically
   # select_x <- paste0(x, '.', c('lon', 'lat', 'precision '), collapse = ', ')
-  select_x <- paste0(x, '.', c('* '), collapse = ', ')
+  select_x <- paste0(x, '.', c(x_columns), collapse = ', ')
   select_clause <- paste0(
-    select_x,
-    paste0(", ", y, ".", select_columns, collapse = ", ")
+    select_x, ',',
+    paste0(y, ".", select_columns, collapse = ", ")
     )
 
   # Create the SQL query
@@ -199,6 +201,7 @@ merge_results <- function(con, x, y, key_column, select_columns){
                    x, key_column, # Left table and key column
                    y, key_column  # Right table and key column
   )
+
 
   # Execute the query and fetch the merged data
   merged_data <- DBI::dbGetQuery(con, query)

@@ -48,12 +48,29 @@ input_df$ID <-  1:nrow(input_df)
 # ncores = NULL
 # cache = TRUE
 
+tictoc::tic()
+fields <- geocodebr::setup_address_fields(
+  logradouro = 'nm_logradouro',
+  numero = 'Numero',
+  complemento = 'Complemento',
+  cep = 'Cep',
+  bairro = 'Bairro',
+  municipio = 'nm_municipio',
+  estado = 'nm_uf'
+  )
 
 
+df_duck_dani <- geocodebr:::geocode2(
+  addresses_table = input_df,
+  address_fields = fields,
+  n_cores = 7,
+  progress = T )
+tictoc::toc()
+# 900K: 13 secs
 
 
 tictoc::tic()
-df_duck3 <- geocode(
+df_duck_rafa <- geocode(
   input_table = input_df,
   logradouro = "nm_logradouro",
   numero = "Numero",
@@ -63,20 +80,12 @@ df_duck3 <- geocode(
   municipio = "nm_municipio",
   estado = "nm_uf",
   output_simple = F,
-  ncores=NULL,
+  ncores=7,
   progress = T
 )
 tictoc::toc()
-#> 28: 4 - 5  (in memory)
-#> 28: 4 - 5  (disk)
-#>
-#> 900K: 37.11 - 44.56  (in memory)
-#> 900K: 39.34          (disk) match_case
-#> 900K: 16             (disk) match_aggregated_cases
-#>
-#> 7.3 milhoes: 113.01 (in memory)
-#> 7.3 milhoes: 101.31 (disk) match_case
-#> 7.3 milhoes: 57.36 (disk) match_aggregated_cases
+# 900K: 19.83 secs
+
 
 
 
