@@ -122,7 +122,7 @@ geocode <- function(input_table,
   # # # more than 2x SLOWER
   # # dir <- fs::path(geocodebr_env$cache_dir, "/**/*.parquet")
   # # DBI::dbExecute(con,
-  # #           sprintf("CREATE VIEW cnefe AS SELECT * FROM read_parquet('%s')",
+  # #           sprintf("CREATE VIEW cnefe AS SELECT * FROM read_parquet('%s') WHERE municipio IN {input_municipio}",
   # #                   dir))
   #
   # ##  DBI::dbRemoveTable(con, 'cnefe')
@@ -138,7 +138,7 @@ geocode <- function(input_table,
   if(is.null(input_municipio)){ input_municipio <- "*"}
 
   query_filter_cnefe_municipios <- sprintf("
-  CREATE TEMPORARY TABLE filtered_cnefe_cep AS
+  CREATE TEMPORARY TABLE filtered_cnefe AS
   SELECT * FROM cnefe
   WHERE municipio IN ('%s')",
                              paste(input_municipio, collapse = "', '")
@@ -200,7 +200,7 @@ geocode <- function(input_table,
     temp_n <- match_aggregated_cases(
       con,
       x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
+      y = 'filtered_cnefe',
       output_tb = 'output_caso_01',
       key_cols <- cols_01,
       precision = 1L
@@ -234,7 +234,7 @@ geocode <- function(input_table,
     temp_n <- match_aggregated_cases(
       con,
       x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
+      y = 'filtered_cnefe',
       output_tb = 'output_caso_02',
       key_cols <- cols_02,
       precision = 2L
@@ -265,7 +265,7 @@ geocode <- function(input_table,
     temp_n <- match_aggregated_cases(
       con,
       x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
+      y = 'filtered_cnefe',
       output_tb = 'output_caso_03',
       key_cols <- cols_03,
       precision = 3L
@@ -297,7 +297,7 @@ geocode <- function(input_table,
     temp_n <- match_aggregated_cases(
     con,
     x = 'input_padrao_db',
-    y = 'filtered_cnefe_cep',
+    y = 'filtered_cnefe',
     output_tb = 'output_caso_04',
     key_cols <- cols_04,
     precision = 4L
@@ -330,7 +330,7 @@ geocode <- function(input_table,
     temp_n <- match_aggregated_cases(
     con,
     x = 'input_padrao_db',
-    y = 'filtered_cnefe_cep',
+    y = 'filtered_cnefe',
     output_tb = 'output_caso_05',
     key_cols <- cols_05,
     precision = 5L
@@ -363,7 +363,7 @@ geocode <- function(input_table,
     temp_n <- match_aggregated_cases(
       con,
       x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
+      y = 'filtered_cnefe',
       output_tb = 'output_caso_06',
       key_cols <- cols_06,
       precision = 6L
@@ -394,7 +394,7 @@ geocode <- function(input_table,
       temp_n <- match_aggregated_cases(
       con,
       x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
+      y = 'filtered_cnefe',
       output_tb = 'output_caso_07',
       key_cols <- cols_07,
       precision = 7L
@@ -426,7 +426,7 @@ geocode <- function(input_table,
     temp_n <- match_aggregated_cases(
       con,
       x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
+      y = 'filtered_cnefe',
       output_tb = 'output_caso_08',
       key_cols <- cols_08,
       precision = 8L
@@ -457,7 +457,7 @@ geocode <- function(input_table,
     temp_n <- match_aggregated_cases(
       con,
       x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
+      y = 'filtered_cnefe',
       output_tb = 'output_caso_09',
       key_cols <- cols_09,
       precision = 9L
@@ -488,7 +488,7 @@ geocode <- function(input_table,
     temp_n <- match_aggregated_cases(
       con,
       x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
+      y = 'filtered_cnefe',
       output_tb = 'output_caso_10',
       key_cols <- cols_10,
       precision = 10L
@@ -519,7 +519,7 @@ geocode <- function(input_table,
     temp_n <- match_aggregated_cases(
       con,
       x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
+      y = 'filtered_cnefe',
       output_tb = 'output_caso_11',
       key_cols <- cols_11,
       precision = 11L
@@ -550,7 +550,7 @@ geocode <- function(input_table,
       temp_n <- match_aggregated_cases(
         con,
         x = 'input_padrao_db',
-        y = 'filtered_cnefe_cep',
+        y = 'filtered_cnefe',
         output_tb = 'output_caso_12',
         key_cols <- cols_12,
         precision = 12L
