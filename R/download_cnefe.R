@@ -13,7 +13,7 @@
 #'   Defaults to `TRUE`.
 #' @template cache
 #'
-#' @return A directory path where the data was saved.
+#' @return Invisibly returns the path to the file where the data was saved.
 #'
 #' @family Support
 #'
@@ -62,7 +62,7 @@ download_cnefe <- function(state = "all", progress = TRUE, cache = TRUE) {
     grepl(glue::glue("estado=({paste(state, collapse = '|')})"), parquet_files)
   ]
 
-  return(state_parquet_files)
+  return(invisible(state_parquet_files))
 }
 
 assert_and_assign_state <- function(state) {
