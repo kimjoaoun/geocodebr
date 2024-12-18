@@ -9,10 +9,6 @@
 #' @param numero A string. The name of the column representing the street number
 #'   of the address. May be `NULL` if the field is not specified in the
 #'   addresses table.
-#' @param complemento A string. The name of the column representing the
-#'   *complemento* (additional information such as apartment, PO box, etc) of
-#'   the address. May be `NULL` if the field is not specified in the addresses
-#'   table.
 #' @param cep A string. The name of the column representing the *CEP* (ZIP code)
 #'   of the address. May be `NULL` if the field is not specified in the
 #'   addresses table.
@@ -33,7 +29,6 @@
 #' setup_address_fields(
 #'   logradouro = "Nome_logradouro",
 #'   numero = "Numero",
-#'   complemento = "Comp",
 #'   cep = "CEP",
 #'   bairro = "Bairro",
 #'   municipio = "Cidade",
@@ -43,7 +38,6 @@
 #' @export
 setup_address_fields <- function(logradouro = NULL,
                                  numero = NULL,
-                                 complemento = NULL,
                                  cep = NULL,
                                  bairro = NULL,
                                  municipio = NULL,
@@ -51,7 +45,6 @@ setup_address_fields <- function(logradouro = NULL,
   col <- checkmate::makeAssertCollection()
   checkmate::assert_string(logradouro, null.ok = TRUE, add = col)
   checkmate::assert_string(numero, null.ok = TRUE, add = col)
-  checkmate::assert_string(complemento, null.ok = TRUE, add = col)
   checkmate::assert_string(cep, null.ok = TRUE, add = col)
   checkmate::assert_string(bairro, null.ok = TRUE, add = col)
   checkmate::assert_string(municipio, null.ok = TRUE, add = col)
@@ -61,7 +54,6 @@ setup_address_fields <- function(logradouro = NULL,
   address_fields <- c(
     logradouro = logradouro,
     numero = numero,
-    complemento = complemento,
     cep = cep,
     bairro = bairro,
     municipio = municipio,

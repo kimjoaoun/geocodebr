@@ -1,6 +1,5 @@
 tester <- function(logradouro = NULL,
                    numero = NULL,
-                   complemento = NULL,
                    cep = NULL,
                    bairro = NULL,
                    municipio = NULL,
@@ -8,7 +7,6 @@ tester <- function(logradouro = NULL,
   setup_address_fields(
     logradouro,
     numero,
-    complemento,
     cep,
     bairro,
     municipio,
@@ -22,9 +20,6 @@ test_that("errors with incorrect input", {
 
   expect_error(tester(numero = 1))
   expect_error(tester(numero = c("aaa", "bbb")))
-
-  expect_error(tester(complemento = 1))
-  expect_error(tester(complemento = c("aaa", "bbb")))
 
   expect_error(tester(cep = 1))
   expect_error(tester(cep = c("aaa", "bbb")))
@@ -50,7 +45,6 @@ test_that("returns a character vector", {
     tester(
       logradouro = "Nome_logradouro",
       numero = "Numero",
-      complemento = "Comp",
       cep = "CEP",
       bairro = "Bairro",
       municipio = "Cidade",
@@ -59,7 +53,6 @@ test_that("returns a character vector", {
     c(
       logradouro = "Nome_logradouro",
       numero = "Numero",
-      complemento = "Comp",
       cep = "CEP",
       bairro = "Bairro",
       municipio = "Cidade",
