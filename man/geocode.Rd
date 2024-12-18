@@ -2,61 +2,48 @@
 % Please edit documentation in R/geocode.R
 \name{geocode}
 \alias{geocode}
-\title{Geocoding addresses based on CNEFE data}
+\title{Geocode Brazilian addresses}
 \usage{
 geocode(
-  input_table,
-  logradouro = NULL,
-  numero = NULL,
-  complemento = NULL,
-  cep = NULL,
-  bairro = NULL,
-  municipio = NULL,
-  estado = NULL,
+  addresses_table,
+  address_fields = setup_address_fields(),
+  n_cores = 1,
   progress = TRUE,
-  output_simple = TRUE,
-  ncores = NULL,
   cache = TRUE
 )
 }
 \arguments{
-\item{input_table}{A data frame.}
+\item{addresses_table}{A data frame. The addresses to be geocoded. Each
+column must represent an address field.}
 
-\item{logradouro}{A string.}
+\item{address_fields}{A character vector. The correspondence between each
+address field and the name of the column that describes it in
+\code{addresses_table}. The \code{\link[=setup_address_fields]{setup_address_fields()}} function helps creating
+this vector and performs some assertions on the input. Address fields
+passed as \code{NULL} are ignored and the function must receive at least one
+non-null field. If manually creating the vector, please note that the
+vector names should be the same names used in the \code{\link[=setup_address_fields]{setup_address_fields()}}
+parameters.}
 
-\item{numero}{A string.}
+\item{n_cores}{A number. The number of cores to be used in parallel
+execution. Defaults to 1.}
 
-\item{complemento}{A string.}
+\item{progress}{A logical. Whether to display progress bars when downloading
+CNEFE data and when geocoding the addresses. Defaults to \code{TRUE}.}
 
-\item{cep}{A string.}
-
-\item{bairro}{A string.}
-
-\item{municipio}{A string.}
-
-\item{estado}{A string.}
-
-\item{progress}{Logical. Defaults to \code{TRUE} display the progress bar.
-This includes both the progress bar of downloading CNEFE as well as of
-processing data records.}
-
-\item{output_simple}{Logic. Defaults to \code{TRUE}}
-
-\item{ncores}{Numeric. The number of cores to be used in parallel execution.
-Defaults to the number of available cores minus 1.}
-
-\item{cache}{Logical. Whether the function should read the data cached
-locally, which is much faster. Defaults to \code{TRUE}. The first time the
-user runs the function, \code{geocodebr} will download CNEFE data and store
-it locally so that the data only needs to be download once. If \code{FALSE},
-the function will download the data again and overwrite the local files.}
+\item{cache}{A logical. Whether CNEFE data should be save to/read from cache,
+reducing processing time in future calls. Defaults to \code{TRUE}. When \code{FALSE},
+CNEFE data is downloaded to a temporary directory.}
 }
 \value{
-An arrow \code{Dataset} or a \code{"data.frame"} object.
+Returns the data frame passed in \code{addresses_table} including columns
+with the latitude and the longitude of each matched address, as well as
+another column describing how the address was matched.
 }
 \description{
-Takes a data frame containing addresses as an input and returns the spatial
-coordinates found based on CNEFE data.
+Geocodes Brazilian addresses based on CNEFE data. Addresses must be passed as
+a data frame in which each column describes one address field (street name,
+street number, neighborhood, etc).
 }
 \examples{
 \dontshow{if (identical(tolower(Sys.getenv("NOT_CRAN")), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
@@ -77,4 +64,3 @@ input_df <- read.csv(data_path)
 #   )
 \dontshow{\}) # examplesIf}
 }
-\concept{Microdata}

@@ -1,25 +1,31 @@
-#' Geocoding addresses based on CNEFE data
+#' Geocode Brazilian addresses
 #'
-#' @description
-#' Takes a data frame containing addresses as an input and returns the spatial
-#' coordinates found based on CNEFE data.
+#' Geocodes Brazilian addresses based on CNEFE data. Addresses must be passed as
+#' a data frame in which each column describes one address field (street name,
+#' street number, neighborhood, etc).
 #'
-#' @param input_table A data frame.
-#' @param logradouro A string.
-#' @param numero A string.
-#' @param complemento A string.
-#' @param cep A string.
-#' @param bairro A string.
-#' @param municipio A string.
-#' @param estado A string.
-#' @param output_simple Logic. Defaults to `TRUE`
-#' @template ncores
-#' @template progress
-#' @template cache
+#' @param addresses_table A data frame. The addresses to be geocoded. Each
+#'   column must represent an address field.
+#' @param address_fields A character vector. The correspondence between each
+#'   address field and the name of the column that describes it in
+#'   `addresses_table`. The [setup_address_fields()] function helps creating
+#'   this vector and performs some assertions on the input. Address fields
+#'   passed as `NULL` are ignored and the function must receive at least one
+#'   non-null field. If manually creating the vector, please note that the
+#'   vector names should be the same names used in the [setup_address_fields()]
+#'   parameters.
+#' @param n_cores A number. The number of cores to be used in parallel
+#'   execution. Defaults to 1.
+#' @param progress A logical. Whether to display progress bars when downloading
+#'   CNEFE data and when geocoding the addresses. Defaults to `TRUE`.
+#' @param cache A logical. Whether CNEFE data should be save to/read from cache,
+#'   reducing processing time in future calls. Defaults to `TRUE`. When `FALSE`,
+#'   CNEFE data is downloaded to a temporary directory.
 #'
-#' @return An arrow `Dataset` or a `"data.frame"` object.
-#' @export
-#' @family Microdata
+#' @return Returns the data frame passed in `addresses_table` including columns
+#'   with the latitude and the longitude of each matched address, as well as
+#'   another column describing how the address was matched.
+#'
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 #'
 #' # open input data
@@ -37,621 +43,241 @@
 #' #   estado = "nm_uf"
 #' #   )
 #'
-geocode <- function(input_table,
-                    logradouro = NULL,
-                    numero = NULL,
-                    complemento = NULL,
-                    cep = NULL,
-                    bairro = NULL,
-                    municipio = NULL,
-                    estado = NULL,
+geocode <- function(addresses_table,
+                    address_fields = setup_address_fields(),
+                    n_cores = 1,
                     progress = TRUE,
-                    output_simple = TRUE,
-                    ncores = NULL,
-                    cache = TRUE){
+                    cache = TRUE) {
+  assert_address_fields(address_fields, addresses_table)
+  checkmate::assert_data_frame(addresses_table)
+  checkmate::assert_number(n_cores, lower = 1, finite = TRUE)
+  checkmate::assert_logical(progress, any.missing = FALSE, len = 1)
+  checkmate::assert_logical(cache, any.missing = FALSE, len = 1)
 
-  # check input
-  checkmate::assert_data_frame(input_table)
-  checkmate::assert_logical(progress)
-  checkmate::assert_logical(output_simple)
-  checkmate::assert_number(ncores, null.ok = TRUE)
-  checkmate::assert_logical(cache)
-  checkmate::assert_names(
-    names(input_table),
-    must.include = "ID"
+  # standardizing the addresses table to increase the chances of finding a match
+  # in the CNEFE data
+
+  standard_locations <- enderecobr::padronizar_enderecos(
+    addresses_table,
+    campos_do_endereco = enderecobr::correspondencia_campos(
+      logradouro = address_fields[["logradouro"]],
+      numero = address_fields[["numero"]],
+      cep = address_fields[["cep"]],
+      bairro = address_fields[["bairro"]],
+      municipio = address_fields[["municipio"]],
+      estado = address_fields[["estado"]]
+    ),
+    formato_estados = "sigla"
   )
 
+  # downloading cnefe. we only need to download the states present in the
+  # addresses table, which may save us some time. we also subset cnefe to
+  # include only the municipalities present in the input table, reducing the
+  # search scope and consequently reducing processing time and memory usage
 
-  # normalize input data -------------------------------------------------------
+  download_cnefe(present_states, progress = progress, cache = cache)
 
-  # correspondence of column names
-  campos <- enderecobr::correspondencia_campos(
-    logradouro = logradouro,
-    numero = numero,
-    complemento = complemento,
-    cep = cep,
-    bairro = bairro,
-    municipio = municipio,
-    estado = estado
+  present_states <- unique(standard_locations$estado_padr)
+
+  cnefe <- arrow::open_dataset(get_cache_dir())
+  cnefe <- dplyr::filter(cnefe, estado %in% present_states)
+
+  # creating a temporary db and registering both the input table and the cnefe
+  # data
+
+  tmpdb <- tempfile(fileext = ".duckdb")
+  con <- duckdb::dbConnect(duckdb::duckdb(), dbdir = tmpdb)
+
+  DBI::dbExecute(con, glue::glue("SET threads = {n_cores}"))
+
+  duckdb::dbWriteTable(
+    con,
+    name = "standard_locations",
+    value = standard_locations,
+    temporary = TRUE
   )
 
-  # padroniza input do usuario
-  input_padrao_raw <- enderecobr::padronizar_enderecos(
-    enderecos = input_table,
-    campos_do_endereco = campos,
-    formato_estados = 'sigla'
-  )
+  unique_muns <- unique(standard_locations$municipio_padr)
+  muns_list <- paste(glue::glue("'{unique_muns}'"), collapse = ", ")
 
-  # keep and rename colunms of input_padrao
-  # keeping same column names used in our cnefe data set
-  cols_padr <- grep("_padr", names(input_padrao_raw), value = TRUE)
-  input_padrao <- input_padrao_raw[, .SD, .SDcols = c("ID", cols_padr)]
-  names(input_padrao) <- c("ID", gsub("_padr", "", cols_padr))
-
-  data.table::setnames(input_padrao, old = 'logradouro', new = 'logradouro_sem_numero')
-  data.table::setnames(input_padrao, old = 'bairro', new = 'localidade')
-
-
-  # create db connection -------------------------------------------------------
-  con <- create_geocodebr_db(ncores = ncores)
-
-
-  # add input and cnefe data sets to db --------------------------------------
-
-  # Convert input data frame to DuckDB table
-  duckdb::dbWriteTable(con, "input_padrao_db", input_padrao,
-                       temporary = TRUE, overwrite=TRUE)
-
-  input_states <- unique(input_padrao$estado)
-
-
-  # download cnefe
-  download_success <- download_cnefe(
-    state = input_states,
-    progress = progress,
-    cache = cache
-    )
-
-  # check if download worked
-  if (isFALSE(download_success)) { return(invisible(NULL)) }
-
-  # Load CNEFE data and write to DuckDB
-  cnefe <- arrow_open_dataset(geocodebr::get_cache_dir())
   duckdb::duckdb_register_arrow(con, "cnefe", cnefe)
+  DBI::dbExecute(
+    con,
+    glue::glue(
+      "CREATE OR REPLACE VIEW filtered_cnefe AS ",
+      "SELECT * FROM cnefe WHERE municipio IN ({muns_list})"
+    )
+  )
 
-  # # # more than 2x SLOWER
-  # # dir <- fs::path(geocodebr_env$cache_dir, "/**/*.parquet")
-  # # DBI::dbExecute(con,
-  # #           sprintf("CREATE VIEW cnefe AS SELECT * FROM read_parquet('%s')",
-  # #                   dir))
+  # to find the coordinates of the addresses, we merge the input table with the
+  # cnefe data. the column names used in the input table are different than the
+  # ones used in cnefe, so we create a helper object to "translate" the column
+  # names between datasets
+
+  equivalent_colnames <- tibble::tribble(
+    ~standard_locations, ~cnefe,
+    "logradouro_padr",   "logradouro_sem_numero",
+    "numero_padr",       "numero",
+    "cep_padr",          "cep",
+    "bairro_padr",       "localidade",
+    "municipio_padr",    "municipio",
+    "estado_padr",       "estado"
+  )
+
+  lookup_vector <- equivalent_colnames$cnefe
+  names(lookup_vector) <- equivalent_colnames$standard_locations
+
+  # when merging the data, we have several different cases with different confidence
+  # levels. from best to worst, they are:
   #
-  # ##  DBI::dbRemoveTable(con, 'cnefe')
+  # - case 01: match estado, municipio, logradouro, numero, cep, localidade
+  # - case 02: match estado, municipio, logradouro, numero, cep
+  # - case 03: match estado, municipio, logradouro, numero, localidade
+  # - case 04: match estado, municipio, logradouro, cep, localidade
+  # - case 05: match estado, municipio, logradouro, numero
+  # - case 06: match estado, municipio, logradouro, cep
+  # - case 07: match estado, municipio, logradouro, localidade
+  # - case 08: match estado, municipio, logradouro
+  # - case 09: match estado, municipio, cep, localidade
+  # - case 10: match estado, municipio, cep
+  # - case 11: match estado, municipio, localidade
+  # - case 12: match estado, municipio
 
+  DBI::dbExecute(con, "ALTER TABLE standard_locations ADD COLUMN match_type VARCHAR DEFAULT NULL")
+  DBI::dbExecute(con, "ALTER TABLE standard_locations ADD COLUMN lon DOUBLE DEFAULT NULL")
+  DBI::dbExecute(con, "ALTER TABLE standard_locations ADD COLUMN lat DOUBLE DEFAULT NULL")
 
-  # Narrow search scope in cnefe to municipalities and zip codes present in input
-  # input_ceps <- unique(input_padrao$cep)
-  # input_ceps <- input_ceps[!is.na(input_ceps)]
-  # if(is.null(input_ceps)){ input_ceps <- "*"}
+  if (progress) {
+    prog <- create_progress_bar(standard_locations)
+    n_rows_affected <- 0
+  }
 
-  input_municipio <- unique(input_padrao$municipio)
-  input_municipio <- input_municipio[!is.na(input_municipio)]
-  if(is.null(input_municipio)){ input_municipio <- "*"}
+  for (case in c(1, 2, 4:11)) {
+    relevant_cols <- get_relevant_cols(case)
+    formatted_case <- formatC(case, width = 2, flag = "0")
 
-  query_filter_cnefe_municipios <- sprintf("
-  CREATE TEMPORARY TABLE filtered_cnefe_cep AS
-  SELECT * FROM cnefe
-  WHERE municipio IN ('%s')",
-                             paste(input_municipio, collapse = "', '")
-  )
+    if (progress) update_progress_bar(n_rows_affected, formatted_case)
 
-  DBI::dbExecute(con, query_filter_cnefe_municipios)
-  # duckdb::dbSendQuery(con, query_filter_cnefe_municipios)
-
-
-  # START DETERMINISTIC MATCHING -----------------------------------------------
-
-  # - case 01: match municipio, logradouro, numero, cep, localidade
-  # - case 02: match municipio, logradouro, numero, cep
-  # - case 03: match municipio, logradouro, numero, localidade
-  # - case 04: match municipio, logradouro, cep, localidade
-  # - case 05: match municipio, logradouro, numero
-  # - case 06: match municipio, logradouro, cep
-  # - case 07: match municipio, logradouro, localidade
-  # - case 08: match municipio, logradouro
-  # - case 09: match municipio, cep, localidade
-  # - case 10: match municipio, cep
-  # - case 11: match municipio, localidade
-  # - case 12: match municipio
-
-
-  # key columns
-  cols_01 <- c("estado", "municipio", "logradouro_sem_numero", "numero", "cep", "localidade")
-  cols_02 <- c("estado", "municipio", "logradouro_sem_numero", "numero", "cep")
-  cols_03 <- c("estado", "municipio", "logradouro_sem_numero", "numero", "localidade")
-  cols_04 <- c("estado", "municipio", "logradouro_sem_numero", "cep", "localidade")
-  cols_05 <- c("estado", "municipio", "logradouro_sem_numero", "numero")
-  cols_06 <- c("estado", "municipio", "logradouro_sem_numero", "cep")
-  cols_07 <- c("estado", "municipio", "logradouro_sem_numero", "localidade")
-  cols_08 <- c("estado", "municipio", "logradouro_sem_numero")
-  cols_09 <- c("estado", "municipio", "cep", "localidade")
-  cols_10 <- c("estado", "municipio", "cep")
-  cols_11 <- c("estado", "municipio", "localidade")
-  cols_12 <- c("estado", "municipio")
-
-  # start progress bar
-  if (isTRUE(progress)) {
-    total_n <- nrow(input_table)
-    pb <- utils::txtProgressBar(min = 0, max = total_n, style = 3)
-
-    ndone <- 0
-    utils::setTxtProgressBar(pb, ndone)
-    }
-
-
-
-  ## CASE 1 --------------------------------------------------------------------
-
-  # check if we have all required inputs
-  inputs <- list(estado, municipio, logradouro, numero, cep, bairro)
-  all_required_inputs <- !any(sapply(inputs, is.null))
-
-  if(all_required_inputs){
-
-    temp_n <- match_aggregated_cases(
-      con,
-      x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
-      output_tb = 'output_caso_01',
-      key_cols <- cols_01,
-      precision = 1L
+    if (all(relevant_cols %in% names(standard_locations))) {
+      join_condition <- paste(
+        glue::glue("standard_locations.{relevant_cols} = aggregated_cnefe.{lookup_vector[relevant_cols]}"),
+        collapse = " AND "
       )
 
-    # UPDATE input_padrao_db: Remove observations found in previous step
-    update_input_db(
-      con,
-      update_tb = 'input_padrao_db',
-      reference_tb = 'output_caso_01'
-      )
+      cnefe_cols <- paste(lookup_vector[relevant_cols], collapse = ", ")
 
-    # update progress bar
-    if (isTRUE(progress)) {
-      ndone <- temp_n
-      utils::setTxtProgressBar(pb, ndone)
-      }
-  }
-  # DBI::dbReadTable(con, 'output_caso_01')
-  # DBI::dbRemoveTable(con, 'output_caso_01')
-
-
-  ## CASE 2 --------------------------------------------------------------------
-
-  # check if we have all required inputs
-  inputs <- list(estado, municipio, logradouro, numero, cep)
-  all_required_inputs <- !any(sapply(inputs, is.null))
-
-  if(all_required_inputs){
-
-    temp_n <- match_aggregated_cases(
-      con,
-      x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
-      output_tb = 'output_caso_02',
-      key_cols <- cols_02,
-      precision = 2L
-    )
-
-    # UPDATE input_padrao_db: Remove observations found in previous step
-    update_input_db(
-      con,
-      update_tb = 'input_padrao_db',
-      reference_tb = 'output_caso_02'
-    )
-
-    # update progress bar
-    if (isTRUE(progress)) {
-      ndone <- ndone + temp_n
-      utils::setTxtProgressBar(pb, ndone)
-    }
-  }
-
-  ## CASE 3 --------------------------------------------------------------------
-
-  # check if we have all required inputs
-  inputs <- list(estado, municipio, logradouro, numero, bairro)
-  all_required_inputs <- !any(sapply(inputs, is.null))
-
-  if(all_required_inputs){
-
-    temp_n <- match_aggregated_cases(
-      con,
-      x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
-      output_tb = 'output_caso_03',
-      key_cols <- cols_03,
-      precision = 3L
-    )
-
-    # UPDATE input_padrao_db: Remove observations found in previous step
-    update_input_db(
-      con,
-      update_tb = 'input_padrao_db',
-      reference_tb = 'output_caso_03'
-    )
-
-    # update progress bar
-    if (isTRUE(progress)) {
-      ndone <- ndone + temp_n
-      utils::setTxtProgressBar(pb, ndone)
-    }
-  }
-
-  ## CASE 4 --------------------------------------------------------------------
-
-
-  # check if we have all required inputs
-  inputs <- list(estado, municipio, logradouro, cep, bairro)
-  all_required_inputs <- !any(sapply(inputs, is.null))
-
-  if(all_required_inputs){
-
-    temp_n <- match_aggregated_cases(
-    con,
-    x = 'input_padrao_db',
-    y = 'filtered_cnefe_cep',
-    output_tb = 'output_caso_04',
-    key_cols <- cols_04,
-    precision = 4L
-  )
-
-  # UPDATE input_padrao_db: Remove observations found in previous step
-  update_input_db(
-    con,
-    update_tb = 'input_padrao_db',
-    reference_tb = 'output_caso_04'
-  )
-
-  # update progress bar
-  if (isTRUE(progress)) {
-    ndone <- ndone + temp_n
-    utils::setTxtProgressBar(pb, ndone)
-  }
-  }
-
-
-  ## CASE 5  --------------------------------------------------------------------
-
-  # check if we have all required inputs
-  inputs <- list(estado, municipio, logradouro, numero)
-  all_required_inputs <- !any(sapply(inputs, is.null))
-
-  if(all_required_inputs){
-
-
-    temp_n <- match_aggregated_cases(
-    con,
-    x = 'input_padrao_db',
-    y = 'filtered_cnefe_cep',
-    output_tb = 'output_caso_05',
-    key_cols <- cols_05,
-    precision = 5L
-  )
-
-  # UPDATE input_padrao_db: Remove observations found in previous step
-  update_input_db(
-    con,
-    update_tb = 'input_padrao_db',
-    reference_tb = 'output_caso_05'
-  )
-
-  # update progress bar
-  if (isTRUE(progress)) {
-    ndone <- ndone + temp_n
-    utils::setTxtProgressBar(pb, ndone)
-  }
-  }
-
-
-
-  ## CASE 6  --------------------------------------------------------------------
-
-  # check if we have all required inputs
-  inputs <- list(estado, municipio, logradouro, cep)
-  all_required_inputs <- !any(sapply(inputs, is.null))
-
-  if(all_required_inputs){
-
-    temp_n <- match_aggregated_cases(
-      con,
-      x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
-      output_tb = 'output_caso_06',
-      key_cols <- cols_06,
-      precision = 6L
-    )
-
-    # UPDATE input_padrao_db: Remove observations found in previous step
-    update_input_db(
-      con,
-      update_tb = 'input_padrao_db',
-      reference_tb = 'output_caso_06'
-    )
-
-    # update progress bar
-    if (isTRUE(progress)) {
-      ndone <- ndone + temp_n
-      utils::setTxtProgressBar(pb, ndone)
-    }
-  }
-
-  ## CASE 7 --------------------------------------------------------------------
-
-  # check if we have all required inputs
-  inputs <- list(estado, municipio, logradouro, bairro)
-  all_required_inputs <- !any(sapply(inputs, is.null))
-
-  if(all_required_inputs){
-
-      temp_n <- match_aggregated_cases(
-      con,
-      x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
-      output_tb = 'output_caso_07',
-      key_cols <- cols_07,
-      precision = 7L
-    )
-
-    # UPDATE input_padrao_db: Remove observations found in previous step
-    update_input_db(
-      con,
-      update_tb = 'input_padrao_db',
-      reference_tb = 'output_caso_07'
-    )
-
-    # update progress bar
-    if (isTRUE(progress)) {
-      ndone <- ndone + temp_n
-      utils::setTxtProgressBar(pb, ndone)
-    }
-  }
-
-  ## CASE 8 --------------------------------------------------------------------
-
-
-  # check if we have all required inputs
-  inputs <- list(estado, municipio, logradouro)
-  all_required_inputs <- !any(sapply(inputs, is.null))
-
-  if(all_required_inputs){
-
-    temp_n <- match_aggregated_cases(
-      con,
-      x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
-      output_tb = 'output_caso_08',
-      key_cols <- cols_08,
-      precision = 8L
-    )
-
-    # UPDATE input_padrao_db: Remove observations found in previous step
-    update_input_db(
-      con,
-      update_tb = 'input_padrao_db',
-      reference_tb = 'output_caso_08'
-    )
-
-    # update progress bar
-    if (isTRUE(progress)) {
-      ndone <- ndone + temp_n
-      utils::setTxtProgressBar(pb, ndone)
-    }
-  }
-
-  ## CASE 9 --------------------------------------------------------------------
-
-  # check if we have all required inputs
-  inputs <- list(estado, municipio, cep, bairro)
-  all_required_inputs <- !any(sapply(inputs, is.null))
-
-  if(all_required_inputs){
-
-    temp_n <- match_aggregated_cases(
-      con,
-      x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
-      output_tb = 'output_caso_09',
-      key_cols <- cols_09,
-      precision = 9L
-    )
-
-    # UPDATE input_padrao_db: Remove observations found in previous step
-    update_input_db(
-      con,
-      update_tb = 'input_padrao_db',
-      reference_tb = 'output_caso_09'
-    )
-
-    # update progress bar
-    if (isTRUE(progress)) {
-      ndone <- ndone + temp_n
-      utils::setTxtProgressBar(pb, ndone)
-    }
-  }
-
-  ## CASE 10 --------------------------------------------------------------------
-
-  # check if we have all required inputs
-  inputs <- list(estado, municipio, cep)
-  all_required_inputs <- !any(sapply(inputs, is.null))
-
-  if(all_required_inputs){
-
-    temp_n <- match_aggregated_cases(
-      con,
-      x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
-      output_tb = 'output_caso_10',
-      key_cols <- cols_10,
-      precision = 10L
-    )
-
-    # UPDATE input_padrao_db: Remove observations found in previous step
-    update_input_db(
-      con,
-      update_tb = 'input_padrao_db',
-      reference_tb = 'output_caso_10'
-    )
-
-    # update progress bar
-    if (isTRUE(progress)) {
-      ndone <- ndone + temp_n
-      utils::setTxtProgressBar(pb, ndone)
-    }
-  }
-
-  ## CASE 11 --------------------------------------------------------------------
-
-  # check if we have all required inputs
-  inputs <- list(estado, municipio, bairro)
-  all_required_inputs <- !any(sapply(inputs, is.null))
-
-  if(all_required_inputs){
-
-    temp_n <- match_aggregated_cases(
-      con,
-      x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
-      output_tb = 'output_caso_11',
-      key_cols <- cols_11,
-      precision = 11L
-    )
-
-    # UPDATE input_padrao_db: Remove observations found in previous step
-    update_input_db(
-      con,
-      update_tb = 'input_padrao_db',
-      reference_tb = 'output_caso_11'
-    )
-
-    # update progress bar
-    if (isTRUE(progress)) {
-      ndone <- ndone + temp_n
-      utils::setTxtProgressBar(pb, ndone)
-    }
-  }
-
-  ## CASE 12 --------------------------------------------------------------------
-
-    # check if we have all required inputs
-    inputs <- list(estado, municipio)
-    all_required_inputs <- !any(sapply(inputs, is.null))
-
-    if(all_required_inputs){
-
-      temp_n <- match_aggregated_cases(
+      n_rows_affected <- DBI::dbExecute(
         con,
-        x = 'input_padrao_db',
-        y = 'filtered_cnefe_cep',
-        output_tb = 'output_caso_12',
-        key_cols <- cols_12,
-        precision = 12L
+        glue::glue(
+          "UPDATE standard_locations ",
+          "SET lat = aggregated_cnefe.lat, lon = aggregated_cnefe.lon, match_type = 'case_{formatted_case}' ",
+          "FROM ",
+          "  (SELECT {cnefe_cols}, AVG(lon) AS lon, AVG(lat) AS lat FROM filtered_cnefe GROUP BY {cnefe_cols}) AS aggregated_cnefe ",
+          "WHERE match_type IS NULL AND {join_condition}"
+        )
       )
-
-      # UPDATE input_padrao_db: Remove observations found in previous step
-      update_input_db(
-        con,
-        update_tb = 'input_padrao_db',
-        reference_tb = 'output_caso_12'
-      )
-
-      # update progress bar
-      if (isTRUE(progress)) {
-        ndone <- ndone + temp_n
-        utils::setTxtProgressBar(pb, ndone)
-        base::close(pb)
-      }
     }
+  }
 
+  if (progress) finish_progress_bar(n_rows_affected)
 
-    ## CASE 999 --------------------------------------------------------------------
-  # TO DO
-  # WHAT SHOULD BE DONE FOR CASES NOT FOUND ?
-  # AND THEIR EFFECT ON THE PROGRESS BAR
+  cols_to_keep <- names(standard_locations)
+  cols_to_keep <- cols_to_keep[!grepl("_padr$", cols_to_keep)]
+  cols_to_keep <- c(cols_to_keep, "match_type", "lon", "lat")
+  cols_to_keep <- paste(cols_to_keep, collapse = ", ")
 
-
-  # DBI::dbReadTable(con, 'input_padrao_db')
-  # DBI::dbReadTable(con, 'output_caso_01')
-
-  # DBI::dbRemoveTable(con, 'output_caso_01')
-
-
-
-
-
-  # prepare output -----------------------------------------------
-
-  # THIS NEEDS TO BE IMPROVED / optimized
-  # THIS NEEDS TO BE IMPROVED / optimized
-
-  # list all table outputs
-  all_output_tbs <- c(
-    ifelse( DBI::dbExistsTable(con, 'output_caso_01'), 'output_caso_01', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_02'), 'output_caso_02', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_03'), 'output_caso_03', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_04'), 'output_caso_04', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_05'), 'output_caso_05', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_06'), 'output_caso_06', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_07'), 'output_caso_07', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_08'), 'output_caso_08', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_09'), 'output_caso_09', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_10'), 'output_caso_10', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_11'), 'output_caso_11', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_12'), 'output_caso_12', 'empty')
+  output <- dplyr::tbl(
+    con,
+    dplyr::sql(glue::glue("SELECT {cols_to_keep} FROM standard_locations"))
   )
-  all_output_tbs <- all_output_tbs[!grepl('empty', all_output_tbs)]
+  output <- dplyr::collect(output)
 
-  # save output to db
-  output_query <- paste("CREATE TEMPORARY TABLE output_db AS",
-                        paste0("SELECT ", paste0('*', " FROM ", all_output_tbs),
-                               collapse = " UNION ALL "))
+  duckdb::dbDisconnect(con, shutdown = TRUE)
 
-  DBI::dbExecute(con, output_query)
+  return(output)
+}
 
-  # output with only ID and geocode columns
-  if (isTRUE(output_simple)) {
+assert_address_fields <- function(address_fields, addresses_table) {
+  col <- checkmate::makeAssertCollection()
+  checkmate::assert_names(
+    names(address_fields),
+    type = "unique",
+    subset.of = c(
+      "logradouro",
+      "numero",
+      "cep",
+      "bairro",
+      "municipio",
+      "estado"
+    ),
+    add = col
+  )
+  checkmate::assert_names(
+    address_fields,
+    subset.of = names(addresses_table),
+    add = col
+  )
+  checkmate::reportAssertions(col)
 
-    output_deterministic <- DBI::dbReadTable(con, 'output_db')
+  return(invisible(TRUE))
+}
+
+get_relevant_cols <- function(case) {
+  relevant_cols <- if (case == 1) {
+    c("estado_padr", "municipio_padr", "logradouro_padr", "numero_padr", "cep_padr", "bairro_padr")
+  } else if (case == 2) {
+    c("estado_padr", "municipio_padr", "logradouro_padr", "numero_padr", "cep_padr")
+  } else if (case == 3) {
+    c("estado_padr", "municipio_padr", "logradouro_padr", "numero_padr", "bairro_padr")
+  } else if (case == 4) {
+    c("estado_padr", "municipio_padr", "logradouro_padr", "cep_padr", "bairro_padr")
+  } else if (case == 5) {
+    c("estado_padr", "municipio_padr", "logradouro_padr", "numero_padr")
+  } else if (case == 6) {
+    c("estado_padr", "municipio_padr", "logradouro_padr", "cep_padr")
+  } else if (case == 7) {
+    c("estado_padr", "municipio_padr", "logradouro_padr", "bairro_padr")
+  } else if (case == 8) {
+    c("estado_padr", "municipio_padr", "logradouro_padr")
+  } else if (case == 9) {
+    c("estado_padr", "municipio_padr", "cep_padr", "bairro_padr")
+  } else if (case == 10) {
+    c("estado_padr", "municipio_padr", "cep_padr")
+  } else if (case == 11) {
+    c("estado_padr", "municipio_padr", "bairro_padr")
+  } else if (case == 12) {
+    c("estado_padr", "municipio_padr")
   }
 
-  # output with all original columns
-  if (isFALSE(output_simple)){
+  return(relevant_cols)
+}
 
-    duckdb::dbWriteTable(con, "input_padrao_db", input_padrao,
-                         temporary = TRUE, overwrite=TRUE)
+create_progress_bar <- function(standard_locations, .envir = parent.frame()) {
+  cli::cli_progress_bar(
+    total = nrow(standard_locations),
+    format = "Matched addresses: {formatC(cli::pb_current, big.mark = ',', format = 'd')}/{formatC(cli::pb_total, big.mark = ',', format = 'd')} {cli::pb_bar} {cli::pb_percent} - {cli::pb_status}",
+    clear = FALSE,
+    .envir = .envir
+  )
+}
 
-    x_columns <- names(input_padrao)
+update_progress_bar <- function(n_rows_affected,
+                                formatted_case,
+                                .envir = parent.frame()) {
+  cli::cli_progress_update(
+    inc = n_rows_affected,
+    status = glue::glue("Looking for case {formatted_case} matches"),
+    force = TRUE,
+    .envir = .envir
+  )
+}
 
-    output_deterministic <- merge_results(con,
-                    x='input_padrao_db',
-                    y='output_db',
-                    key_column='ID',
-                    select_columns = x_columns)
-
-  }
-
-  # Disconnect from DuckDB when done
-  duckdb::duckdb_unregister_arrow(con, 'cnefe')
-  duckdb::dbDisconnect(con, shutdown=TRUE)
-  gc()
-
-  # Return the result
-  return(output_deterministic)
-
-  #   # NEXT STEPS
-  #   - optimize disk and parallel operations in duckdb
-  #   - cases that matche first 7 digits of CEP
-  #   - exceptional cases (no info on municipio input)
-  #   - join probabilistico
-  #   - interpolar numeros na mesma rua
-
+finish_progress_bar <- function(n_rows_affected, .envir = parent.frame()) {
+  cli::cli_progress_update(
+    inc = n_rows_affected,
+    status = "Done!",
+    force = TRUE,
+    .envir = .envir
+  )
 }
 
