@@ -26,14 +26,6 @@ create_geocodebr_db <- function(db_path = tempdir(),
   checkmate::assert_number(ncores, null.ok = TRUE)
 
 
-  # check if CNEFE has been downloaded
-  cache_dir <- geocodebr::get_cache_dir()
-  cached_files <- list.files(cache_dir, recursive = TRUE, pattern = '.parquet')
-
-  # if (length(cached_files)==0) {
-  #   stop("No CNEFE data has been downloaded yet.")
-  #   }
-
   ## create db connection -------------------------------------------------------
 
   # remove traces of previous db
@@ -69,10 +61,6 @@ create_geocodebr_db <- function(db_path = tempdir(),
     duckdb::duckdb_unregister_arrow(con, 'cnefe')
     gc()
   }
-
-  # # Load CNEFE data and write it to DuckDB
-  # cnefe <- arrow_open_dataset(cache_dir)
-  # duckdb::duckdb_register_arrow(con, "cnefe", cnefe)
 
   return(con)
   }
