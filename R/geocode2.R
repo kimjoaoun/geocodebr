@@ -55,7 +55,10 @@ geocode2 <- function(addresses_table,
     progress = progress,
     cache = cache
   )
-  cnefe <- arrow::open_dataset(cnefe_path)
+
+  # FIXME: DAR UM JEITO NISSO
+  cnefe <- arrow::open_dataset(get_cache_dir())
+  cnefe <- dplyr::filter(cnefe, estado %in% present_states)
 
   # creating a temporary db and registering both the input table and the cnefe
   # data
@@ -97,7 +100,7 @@ geocode2 <- function(addresses_table,
     "cep_padr",          "cep",
     "bairro_padr",       "localidade",
     "municipio_padr",    "municipio",
-    "estado_padr",       "estado"         # INCLUDE, NOT IN CNEFE YET
+    "estado_padr",       "estado"
   )
 
   lookup_vector <- equivalent_colnames$cnefe
@@ -106,18 +109,18 @@ geocode2 <- function(addresses_table,
   # when merging the data, we have several different cases with different confidence
   # levels. from best to worst, they are:
   #
-  # - case 01: match municipio, logradouro, numero, cep, localidade
-  # - case 02: match municipio, logradouro, numero, cep
-  # - case 03: match municipio, logradouro, numero, localidade
-  # - case 04: match municipio, logradouro, cep, localidade
-  # - case 05: match municipio, logradouro, numero
-  # - case 06: match municipio, logradouro, cep
-  # - case 07: match municipio, logradouro, localidade
-  # - case 08: match municipio, logradouro
-  # - case 09: match municipio, cep, localidade
-  # - case 10: match municipio, cep
-  # - case 11: match municipio, localidade
-  # - case 12: match municipio
+  # - case 01: match estado, municipio, logradouro, numero, cep, localidade
+  # - case 02: match estado, municipio, logradouro, numero, cep
+  # - case 03: match estado, municipio, logradouro, numero, localidade
+  # - case 04: match estado, municipio, logradouro, cep, localidade
+  # - case 05: match estado, municipio, logradouro, numero
+  # - case 06: match estado, municipio, logradouro, cep
+  # - case 07: match estado, municipio, logradouro, localidade
+  # - case 08: match estado, municipio, logradouro
+  # - case 09: match estado, municipio, cep, localidade
+  # - case 10: match estado, municipio, cep
+  # - case 11: match estado, municipio, localidade
+  # - case 12: match estado, municipio
 
   DBI::dbExecute(con, "ALTER TABLE standard_locations ADD COLUMN match_type VARCHAR DEFAULT NULL")
   DBI::dbExecute(con, "ALTER TABLE standard_locations ADD COLUMN lon DOUBLE DEFAULT NULL")
@@ -128,8 +131,7 @@ geocode2 <- function(addresses_table,
     n_rows_affected <- 0
   }
 
-
-  for (case in 1:12) {
+  for (case in c(1, 2, 4:11)) {
     relevant_cols <- get_relevant_cols(case)
     formatted_case <- formatC(case, width = 2, flag = "0")
 
@@ -202,29 +204,29 @@ assert_address_fields <- function(address_fields, addresses_table) {
 
 get_relevant_cols <- function(case) {
   relevant_cols <- if (case == 1) {
-    c("municipio_padr", "logradouro_padr", "numero_padr", "cep_padr", "bairro_padr")
+    c("estado_padr", "municipio_padr", "logradouro_padr", "numero_padr", "cep_padr", "bairro_padr")
   } else if (case == 2) {
-    c("municipio_padr", "logradouro_padr", "numero_padr", "cep_padr")
+    c("estado_padr", "municipio_padr", "logradouro_padr", "numero_padr", "cep_padr")
   } else if (case == 3) {
-    c("municipio_padr", "logradouro_padr", "numero_padr", "bairro_padr")
+    c("estado_padr", "municipio_padr", "logradouro_padr", "numero_padr", "bairro_padr")
   } else if (case == 4) {
-    c("municipio_padr", "logradouro_padr", "cep_padr", "bairro_padr")
+    c("estado_padr", "municipio_padr", "logradouro_padr", "cep_padr", "bairro_padr")
   } else if (case == 5) {
-    c("municipio_padr", "logradouro_padr", "numero_padr")
+    c("estado_padr", "municipio_padr", "logradouro_padr", "numero_padr")
   } else if (case == 6) {
-    c("municipio_padr", "logradouro_padr", "cep_padr")
+    c("estado_padr", "municipio_padr", "logradouro_padr", "cep_padr")
   } else if (case == 7) {
-    c("municipio_padr", "logradouro_padr", "bairro_padr")
+    c("estado_padr", "municipio_padr", "logradouro_padr", "bairro_padr")
   } else if (case == 8) {
-    c("municipio_padr", "logradouro_padr")
+    c("estado_padr", "municipio_padr", "logradouro_padr")
   } else if (case == 9) {
-    c("municipio_padr", "cep_padr", "bairro_padr")
+    c("estado_padr", "municipio_padr", "cep_padr", "bairro_padr")
   } else if (case == 10) {
-    c("municipio_padr", "cep_padr")
+    c("estado_padr", "municipio_padr", "cep_padr")
   } else if (case == 11) {
-    c("municipio_padr", "bairro_padr")
+    c("estado_padr", "municipio_padr", "bairro_padr")
   } else if (case == 12) {
-    c("municipio_padr")
+    c("estado_padr", "municipio_padr")
   }
 
   return(relevant_cols)
