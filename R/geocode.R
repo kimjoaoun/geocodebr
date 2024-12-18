@@ -628,11 +628,13 @@ geocode <- function(input_table,
     duckdb::dbWriteTable(con, "input_padrao_db", input_padrao,
                          temporary = TRUE, overwrite=TRUE)
 
+    x_columns <- names(input_padrao)
+
     output_deterministic <- merge_results(con,
                     x='input_padrao_db',
                     y='output_db',
                     key_column='ID',
-                    select_columns = "*")
+                    select_columns = x_columns)
 
   }
 
