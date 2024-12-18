@@ -23,7 +23,7 @@ it locally so that the data only needs to be download once. If \code{FALSE},
 the function will download the data again and overwrite the local files.}
 }
 \value{
-A directory path where the data was saved.
+Invisibly returns the path to the file where the data was saved.
 }
 \description{
 Downloads an enriched version of the CNEFE (National Registry of Addresses

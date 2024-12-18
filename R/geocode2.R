@@ -48,15 +48,10 @@ geocode2 <- function(addresses_table,
   # include only the municipalities present in the input table, reducing the
   # search scope and consequently reducing processing time and memory usage
 
+  download_cnefe(present_states, progress = progress, cache = cache)
+
   present_states <- unique(standard_locations$estado_padr)
 
-  cnefe_path <- download_cnefe(
-    present_states,
-    progress = progress,
-    cache = cache
-  )
-
-  # FIXME: DAR UM JEITO NISSO
   cnefe <- arrow::open_dataset(get_cache_dir())
   cnefe <- dplyr::filter(cnefe, estado %in% present_states)
 
