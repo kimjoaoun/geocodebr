@@ -74,6 +74,8 @@ geocode <- function(addresses_table,
                     n_cores = 1,
                     progress = TRUE,
                     cache = TRUE) {
+
+  # check input
   assert_address_fields(address_fields, addresses_table)
   checkmate::assert_data_frame(addresses_table)
   checkmate::assert_number(n_cores, lower = 1, finite = TRUE)
@@ -82,6 +84,8 @@ geocode <- function(addresses_table,
 
   # standardizing the addresses table to increase the chances of finding a match
   # in the CNEFE data
+
+  message("Standardizing input addresses")
 
   standard_locations <- enderecobr::padronizar_enderecos(
     addresses_table,
@@ -136,6 +140,8 @@ geocode <- function(addresses_table,
   # cnefe data. the column names used in the input table are different than the
   # ones used in cnefe, so we create a helper object to "translate" the column
   # names between datasets
+
+  message("Finding spatial coordinates")
 
   equivalent_colnames <- tibble::tribble(
     ~standard_locations, ~cnefe,

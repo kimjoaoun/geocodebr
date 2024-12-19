@@ -61,6 +61,8 @@ geocode_rafa <- function(input_table,
 
   # normalize input data -------------------------------------------------------
 
+  message("Standardizing input addresses")
+
   # correspondence of column names
   campos <- enderecobr::correspondencia_campos(
     logradouro = logradouro,
@@ -132,6 +134,8 @@ geocode_rafa <- function(input_table,
 
 
   # START DETERMINISTIC MATCHING -----------------------------------------------
+
+  message("Finding spatial coordinates")
 
   # - case 01: match municipio, logradouro, numero, cep, localidade
   # - case 02: match municipio, logradouro, numero, cep
