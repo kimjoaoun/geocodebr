@@ -4,9 +4,14 @@
 #'
 #' @importFrom dplyr mutate select across case_when all_of
 #' @importFrom data.table := .I .SD %chin% .GRP .N %like%
+#' @importFrom tools R_user_dir
 #'
 #' @keywords internal
 "_PACKAGE"
+
+# tools is a build-time dependency. if we don't importFrom tools here, R CMD
+# check complains:
+#   Namespace in Imports field not imported from: 'tools'
 
 data_release <- "v0.1.0"
 
