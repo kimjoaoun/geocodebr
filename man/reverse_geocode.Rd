@@ -2,25 +2,22 @@
 % Please edit documentation in R/reverse_geocode.R
 \name{reverse_geocode}
 \alias{reverse_geocode}
-\title{Reverse geocoding coordinates based on CNEFE data}
+\title{Reverse geocoding coordinates in Brazil based on CNEFE data}
 \usage{
-reverse_geocode(input_table, progress = TRUE, ncores = NULL, cache = TRUE)
+reverse_geocode(input_table, n_cores = 1, progress = TRUE, cache = TRUE)
 }
 \arguments{
-\item{input_table}{A data frame. It must contain the columns \code{'id'}, \code{'lon'}, \code{'lat'}}
+\item{input_table}{A data frame. It must contain the columns \code{'id'},  \code{'lat'}, \code{'lon'}.}
 
-\item{progress}{Logical. Defaults to \code{TRUE} display the progress bar.
-This includes both the progress bar of downloading CNEFE as well as of
-processing data records.}
+\item{n_cores}{A number. The number of cores to be used in parallel
+execution. Defaults to 1.}
 
-\item{ncores}{Numeric. The number of cores to be used in parallel execution.
-Defaults to the number of available cores minus 1.}
+\item{progress}{A logical. Whether to display progress bars when downloading
+CNEFE data and when geocoding the addresses. Defaults to \code{TRUE}.}
 
-\item{cache}{Logical. Whether the function should read the data cached
-locally, which is much faster. Defaults to \code{TRUE}. The first time the
-user runs the function, \code{geocodebr} will download CNEFE data and store
-it locally so that the data only needs to be download once. If \code{FALSE},
-the function will download the data again and overwrite the local files.}
+\item{cache}{A logical. Whether CNEFE data should be save to/read from cache,
+reducing processing time in future calls. Defaults to \code{TRUE}. When \code{FALSE},
+CNEFE data is downloaded to a temporary directory.}
 }
 \value{
 A \code{"data.frame"} object.
@@ -28,8 +25,8 @@ A \code{"data.frame"} object.
 \description{
 Takes a data frame containing coordinates (latitude and longitude) and
 returns  the address in CNEFE that is the closest to the input coordinates.
-Latitude and longitude inputs are limited to possible values. Latitudes must
-be between -90 and 90 and longitudes must be between -180 and 180.
+Latitude and longitude inputs are limited to possible values within the
+bounding box of Brazil.
 }
 \examples{
 \dontshow{if (identical(tolower(Sys.getenv("NOT_CRAN")), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
@@ -42,10 +39,10 @@ df_coords <- data.frame(
 )
 
 # reverse geocode
-# df_addresses <- geocodebr::reverse_geocode(
-#   input_table = df_coords,
-#   progress = TRUE
-#   )
+df_addresses <- geocodebr::reverse_geocode(
+  input_table = df_coords,
+  progress = TRUE
+  )
 \dontshow{\}) # examplesIf}
 }
 \concept{Reverse geocoding}
