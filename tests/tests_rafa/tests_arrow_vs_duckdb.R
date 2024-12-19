@@ -148,3 +148,44 @@ query_aggregate_and_match <- sprintf(
 
 
 
+rafa <- function(){
+  df_duck_rafa <- geocode(
+    input_table = input_df,
+    logradouro = "nm_logradouro",
+    numero = "Numero",
+    complemento = "Complemento",
+    cep = "Cep",
+    bairro = "Bairro",
+    municipio = "nm_municipio",
+    estado = "nm_uf",
+    output_simple = F,
+    ncores=7,
+    progress = T
+  )
+  }
+
+  dani <- function(){
+    fields <- geocodebr::setup_address_fields(
+    logradouro = 'nm_logradouro',
+    numero = 'Numero',
+    complemento = 'Complemento',
+    cep = 'Cep',
+    bairro = 'Bairro',
+    municipio = 'nm_municipio',
+    estado = 'nm_uf'
+  )
+
+
+  df_duck_dani <- geocodebr:::geocode2(
+    addresses_table = input_df,
+    address_fields = fields,
+    n_cores = 7,
+    progress = T
+  )
+  }
+
+  microbenchmark::microbenchmark(dani = dani(),
+                                 rafa = rafa(),
+                                 times = 10
+  )
+
