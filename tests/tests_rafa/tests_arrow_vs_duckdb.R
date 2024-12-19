@@ -52,7 +52,6 @@ tictoc::tic()
 fields <- geocodebr::setup_address_fields(
   logradouro = 'nm_logradouro',
   numero = 'Numero',
-  complemento = 'Complemento',
   cep = 'Cep',
   bairro = 'Bairro',
   municipio = 'nm_municipio',
@@ -60,7 +59,7 @@ fields <- geocodebr::setup_address_fields(
   )
 
 
-df_duck_dani <- geocodebr:::geocode2(
+df_duck_dani <- geocodebr:::geocode(
   addresses_table = input_df,
   address_fields = fields,
   n_cores = 7,
@@ -71,11 +70,10 @@ tictoc::toc()
 
 
 tictoc::tic()
-df_duck_rafa <- geocode(
+df_duck_rafa <- geocodebr:::geocode_rafa(
   input_table = input_df,
   logradouro = "nm_logradouro",
   numero = "Numero",
-  complemento = "Complemento",
   cep = "Cep",
   bairro = "Bairro",
   municipio = "nm_municipio",

@@ -7,13 +7,12 @@
 #' @param input_table A data frame.
 #' @param logradouro A string.
 #' @param numero A string.
-#' @param complemento A string.
 #' @param cep A string.
 #' @param bairro A string.
 #' @param municipio A string.
 #' @param estado A string.
 #' @param output_simple Logic. Defaults to `TRUE`
-#' @template ncores
+#' @template n_cores
 #' @template progress
 #' @template cache
 #'
@@ -30,7 +29,6 @@
 #' #   input_table = input_df,
 #' #   logradouro = "nm_logradouro",
 #' #   numero = "Numero",
-#' #   complemento = "Complemento",
 #' #   cep = "Cep",
 #' #   bairro = "Bairro",
 #' #   municipio = "nm_municipio",
@@ -40,7 +38,6 @@
 geocode_rafa <- function(input_table,
                          logradouro = NULL,
                          numero = NULL,
-                         complemento = NULL,
                          cep = NULL,
                          bairro = NULL,
                          municipio = NULL,
@@ -68,7 +65,6 @@ geocode_rafa <- function(input_table,
   campos <- enderecobr::correspondencia_campos(
     logradouro = logradouro,
     numero = numero,
-    complemento = complemento,
     cep = cep,
     bairro = bairro,
     municipio = municipio,
@@ -115,17 +111,6 @@ geocode_rafa <- function(input_table,
   # check if download worked
   if (isFALSE(download_success)) { return(invisible(NULL)) }
 
-  # Load CNEFE data and write to DuckDB
-  cnefe <- arrow_open_dataset(geocodebr::get_cache_dir())
-  duckdb::duckdb_register_arrow(con, "cnefe", cnefe)
-
-  # # # more than 2x SLOWER
-  # # dir <- fs::path(geocodebr_env$cache_dir, "/**/*.parquet")
-  # # DBI::dbExecute(con,
-  # #           sprintf("CREATE VIEW cnefe AS SELECT * FROM read_parquet('%s')",
-  # #                   dir))
-  #
-  # ##  DBI::dbRemoveTable(con, 'cnefe')
 
 
   # Narrow search scope in cnefe to municipalities and zip codes present in input
@@ -137,15 +122,12 @@ geocode_rafa <- function(input_table,
   input_municipio <- input_municipio[!is.na(input_municipio)]
   if(is.null(input_municipio)){ input_municipio <- "*"}
 
-  query_filter_cnefe_municipios <- sprintf("
-  CREATE TEMPORARY TABLE filtered_cnefe_cep AS
-  SELECT * FROM cnefe
-  WHERE municipio IN ('%s')",
-                             paste(input_municipio, collapse = "', '")
-  )
+  # Load CNEFE data and write to DuckDB
+  filtered_cnefe <- arrow_open_dataset(geocodebr::get_cache_dir()) |>
+    dplyr::filter(municipio %in% input_municipio) |>
+    dplyr::compute()
 
-  DBI::dbExecute(con, query_filter_cnefe_municipios)
-  # duckdb::dbSendQuery(con, query_filter_cnefe_municipios)
+  duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
 
 
   # START DETERMINISTIC MATCHING -----------------------------------------------
@@ -200,7 +182,7 @@ geocode_rafa <- function(input_table,
     temp_n <- match_aggregated_cases(
       con,
       x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
+      y = 'filtered_cnefe',
       output_tb = 'output_caso_01',
       key_cols <- cols_01,
       precision = 1L
@@ -234,7 +216,7 @@ geocode_rafa <- function(input_table,
     temp_n <- match_aggregated_cases(
       con,
       x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
+      y = 'filtered_cnefe',
       output_tb = 'output_caso_02',
       key_cols <- cols_02,
       precision = 2L
@@ -265,7 +247,7 @@ geocode_rafa <- function(input_table,
     temp_n <- match_aggregated_cases(
       con,
       x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
+      y = 'filtered_cnefe',
       output_tb = 'output_caso_03',
       key_cols <- cols_03,
       precision = 3L
@@ -297,7 +279,7 @@ geocode_rafa <- function(input_table,
     temp_n <- match_aggregated_cases(
     con,
     x = 'input_padrao_db',
-    y = 'filtered_cnefe_cep',
+    y = 'filtered_cnefe',
     output_tb = 'output_caso_04',
     key_cols <- cols_04,
     precision = 4L
@@ -330,7 +312,7 @@ geocode_rafa <- function(input_table,
     temp_n <- match_aggregated_cases(
     con,
     x = 'input_padrao_db',
-    y = 'filtered_cnefe_cep',
+    y = 'filtered_cnefe',
     output_tb = 'output_caso_05',
     key_cols <- cols_05,
     precision = 5L
@@ -363,7 +345,7 @@ geocode_rafa <- function(input_table,
     temp_n <- match_aggregated_cases(
       con,
       x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
+      y = 'filtered_cnefe',
       output_tb = 'output_caso_06',
       key_cols <- cols_06,
       precision = 6L
@@ -394,7 +376,7 @@ geocode_rafa <- function(input_table,
       temp_n <- match_aggregated_cases(
       con,
       x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
+      y = 'filtered_cnefe',
       output_tb = 'output_caso_07',
       key_cols <- cols_07,
       precision = 7L
@@ -426,7 +408,7 @@ geocode_rafa <- function(input_table,
     temp_n <- match_aggregated_cases(
       con,
       x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
+      y = 'filtered_cnefe',
       output_tb = 'output_caso_08',
       key_cols <- cols_08,
       precision = 8L
@@ -457,7 +439,7 @@ geocode_rafa <- function(input_table,
     temp_n <- match_aggregated_cases(
       con,
       x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
+      y = 'filtered_cnefe',
       output_tb = 'output_caso_09',
       key_cols <- cols_09,
       precision = 9L
@@ -488,7 +470,7 @@ geocode_rafa <- function(input_table,
     temp_n <- match_aggregated_cases(
       con,
       x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
+      y = 'filtered_cnefe',
       output_tb = 'output_caso_10',
       key_cols <- cols_10,
       precision = 10L
@@ -519,7 +501,7 @@ geocode_rafa <- function(input_table,
     temp_n <- match_aggregated_cases(
       con,
       x = 'input_padrao_db',
-      y = 'filtered_cnefe_cep',
+      y = 'filtered_cnefe',
       output_tb = 'output_caso_11',
       key_cols <- cols_11,
       precision = 11L
@@ -550,7 +532,7 @@ geocode_rafa <- function(input_table,
       temp_n <- match_aggregated_cases(
         con,
         x = 'input_padrao_db',
-        y = 'filtered_cnefe_cep',
+        y = 'filtered_cnefe',
         output_tb = 'output_caso_12',
         key_cols <- cols_12,
         precision = 12L
@@ -626,7 +608,7 @@ geocode_rafa <- function(input_table,
   if (isFALSE(output_simple)){
 
     duckdb::dbWriteTable(con, "input_padrao_db", input_padrao,
-                         temporary = TRUE, overwrite=TRUE)
+                        temporary = TRUE, overwrite=TRUE)
 
     x_columns <- names(input_padrao)
 

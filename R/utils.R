@@ -160,15 +160,12 @@ add_precision_col <- function(con, update_tb = NULL, precision = NULL){
   # update_tb = "output_caso_01"
   # precision = 1L
 
-  # create empty column
-  DBI::dbExecute(con,
-                 sprintf("ALTER TABLE %s ADD COLUMN precision INTEGER", update_tb)
-  )
-
-
-  DBI::dbExecute(con,
-                 sprintf("UPDATE %s SET precision = %s", update_tb, precision)
-                 )
+  DBI::dbExecute(
+    con,
+    glue::glue(
+      "ALTER TABLE {update_tb} ADD COLUMN precision INTEGER DEFAULT {precision}"
+      )
+    )
 }
 
 
