@@ -49,7 +49,7 @@ reverse_geocode <- function(input_table,
   # prep input -------------------------------------------------------
 
   # 1 degree of latitude is always 111111.1 meters
-  # 1 degree of longitude is  111111.1 * lon * cos(lat)
+  # 1 degree of longitude is  111111.1 * cos(lat)
 
   # create a small range around coordinates
   margin <- 0.001 # 0.0001
@@ -78,7 +78,7 @@ reverse_geocode <- function(input_table,
 
   # download cnefe  -------------------------------------------------------
 
-  download_cnefe(state = c("all"), progress = progress)
+  download_cnefe(state = "all", progress = progress)
 
 
   # create db connection -------------------------------------------------------
