@@ -2,7 +2,8 @@
 #'
 #' Geocodes Brazilian addresses based on CNEFE data. Addresses must be passed as
 #' a data frame in which each column describes one address field (street name,
-#' street number, neighborhood, etc).
+#' street number, neighborhood, etc). The input addresses are macthed with CNEFE
+#' following 12 different case patterns. See more info in the Details section.
 #'
 #' @param addresses_table A data frame. The addresses to be geocoded. Each
 #'   column must represent an address field.
@@ -14,34 +15,58 @@
 #'   non-null field. If manually creating the vector, please note that the
 #'   vector names should be the same names used in the [setup_address_fields()]
 #'   parameters.
-#' @param n_cores A number. The number of cores to be used in parallel
-#'   execution. Defaults to 1.
-#' @param progress A logical. Whether to display progress bars when downloading
-#'   CNEFE data and when geocoding the addresses. Defaults to `TRUE`.
-#' @param cache A logical. Whether CNEFE data should be save to/read from cache,
-#'   reducing processing time in future calls. Defaults to `TRUE`. When `FALSE`,
-#'   CNEFE data is downloaded to a temporary directory.
+#' @template n_cores
+#' @template progress
+#' @template cache
 #'
-#' @return Returns the data frame passed in `addresses_table` including columns
-#'   with the latitude and the longitude of each matched address, as well as
-#'   another column describing how the address was matched.
+#' @return Returns the data frame passed in `addresses_table` with the following
+#'   added columns: the latitude and longitude of each matched address, as well
+#'   as another column describing how the address was matched.
+#'
+#' @section Match type:
+#'
+#' The input addresses are deterministacally macthed with CNEFE following 12
+#' different case patterns, which are indicated in the output with the
+#' `match_type` column. In all cases, geocodebr calculates de average latitude
+#' and average longitude of all addresses in CNEFE that match the input address.
+#' The difference between the 12 match types is which columns are matched.
+#'
+#' - case 01: match estado, municipio, logradouro, numero, cep, bairro
+#' - case 02: match estado, municipio, logradouro, numero, cep
+#' - case 03: match estado, municipio, logradouro, numero, bairro
+#' - case 04: match estado, municipio, logradouro, cep, bairro
+#' - case 05: match estado, municipio, logradouro, numero
+#' - case 06: match estado, municipio, logradouro, cep
+#' - case 07: match estado, municipio, logradouro, bairro
+#' - case 08: match estado, municipio, logradouro
+#' - case 09: match estado, municipio, cep, bairro
+#' - case 10: match estado, municipio, cep
+#' - case 11: match estado, municipio, bairro
+#' - case 12: match estado, municipio
 #'
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 #'
-#' # open input data
+#' # open example of input data
 #' data_path <- system.file("extdata/sample_1.csv", package = "geocodebr")
 #' input_df <- read.csv(data_path)
 #'
-#' # df <- geocodebr::geocode(
-#' #   input_table = input_df,
-#' #   logradouro = "nm_logradouro",
-#' #   numero = "Numero",
-#' #   complemento = "Complemento",
-#' #   cep = "Cep",
-#' #   bairro = "Bairro",
-#' #   municipio = "nm_municipio",
-#' #   estado = "nm_uf"
-#' #   )
+#' # declare name of columns
+#' fields <- geocodebr::setup_address_fields(
+#'   logradouro = 'nm_logradouro',
+#'   numero = 'Numero',
+#'   cep = 'Cep',
+#'   bairro = 'Bairro',
+#'   municipio = 'nm_municipio',
+#'   estado = 'nm_uf'
+#' )
+#'
+#' # geocode
+#' df <- geocodebr:::geocode(
+#'   addresses_table = input_df,
+#'   address_fields = fields,
+#'   n_cores = 1,
+#'   progress = TRUE
+#' )
 #'
 geocode <- function(addresses_table,
                     address_fields = setup_address_fields(),
@@ -75,9 +100,9 @@ geocode <- function(addresses_table,
   # include only the municipalities present in the input table, reducing the
   # search scope and consequently reducing processing time and memory usage
 
+  present_states <- unique(standard_locations$estado_padr)
   download_cnefe(present_states, progress = progress, cache = cache)
 
-  present_states <- unique(standard_locations$estado_padr)
 
   cnefe <- arrow::open_dataset(get_cache_dir())
   cnefe <- dplyr::filter(cnefe, estado %in% present_states)

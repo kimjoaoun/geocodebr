@@ -16,11 +16,9 @@ District).}
 \item{progress}{A logical. Whether to display a download progress bar.
 Defaults to \code{TRUE}.}
 
-\item{cache}{Logical. Whether the function should read the data cached
-locally, which is much faster. Defaults to \code{TRUE}. The first time the
-user runs the function, \code{geocodebr} will download CNEFE data and store
-it locally so that the data only needs to be download once. If \code{FALSE},
-the function will download the data again and overwrite the local files.}
+\item{cache}{A logical. Whether CNEFE data should be save to/read from cache,
+reducing processing time in future calls. Defaults to \code{TRUE}. When \code{FALSE},
+CNEFE data is downloaded to a temporary directory.}
 }
 \value{
 Invisibly returns the path to the file where the data was saved.

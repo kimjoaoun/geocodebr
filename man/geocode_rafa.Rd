@@ -8,7 +8,6 @@ geocode_rafa(
   input_table,
   logradouro = NULL,
   numero = NULL,
-  complemento = NULL,
   cep = NULL,
   bairro = NULL,
   municipio = NULL,
@@ -26,8 +25,6 @@ geocode_rafa(
 
 \item{numero}{A string.}
 
-\item{complemento}{A string.}
-
 \item{cep}{A string.}
 
 \item{bairro}{A string.}
@@ -36,20 +33,17 @@ geocode_rafa(
 
 \item{estado}{A string.}
 
-\item{progress}{Logical. Defaults to \code{TRUE} display the progress bar.
-This includes both the progress bar of downloading CNEFE as well as of
-processing data records.}
+\item{progress}{A logical. Whether to display progress bars when downloading
+CNEFE data and when geocoding the addresses. Defaults to \code{TRUE}.}
 
 \item{output_simple}{Logic. Defaults to \code{TRUE}}
 
-\item{ncores}{Numeric. The number of cores to be used in parallel execution.
-Defaults to the number of available cores minus 1.}
+\item{cache}{A logical. Whether CNEFE data should be save to/read from cache,
+reducing processing time in future calls. Defaults to \code{TRUE}. When \code{FALSE},
+CNEFE data is downloaded to a temporary directory.}
 
-\item{cache}{Logical. Whether the function should read the data cached
-locally, which is much faster. Defaults to \code{TRUE}. The first time the
-user runs the function, \code{geocodebr} will download CNEFE data and store
-it locally so that the data only needs to be download once. If \code{FALSE},
-the function will download the data again and overwrite the local files.}
+\item{n_cores}{A number. The number of cores to be used in parallel
+execution. Defaults to 1.}
 }
 \value{
 An arrow \code{Dataset} or a \code{"data.frame"} object.
@@ -69,7 +63,6 @@ input_df <- read.csv(data_path)
 #   input_table = input_df,
 #   logradouro = "nm_logradouro",
 #   numero = "Numero",
-#   complemento = "Complemento",
 #   cep = "Cep",
 #   bairro = "Bairro",
 #   municipio = "nm_municipio",

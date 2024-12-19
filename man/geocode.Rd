@@ -36,31 +36,63 @@ reducing processing time in future calls. Defaults to \code{TRUE}. When \code{FA
 CNEFE data is downloaded to a temporary directory.}
 }
 \value{
-Returns the data frame passed in \code{addresses_table} including columns
-with the latitude and the longitude of each matched address, as well as
-another column describing how the address was matched.
+Returns the data frame passed in \code{addresses_table} with the following
+added columns: the latitude and longitude of each matched address, as well
+as another column describing how the address was matched.
 }
 \description{
 Geocodes Brazilian addresses based on CNEFE data. Addresses must be passed as
 a data frame in which each column describes one address field (street name,
-street number, neighborhood, etc).
+street number, neighborhood, etc). The input addresses are macthed with CNEFE
+following 12 different case patterns. See more info in the Details section.
 }
+\section{Match type}{
+
+
+The input addresses are deterministacally macthed with CNEFE following 12
+different case patterns, which are indicated in the output with the
+\code{match_type} column. In all cases, geocodebr calculates de average latitude
+and average longitude of all addresses in CNEFE that match the input address.
+The difference between the 12 match types is which columns are matched.
+\itemize{
+\item case 01: match estado, municipio, logradouro, numero, cep, bairro
+\item case 02: match estado, municipio, logradouro, numero, cep
+\item case 03: match estado, municipio, logradouro, numero, bairro
+\item case 04: match estado, municipio, logradouro, cep, bairro
+\item case 05: match estado, municipio, logradouro, numero
+\item case 06: match estado, municipio, logradouro, cep
+\item case 07: match estado, municipio, logradouro, bairro
+\item case 08: match estado, municipio, logradouro
+\item case 09: match estado, municipio, cep, bairro
+\item case 10: match estado, municipio, cep
+\item case 11: match estado, municipio, bairro
+\item case 12: match estado, municipio
+}
+}
+
 \examples{
 \dontshow{if (identical(tolower(Sys.getenv("NOT_CRAN")), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 
-# open input data
+# open example of input data
 data_path <- system.file("extdata/sample_1.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
 
-# df <- geocodebr::geocode(
-#   input_table = input_df,
-#   logradouro = "nm_logradouro",
-#   numero = "Numero",
-#   complemento = "Complemento",
-#   cep = "Cep",
-#   bairro = "Bairro",
-#   municipio = "nm_municipio",
-#   estado = "nm_uf"
-#   )
+# declare name of columns
+fields <- geocodebr::setup_address_fields(
+  logradouro = 'nm_logradouro',
+  numero = 'Numero',
+  cep = 'Cep',
+  bairro = 'Bairro',
+  municipio = 'nm_municipio',
+  estado = 'nm_uf'
+)
+
+# geocode
+df <- geocodebr:::geocode(
+  addresses_table = input_df,
+  address_fields = fields,
+  n_cores = 1,
+  progress = TRUE
+)
 \dontshow{\}) # examplesIf}
 }
