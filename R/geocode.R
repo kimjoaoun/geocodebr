@@ -97,19 +97,14 @@ geocode <- function(addresses_table,
   )
 
   # downloading cnefe. we only need to download the states present in the
-  # addresses table, which may save us some time. we also subset cnefe to
-  # include only the municipalities present in the input table, reducing the
-  # search scope and consequently reducing processing time and memory usage
+  # addresses table, which may save us some time.
 
   present_states <- unique(standard_locations$estado_padr)
   download_cnefe(present_states, progress = progress, cache = cache)
 
 
-  cnefe <- arrow::open_dataset(get_cache_dir())
-  cnefe <- dplyr::filter(cnefe, estado %in% present_states)
 
-  # creating a temporary db and registering both the input table and the cnefe
-  # data
+  # creating a temporary db and register the input table data
 
   tmpdb <- tempfile(fileext = ".duckdb")
   con <- duckdb::dbConnect(duckdb::duckdb(), dbdir = tmpdb)
@@ -123,17 +118,19 @@ geocode <- function(addresses_table,
     temporary = TRUE
   )
 
-  unique_muns <- unique(standard_locations$municipio_padr)
-  muns_list <- paste(glue::glue("'{unique_muns}'"), collapse = ", ")
+  # register cnefe data to db but only include states and municipalities
+  # present in the input table, reducing the search scope and
+  # consequently reducing processing time and memory usage
 
-  duckdb::duckdb_register_arrow(con, "cnefe", cnefe)
-  DBI::dbExecute(
-    con,
-    glue::glue(
-      "CREATE OR REPLACE VIEW filtered_cnefe AS ",
-      "SELECT * FROM cnefe WHERE municipio IN ({muns_list})"
-    )
-  )
+  unique_muns <- unique(standard_locations$municipio_padr)
+
+  filtered_cnefe <- arrow::open_dataset(get_cache_dir()) |>
+    dplyr::filter(estado %in% present_states) |>
+    dplyr::filter(municipio %in% unique_muns) |>
+    dplyr::compute()
+
+  duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
+
 
   # to find the coordinates of the addresses, we merge the input table with the
   # cnefe data. the column names used in the input table are different than the

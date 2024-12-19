@@ -96,7 +96,7 @@ geocode_rafa <- function(input_table,
 
   # Convert input data frame to DuckDB table
   duckdb::dbWriteTable(con, "input_padrao_db", input_padrao,
-                       temporary = TRUE, overwrite=TRUE)
+                       temporary = TRUE)
 
   input_states <- unique(input_padrao$estado)
 
@@ -123,7 +123,8 @@ geocode_rafa <- function(input_table,
   if(is.null(input_municipio)){ input_municipio <- "*"}
 
   # Load CNEFE data and write to DuckDB
-  filtered_cnefe <- arrow_open_dataset(geocodebr::get_cache_dir()) |>
+  filtered_cnefe <- arrow::open_dataset(get_cache_dir()) |>
+    dplyr::filter(estado %in% input_states) |>
     dplyr::filter(municipio %in% input_municipio) |>
     dplyr::compute()
 

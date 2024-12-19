@@ -58,7 +58,6 @@ fields <- geocodebr::setup_address_fields(
   estado = 'nm_uf'
   )
 
-
 df_duck_dani <- geocodebr:::geocode(
   addresses_table = input_df,
   address_fields = fields,
@@ -79,7 +78,7 @@ df_duck_rafa <- geocodebr:::geocode_rafa(
   municipio = "nm_municipio",
   estado = "nm_uf",
   output_simple = F,
-  ncores=7,
+  n_cores=7,
   progress = T
 )
 tictoc::toc()
@@ -147,17 +146,16 @@ query_aggregate_and_match <- sprintf(
 
 
 rafa <- function(){
-  df_duck_rafa <- geocode(
+  df_duck_rafa <- geocodebr:::geocode_rafa(
     input_table = input_df,
     logradouro = "nm_logradouro",
     numero = "Numero",
-    complemento = "Complemento",
     cep = "Cep",
     bairro = "Bairro",
     municipio = "nm_municipio",
     estado = "nm_uf",
     output_simple = F,
-    ncores=7,
+    n_cores=7,
     progress = T
   )
   }
@@ -166,7 +164,6 @@ rafa <- function(){
     fields <- geocodebr::setup_address_fields(
     logradouro = 'nm_logradouro',
     numero = 'Numero',
-    complemento = 'Complemento',
     cep = 'Cep',
     bairro = 'Bairro',
     municipio = 'nm_municipio',
@@ -174,7 +171,7 @@ rafa <- function(){
   )
 
 
-  df_duck_dani <- geocodebr:::geocode2(
+df_duck_dani <- geocodebr:::geocode(
     addresses_table = input_df,
     address_fields = fields,
     n_cores = 7,
