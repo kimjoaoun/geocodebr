@@ -16,9 +16,9 @@ District).}
 \item{progress}{A logical. Whether to display a download progress bar.
 Defaults to \code{TRUE}.}
 
-\item{cache}{A logical. Whether CNEFE data should be save to/read from cache,
-reducing processing time in future calls. Defaults to \code{TRUE}. When \code{FALSE},
-CNEFE data is downloaded to a temporary directory.}
+\item{cache}{A logical. Whether CNEFE data should be saved to/read from
+cache, reducing processing time in future calls. Defaults to \code{TRUE}. When
+\code{FALSE}, CNEFE data is downloaded to a temporary directory.}
 }
 \value{
 Invisibly returns the path to the file where the data was saved.
