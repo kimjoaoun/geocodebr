@@ -178,7 +178,7 @@ geocode <- function(addresses_table,
     n_rows_affected <- 0
   }
 
-  for (case in c(1, 2, 4:11)) {
+  for (case in 1:12) {
     relevant_cols <- get_relevant_cols(case)
     formatted_case <- formatC(case, width = 2, flag = "0")
 
