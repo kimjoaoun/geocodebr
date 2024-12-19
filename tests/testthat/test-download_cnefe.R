@@ -15,31 +15,18 @@ test_that("errors with incorrect input", {
   expect_error(tester(cache = c(TRUE, TRUE)))
 })
 
-test_that("returns the path to the downloaded files", {
+test_that("returns the path to the directory where the files were saved", {
   result <- tester("AL")
-  expect_identical(
-    result,
-    file.path(get_cache_dir(), "estado=AL/part-0.parquet")
-  )
-
-  states <- c("AC", "AL")
-  result <- tester(states)
-  expect_identical(
-    result,
-    file.path(get_cache_dir(), glue::glue("estado={states}/part-0.parquet"))
-  )
+  expect_identical(result, file.path(get_cache_dir()))
 })
 
 test_that("cache usage is controlled by the cache argument", {
   result <- tester("AL", cache = TRUE)
-  expect_identical(
-    result,
-    file.path(get_cache_dir(), "estado=AL/part-0.parquet")
-  )
+  expect_identical(result, file.path(get_cache_dir()))
 
   result <- tester("AL", cache = FALSE)
   expect_true(
-    grepl(fs::path(fs::path_norm(tempdir()), "standardized_cnefe"), result)
+    grepl(file.path(fs::path_norm(tempdir()), "standardized_cnefe"), result)
   )
 })
 

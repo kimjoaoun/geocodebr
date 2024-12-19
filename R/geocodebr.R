@@ -23,6 +23,6 @@ cache_config_file <- fs::path(
 utils::globalVariables(
   c(
     "year", "temp_local_file", "lon_min", "lon_max", "lat_min", "lat_max", ".",
-    "lon_diff", "lat_diff", "lon", "lat", "estado"
+    "lon_diff", "lat_diff", "lon", "lat", "estado", "municipio"
   )
 )

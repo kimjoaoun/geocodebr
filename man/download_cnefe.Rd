@@ -21,7 +21,7 @@ cache, reducing processing time in future calls. Defaults to \code{TRUE}. When
 \code{FALSE}, CNEFE data is downloaded to a temporary directory.}
 }
 \value{
-Invisibly returns the path to the file where the data was saved.
+Invisibly returns the path to the directory where the data was saved.
 }
 \description{
 Downloads an enriched version of the CNEFE (National Registry of Addresses

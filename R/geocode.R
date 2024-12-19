@@ -104,9 +104,11 @@ geocode <- function(addresses_table,
   # addresses table, which may save us some time.
 
   present_states <- unique(standard_locations$estado_padr)
-  download_cnefe(present_states, progress = progress, cache = cache)
-
-
+  cnefe_dir <- download_cnefe(
+    present_states,
+    progress = progress,
+    cache = cache
+  )
 
   # creating a temporary db and register the input table data
 
@@ -122,19 +124,19 @@ geocode <- function(addresses_table,
     temporary = TRUE
   )
 
-  # register cnefe data to db but only include states and municipalities
-  # present in the input table, reducing the search scope and
-  # consequently reducing processing time and memory usage
+  # register cnefe data to db, but only include states and municipalities
+  # present in the input table, reducing the search scope and consequently
+  # reducing processing time and memory usage
 
   unique_muns <- unique(standard_locations$municipio_padr)
 
-  filtered_cnefe <- arrow::open_dataset(get_cache_dir()) |>
-    dplyr::filter(estado %in% present_states) |>
-    dplyr::filter(municipio %in% unique_muns) |>
-    dplyr::compute()
+  filtered_cnefe <- arrow::open_dataset(cnefe_dir)
+  filtered_cnefe <- dplyr::filter(
+    filtered_cnefe,
+    estado %in% present_states & municipio %in% unique_muns
+  )
 
   duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
-
 
   # to find the coordinates of the addresses, we merge the input table with the
   # cnefe data. the column names used in the input table are different than the
@@ -309,4 +311,3 @@ finish_progress_bar <- function(n_rows_affected, .envir = parent.frame()) {
     .envir = .envir
   )
 }
-

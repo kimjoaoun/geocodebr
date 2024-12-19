@@ -13,7 +13,7 @@
 #'   Defaults to `TRUE`.
 #' @template cache
 #'
-#' @return Invisibly returns the path to the file where the data was saved.
+#' @return Invisibly returns the path to the directory where the data was saved.
 #'
 #' @family Support
 #'
@@ -34,7 +34,7 @@ download_cnefe <- function(state = "all", progress = TRUE, cache = TRUE) {
   )
 
   if (!cache) {
-    data_dir <- fs::path_norm(tempfile("standardized_cnefe"))
+    data_dir <- as.character(fs::path_norm(tempfile("standardized_cnefe")))
   } else {
     data_dir <- get_cache_dir()
   }
@@ -56,13 +56,7 @@ download_cnefe <- function(state = "all", progress = TRUE, cache = TRUE) {
     function(zipfile) zip::unzip(zipfile, exdir = data_dir)
   )
 
-  parquet_files <- list.files(data_dir, recursive = TRUE, full.names = TRUE)
-
-  state_parquet_files <- parquet_files[
-    grepl(glue::glue("estado=({paste(state, collapse = '|')})"), parquet_files)
-  ]
-
-  return(invisible(state_parquet_files))
+  return(invisible(data_dir))
 }
 
 assert_and_assign_state <- function(state) {
