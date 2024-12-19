@@ -2,8 +2,9 @@
 #'
 #' Geocodes Brazilian addresses based on CNEFE data. Addresses must be passed as
 #' a data frame in which each column describes one address field (street name,
-#' street number, neighborhood, etc). The input addresses are macthed with CNEFE
-#' following 12 different case patterns. See more info in the Details section.
+#' street number, neighborhood, etc). The input addresses are matched with CNEFE
+#' following 12 different case patterns. For more info, please see the Details
+#' section.
 #'
 #' @param addresses_table A data frame. The addresses to be geocoded. Each
 #'   column must represent an address field.
@@ -19,55 +20,55 @@
 #' @template progress
 #' @template cache
 #'
-#' @return Returns the data frame passed in `addresses_table` with the following
-#'   added columns: the latitude and longitude of each matched address, as well
-#'   as another column describing how the address was matched.
+#' @return Returns the data frame passed in `addresses_table` with the latitude
+#'   (`lat`) and longitude (`lon`) of each matched address, as well as another
+#'   column (`match_type`) indicating the match level with which the address was
+#'   matched.
 #'
-#' @section Match type:
+#' @details
+#' The input addresses are deterministically matched with CNEFE following 12
+#' different case patterns. The case used to match each address is indicated in
+#' the output by the `match_type` column. Despite the case, the function always
+#' calculates the average latitude and longitude of all addresses in CNEFE that
+#' match the input address. For example, for the strictest case, in which the
+#' function finds a perfect match for the address, think of a building with
+#' several apartments that match the same street address: their coordinates will
+#' differ very slightly, and we take their average. In the other hand, for the
+#' loosest case, in which only the state and the city match, we take the
+#' city-wide average coordinates, which tend to favor more densely populated
+#' areas. The columns considered in each of the 12 different match types are
+#' described below:
 #'
-#' The input addresses are deterministacally macthed with CNEFE following 12
-#' different case patterns, which are indicated in the output with the
-#' `match_type` column. In all cases, geocodebr calculates de average latitude
-#' and average longitude of all addresses in CNEFE that match the input address.
-#' The difference between the 12 match types is which columns are matched.
-#'
-#' - case 01: match estado, municipio, logradouro, numero, cep, bairro
-#' - case 02: match estado, municipio, logradouro, numero, cep
-#' - case 03: match estado, municipio, logradouro, numero, bairro
-#' - case 04: match estado, municipio, logradouro, cep, bairro
-#' - case 05: match estado, municipio, logradouro, numero
-#' - case 06: match estado, municipio, logradouro, cep
-#' - case 07: match estado, municipio, logradouro, bairro
-#' - case 08: match estado, municipio, logradouro
-#' - case 09: match estado, municipio, cep, bairro
-#' - case 10: match estado, municipio, cep
-#' - case 11: match estado, municipio, bairro
-#' - case 12: match estado, municipio
+#' - Case 01: estado, município, logradouro, número, cep e bairro;
+#' - Case 02: estado, município, logradouro, número e cep;
+#' - Case 03: estado, município, logradouro, número e bairro;
+#' - Case 04: estado, município, logradouro, cep e bairro;
+#' - Case 05: estado, município, logradouro e número;
+#' - Case 06: estado, município, logradouro e cep;
+#' - Case 07: estado, município, logradouro e bairro;
+#' - Case 08: estado, município e logradouro;
+#' - Case 09: estado, município, cep e bairro;
+#' - Case 10: estado, município e cep;
+#' - Case 11: estado, município e bairro;
+#' - Case 12: estado, município.
 #'
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 #'
-#' # open example of input data
 #' data_path <- system.file("extdata/sample_1.csv", package = "geocodebr")
 #' input_df <- read.csv(data_path)
 #'
-#' # declare name of columns
-#' fields <- geocodebr::setup_address_fields(
-#'   logradouro = 'nm_logradouro',
-#'   numero = 'Numero',
-#'   cep = 'Cep',
-#'   bairro = 'Bairro',
-#'   municipio = 'nm_municipio',
-#'   estado = 'nm_uf'
+#' fields <- setup_address_fields(
+#'   logradouro = "nm_logradouro",
+#'   numero = "Numero",
+#'   cep = "Cep",
+#'   bairro = "Bairro",
+#'   municipio = "nm_municipio",
+#'   estado = "nm_uf"
 #' )
 #'
-#' # geocode
-#' df <- geocodebr:::geocode(
-#'   addresses_table = input_df,
-#'   address_fields = fields,
-#'   n_cores = 1,
-#'   progress = TRUE
-#' )
+#' df <- geocode(input_df, address_fields = fields)
 #'
+#' @export
 geocode <- function(addresses_table,
                     address_fields = setup_address_fields(),
                     n_cores = 1,
@@ -177,7 +178,7 @@ geocode <- function(addresses_table,
     n_rows_affected <- 0
   }
 
-  for (case in c(1, 2, 4:11)) {
+  for (case in 1:12) {
     relevant_cols <- get_relevant_cols(case)
     formatted_case <- formatC(case, width = 2, flag = "0")
 

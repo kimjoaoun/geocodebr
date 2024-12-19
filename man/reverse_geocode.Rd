@@ -15,9 +15,9 @@ execution. Defaults to 1.}
 \item{progress}{A logical. Whether to display progress bars when downloading
 CNEFE data and when geocoding the addresses. Defaults to \code{TRUE}.}
 
-\item{cache}{A logical. Whether CNEFE data should be save to/read from cache,
-reducing processing time in future calls. Defaults to \code{TRUE}. When \code{FALSE},
-CNEFE data is downloaded to a temporary directory.}
+\item{cache}{A logical. Whether CNEFE data should be saved to/read from
+cache, reducing processing time in future calls. Defaults to \code{TRUE}. When
+\code{FALSE}, CNEFE data is downloaded to a temporary directory.}
 }
 \value{
 A \code{"data.frame"} object.
