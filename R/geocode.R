@@ -85,7 +85,7 @@ geocode <- function(addresses_table,
   # standardizing the addresses table to increase the chances of finding a match
   # in the CNEFE data
 
-  message("Standardizing input addresses")
+  if (progress) message_standardizing_addresses()
 
   standard_locations <- enderecobr::padronizar_enderecos(
     addresses_table,
@@ -143,8 +143,6 @@ geocode <- function(addresses_table,
   # ones used in cnefe, so we create a helper object to "translate" the column
   # names between datasets
 
-  message("Finding spatial coordinates")
-
   equivalent_colnames <- tibble::tribble(
     ~standard_locations, ~cnefe,
     "logradouro_padr",   "logradouro_sem_numero",
@@ -181,6 +179,8 @@ geocode <- function(addresses_table,
   if (progress) {
     prog <- create_progress_bar(standard_locations)
     n_rows_affected <- 0
+
+    message_looking_for_matches()
   }
 
   for (case in 1:12) {
@@ -251,6 +251,14 @@ assert_address_fields <- function(address_fields, addresses_table) {
   checkmate::reportAssertions(col)
 
   return(invisible(TRUE))
+}
+
+message_standardizing_addresses <- function() {
+  geocodebr_message(c("i" = "Standardizing input addresses"))
+}
+
+message_looking_for_matches <- function() {
+  geocodebr_message(c("i" = "Looking for matches in CNEFE"))
 }
 
 get_relevant_cols <- function(case) {
