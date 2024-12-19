@@ -44,14 +44,14 @@ geocode_rafa <- function(input_table,
                          estado = NULL,
                          progress = TRUE,
                          output_simple = TRUE,
-                         ncores = NULL,
+                         n_cores = NULL,
                          cache = TRUE){
 
   # check input
   checkmate::assert_data_frame(input_table)
   checkmate::assert_logical(progress)
   checkmate::assert_logical(output_simple)
-  checkmate::assert_number(ncores, null.ok = TRUE)
+  checkmate::assert_number(n_cores, null.ok = TRUE)
   checkmate::assert_logical(cache)
   checkmate::assert_names(
     names(input_table),
@@ -89,7 +89,7 @@ geocode_rafa <- function(input_table,
 
 
   # create db connection -------------------------------------------------------
-  con <- create_geocodebr_db(ncores = ncores)
+  con <- create_geocodebr_db(n_cores = n_cores)
 
 
   # add input and cnefe data sets to db --------------------------------------

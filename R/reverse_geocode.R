@@ -85,7 +85,6 @@ reverse_geocode <- function(input_table,
   con <- create_geocodebr_db(n_cores = n_cores)
 
   # Narrow search scope in cnefe to bounding box
-
   filtered_cnefe_coords <- arrow::open_dataset(get_cache_dir()) |>
     dplyr::filter(lon > bbox_lon_min &
                   lon < bbox_lon_max &
@@ -93,7 +92,8 @@ reverse_geocode <- function(input_table,
                   lat < bbox_lat_max) |>
     dplyr::compute()
 
-  duckdb::duckdb_register_arrow(con, "filtered_cnefe_coords", filtered_cnefe_coords)
+  duckdb::duckdb_register_arrow(con, "filtered_cnefe_coords",
+                                filtered_cnefe_coords)
 
 
   # query_filter_cnefe_coords <- glue::glue("

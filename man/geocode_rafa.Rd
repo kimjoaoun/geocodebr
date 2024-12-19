@@ -14,7 +14,7 @@ geocode_rafa(
   estado = NULL,
   progress = TRUE,
   output_simple = TRUE,
-  ncores = NULL,
+  n_cores = NULL,
   cache = TRUE
 )
 }
@@ -38,12 +38,12 @@ CNEFE data and when geocoding the addresses. Defaults to \code{TRUE}.}
 
 \item{output_simple}{Logic. Defaults to \code{TRUE}}
 
+\item{n_cores}{A number. The number of cores to be used in parallel
+execution. Defaults to 1.}
+
 \item{cache}{A logical. Whether CNEFE data should be save to/read from cache,
 reducing processing time in future calls. Defaults to \code{TRUE}. When \code{FALSE},
 CNEFE data is downloaded to a temporary directory.}
-
-\item{n_cores}{A number. The number of cores to be used in parallel
-execution. Defaults to 1.}
 }
 \value{
 An arrow \code{Dataset} or a \code{"data.frame"} object.
