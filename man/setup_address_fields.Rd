@@ -7,7 +7,6 @@
 setup_address_fields(
   logradouro = NULL,
   numero = NULL,
-  complemento = NULL,
   cep = NULL,
   bairro = NULL,
   municipio = NULL,
@@ -22,11 +21,6 @@ not specified in the addresses table.}
 \item{numero}{A string. The name of the column representing the street number
 of the address. May be \code{NULL} if the field is not specified in the
 addresses table.}
-
-\item{complemento}{A string. The name of the column representing the
-\emph{complemento} (additional information such as apartment, PO box, etc) of
-the address. May be \code{NULL} if the field is not specified in the addresses
-table.}
 
 \item{cep}{A string. The name of the column representing the \emph{CEP} (ZIP code)
 of the address. May be \code{NULL} if the field is not specified in the
@@ -56,7 +50,6 @@ field in the addresses table.
 setup_address_fields(
   logradouro = "Nome_logradouro",
   numero = "Numero",
-  complemento = "Comp",
   cep = "CEP",
   bairro = "Bairro",
   municipio = "Cidade",

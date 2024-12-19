@@ -51,7 +51,7 @@ match_aggregated_cases <- function(con, x, y, output_tb, key_cols, precision){
   )
 
   # parse(query_match_case)
-  DBI::dbExecute(con, query_aggregate_and_match)
+  temp_n <- DBI::dbExecute(con, query_aggregate_and_match)
 
   # add precision column to output
   add_precision_col(
@@ -59,4 +59,6 @@ match_aggregated_cases <- function(con, x, y, output_tb, key_cols, precision){
     update_tb = output_tb,
     precision = precision
   )
+
+  return(temp_n)
 }

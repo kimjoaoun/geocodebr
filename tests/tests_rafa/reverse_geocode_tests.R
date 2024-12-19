@@ -12,12 +12,20 @@ df_coords <- data.frame(
   lat = c(-9.962392, -9.963436, -9.972736, -22.695578, -30.05981, -9.97273)
   )
 
+df_coords <- rbind(df_coords,df_coords,df_coords,df_coords,df_coords,df_coords)
+df_coords <- rbind(df_coords,df_coords,df_coords,df_coords,df_coords,df_coords)
+df_coords <- rbind(df_coords,df_coords,df_coords,df_coords,df_coords,df_coords)
+df_coords <- rbind(df_coords,df_coords,df_coords,df_coords,df_coords,df_coords)
+df_coords <- rbind(df_coords,df_coords,df_coords,df_coords,df_coords,df_coords)
+df_coords <- rbind(df_coords,df_coords,df_coords,df_coords,df_coords,df_coords)
+df_coords$ID <-  1:nrow(df_coords)
+
 
 tictoc::tic()
-a <- reverse_geocode(lonlat_df)
+a <- reverse_geocode(df_coords)
 tictoc::toc()
 # 37.78 sec elapsed
-
+# 18.95 sec elapsed
 
 tictoc::tic()
 b <- reverse_geocode2(lonlat_df)

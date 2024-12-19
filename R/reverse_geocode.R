@@ -1,13 +1,13 @@
-#' Reverse geocoding coordinates based on CNEFE data
+#' Reverse geocoding coordinates in Brazil based on CNEFE data
 #'
 #' @description
 #' Takes a data frame containing coordinates (latitude and longitude) and
 #' returns  the address in CNEFE that is the closest to the input coordinates.
-#' Latitude and longitude inputs are limited to possible values. Latitudes must
-#' be between -90 and 90 and longitudes must be between -180 and 180.
+#' Latitude and longitude inputs are limited to possible values within the
+#' bounding box of Brazil.
 #'
-#' @param input_table A data frame. It must contain the columns `'id'`, `'lon'`, `'lat'`
-#' @template ncores
+#' @param input_table A data frame. It must contain the columns `'id'`,  `'lat'`, `'lon'`.
+#' @template n_cores
 #' @template progress
 #' @template cache
 #'
@@ -24,21 +24,21 @@
 #' )
 #'
 #' # reverse geocode
-#' # df_addresses <- geocodebr::reverse_geocode(
-#' #   input_table = df_coords,
-#' #   progress = TRUE
-#' #   )
+#' df_addresses <- geocodebr::reverse_geocode(
+#'   input_table = df_coords,
+#'   progress = TRUE
+#'   )
 #'
 reverse_geocode <- function(input_table,
+                            n_cores = 1,
                             progress = TRUE,
-                            ncores = NULL,
                             cache = TRUE
                             ){
 
   # check input
   checkmate::assert_data_frame(input_table)
   checkmate::assert_logical(progress)
-  checkmate::assert_number(ncores, null.ok = TRUE)
+  checkmate::assert_number(n_cores, null.ok = TRUE)
   checkmate::assert_logical(cache)
   checkmate::assert_names(
     names(input_table),
@@ -46,44 +46,64 @@ reverse_geocode <- function(input_table,
     .var.name = "input_table"
   )
 
-  # download cnefe  -------------------------------------------------------
-
-  download_cnefe(state = c("all"), progress = progress)
-
-
-
-  # create db connection -------------------------------------------------------
-  con <- create_geocodebr_db(ncores = ncores)
-
-
-
   # prep input -------------------------------------------------------
 
-  # create a small range around coordinates
+  # 1 degree of latitude is always 111111.1 meters
+  # 1 degree of longitude is  111111.1 * cos(lat)
 
+  # create a small range around coordinates
   margin <- 0.001 # 0.0001
 
   data.table::setDT(input_table)
   input_table[, c("lon_min", "lon_max", "lat_min", "lat_max") :=
                 .(lon - margin, lon + margin, lat - margin, lat + margin)]
 
-
-  # Narrow search scope in cnefe to bounding box
-
   bbox_lon_min <- min(input_table$lon_min)
   bbox_lon_max <- max(input_table$lon_max)
   bbox_lat_min <- min(input_table$lat_min)
   bbox_lat_max <- max(input_table$lat_max)
 
+  # check if input falls within Brazil
+  bbox_brazil <- data.frame(
+    xmin = -73.99044997,
+    ymin = -33.752081270872,
+    xmax = -28.83594354,
+    ymax = 5.27184108017288)
 
-  query_filter_cnefe_coords <- glue::glue("
-  CREATE TEMPORARY TABLE filtered_cnefe_coords AS
-  SELECT * FROM cnefe
-  WHERE lon BETWEEN {bbox_lon_min} AND {bbox_lon_max}
-    AND lat BETWEEN {bbox_lat_min} AND {bbox_lat_max}
-  ")
+  error_msg <- 'Input coordinates outside the bounding box of Brazil.'
+  if(bbox_lon_min < bbox_brazil$xmin){stop(error_msg)}
+  if(bbox_lon_max > bbox_brazil$xmax){stop(error_msg)}
+  if(bbox_lat_min < bbox_brazil$ymin){stop(error_msg)}
+  if(bbox_lat_max > bbox_brazil$ymax){stop(error_msg)}
 
-  DBI::dbExecute(con, query_filter_cnefe_coords)
+  # download cnefe  -------------------------------------------------------
+
+  download_cnefe(state = "all", progress = progress)
+
+
+  # create db connection -------------------------------------------------------
+  con <- create_geocodebr_db(n_cores = n_cores)
+
+  # Narrow search scope in cnefe to bounding box
+  filtered_cnefe_coords <- arrow::open_dataset(get_cache_dir()) |>
+    dplyr::filter(lon > bbox_lon_min &
+                  lon < bbox_lon_max &
+                  lat > bbox_lat_min &
+                  lat < bbox_lat_max) |>
+    dplyr::compute()
+
+  duckdb::duckdb_register_arrow(con, "filtered_cnefe_coords",
+                                filtered_cnefe_coords)
+
+
+  # query_filter_cnefe_coords <- glue::glue("
+  # CREATE TEMPORARY TABLE filtered_cnefe_coords AS
+  # SELECT * FROM cnefe
+  # WHERE lon BETWEEN {bbox_lon_min} AND {bbox_lon_max}
+  #   AND lat BETWEEN {bbox_lat_min} AND {bbox_lat_max}
+  # ")
+  #
+  # DBI::dbExecute(con, query_filter_cnefe_coords)
 
 
 
