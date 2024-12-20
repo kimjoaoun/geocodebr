@@ -48,46 +48,54 @@ input_df$ID <-  1:nrow(input_df)
 # ncores = NULL
 # cache = TRUE
 
-tictoc::tic()
-fields <- geocodebr::setup_address_fields(
-  logradouro = 'nm_logradouro',
-  numero = 'Numero',
-  cep = 'Cep',
-  bairro = 'Bairro',
-  municipio = 'nm_municipio',
-  estado = 'nm_uf'
+# benchmark different approaches ------------------------------------------------------------------
+
+rafa <- function(){
+  df_duck_rafa <- geocodebr:::geocode_rafa(
+    input_table = input_df,
+    logradouro = "nm_logradouro",
+    numero = "Numero",
+    cep = "Cep",
+    bairro = "Bairro",
+    municipio = "nm_municipio",
+    estado = "nm_uf",
+    output_simple = F,
+    n_cores=7,
+    progress = T
+  )
+}
+
+
+dani <- function(){
+  fields <- geocodebr::setup_address_fields(
+    logradouro = 'nm_logradouro',
+    numero = 'Numero',
+    cep = 'Cep',
+    bairro = 'Bairro',
+    municipio = 'nm_municipio',
+    estado = 'nm_uf'
   )
 
-df_duck_dani <- geocodebr:::geocode(
-  addresses_table = input_df,
-  address_fields = fields,
-  n_cores = 7,
-  progress = T
+
+  df_duck_dani <- geocodebr:::geocode(
+    addresses_table = input_df,
+    address_fields = fields,
+    n_cores = 7,
+    progress = T
   )
-tictoc::toc()
-# 900K: 13 secs
+}
 
-
-tictoc::tic()
-df_duck_rafa <- geocodebr:::geocode_rafa(
-  input_table = input_df,
-  logradouro = "nm_logradouro",
-  numero = "Numero",
-  cep = "Cep",
-  bairro = "Bairro",
-  municipio = "nm_municipio",
-  estado = "nm_uf",
-  output_simple = F,
-  n_cores=7,
-  progress = T
+microbenchmark::microbenchmark(dani = dani(),
+                               rafa = rafa(),
+                               times = 10
 )
-tictoc::toc()
-# 900K: 19.83 secs
+
+# expr       min        lq      mean    median        uq      max neval
+# dani 16.006761 16.859789 18.569111 17.691887 20.367627 22.86581    10
+# rafa  7.586888  8.178381  9.156078  8.865305  9.168628 13.42151    10
 
 
-
-
-
+# precision ------------------------------------------------------------------
 
 input_df <- input_table <- data.frame(
   ID=666,
@@ -144,43 +152,4 @@ query_aggregate_and_match <- sprintf(
 )
 
 
-
-rafa <- function(){
-  df_duck_rafa <- geocodebr:::geocode_rafa(
-    input_table = input_df,
-    logradouro = "nm_logradouro",
-    numero = "Numero",
-    cep = "Cep",
-    bairro = "Bairro",
-    municipio = "nm_municipio",
-    estado = "nm_uf",
-    output_simple = F,
-    n_cores=7,
-    progress = T
-  )
-  }
-
-  dani <- function(){
-    fields <- geocodebr::setup_address_fields(
-    logradouro = 'nm_logradouro',
-    numero = 'Numero',
-    cep = 'Cep',
-    bairro = 'Bairro',
-    municipio = 'nm_municipio',
-    estado = 'nm_uf'
-  )
-
-
-df_duck_dani <- geocodebr:::geocode(
-    addresses_table = input_df,
-    address_fields = fields,
-    n_cores = 7,
-    progress = T
-  )
-  }
-
-  microbenchmark::microbenchmark(dani = dani(),
-                                 rafa = rafa(),
-                                 times = 10
-  )
 

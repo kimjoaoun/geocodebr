@@ -628,7 +628,7 @@ geocode_rafa <- function(input_table,
   # Disconnect from DuckDB when done
   duckdb::duckdb_unregister_arrow(con, 'cnefe')
   duckdb::dbDisconnect(con, shutdown=TRUE)
-  gc()
+  # gc()
 
   # Return the result
   return(output_deterministic)

@@ -3,7 +3,10 @@ library(tictoc)
 library(dplyr)
 library(data.table)
 library(ipeadatalake)
+set.seed(42)
 
+data_path <- system.file("extdata/sample_1.csv", package = "geocodebr")
+input_df <- read.csv(data_path)
 
 # rais --------------------------------------------------------------------
 
@@ -14,6 +17,7 @@ rais <- ipeadatalake::ler_rais(
   colunas = c("id_estab", "cnpj_raiz", "logradouro",
               "bairro", "codemun", "uf", "cep", "qt_vinc_ativos")
   ) |>
+  dplyr::slice_sample(n = 50000) |> # sample 50K
   filter(uf != "IG") |>
   filter(uf != "") |>
   collect()
@@ -87,6 +91,7 @@ cad <- ipeadatalake::ler_cadunico(
 
 # compose address fields
 cad <- cad |>
+  dplyr::slice_sample(n = 50000) |> # sample 20K
   mutate(no_tip_logradouro_fam = ifelse(is.na(no_tip_logradouro_fam), '', no_tip_logradouro_fam),
          no_tit_logradouro_fam = ifelse(is.na(no_tit_logradouro_fam), '', no_tit_logradouro_fam),
          no_logradouro_fam = ifelse(is.na(no_logradouro_fam), '', no_logradouro_fam)
@@ -107,8 +112,7 @@ cad <- cad |>
   dplyr::collect()
 
 
-# sample 10%
-cad <- sample_frac(tbl = cad, 0.1)
+
 gc(T)
 
 tictoc::tic()
