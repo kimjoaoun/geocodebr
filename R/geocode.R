@@ -163,8 +163,8 @@ geocode <- function(addresses_table,
   # - case 01: match estado, municipio, logradouro, numero, cep, localidade
   # - case 02: match estado, municipio, logradouro, numero, cep
   # - case 03: match estado, municipio, logradouro, numero, localidade
-  # - case 04: match estado, municipio, logradouro, cep, localidade
-  # - case 05: match estado, municipio, logradouro, numero
+  # - case 04: match estado, municipio, logradouro, numero
+  # - case 05: match estado, municipio, logradouro, cep, localidade
   # - case 06: match estado, municipio, logradouro, cep
   # - case 07: match estado, municipio, logradouro, localidade
   # - case 08: match estado, municipio, logradouro
@@ -270,9 +270,9 @@ get_relevant_cols <- function(case) {
   } else if (case == 3) {
     c("estado_padr", "municipio_padr", "logradouro_padr", "numero_padr", "bairro_padr")
   } else if (case == 4) {
-    c("estado_padr", "municipio_padr", "logradouro_padr", "cep_padr", "bairro_padr")
-  } else if (case == 5) {
     c("estado_padr", "municipio_padr", "logradouro_padr", "numero_padr")
+  } else if (case == 5) {
+    c("estado_padr", "municipio_padr", "logradouro_padr", "cep_padr", "bairro_padr")
   } else if (case == 6) {
     c("estado_padr", "municipio_padr", "logradouro_padr", "cep_padr")
   } else if (case == 7) {
