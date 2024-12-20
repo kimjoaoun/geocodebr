@@ -1,4 +1,4 @@
-data_path <- system.file("extdata/sample_1.csv", package = "geocodebr")
+data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
 
 fields <- setup_address_fields(

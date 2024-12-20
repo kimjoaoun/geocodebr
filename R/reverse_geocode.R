@@ -15,18 +15,18 @@
 #' @family Reverse geocoding
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 #'
-#' # input data
-#' df_coords <- data.frame(
-#'   id = 1:6,
-#'   lon = c(-67.83112, -67.83559, -67.81918, -43.47110, -51.08934, -67.8191),
-#'   lat = c(-9.962392, -9.963436, -9.972736, -22.695578, -30.05981, -9.97273)
-#' )
-#'
-#' # reverse geocode
-#' df_addresses <- geocodebr::reverse_geocode(
-#'   input_table = df_coords,
-#'   progress = TRUE
-#'   )
+#' # # input data
+#' # df_coords <- data.frame(
+#' #   id = 1:6,
+#' #   lon = c(-67.83112, -67.83559, -67.81918, -43.47110, -51.08934, -67.8191),
+#' #   lat = c(-9.962392, -9.963436, -9.972736, -22.695578, -30.05981, -9.97273)
+#' # )
+#' #
+#' # # reverse geocode
+#' # df_addresses <- geocodebr::reverse_geocode(
+#' #   input_table = df_coords,
+#' #   progress = TRUE
+#' #   )
 #'
 reverse_geocode <- function(input_table,
                             n_cores = 1,
