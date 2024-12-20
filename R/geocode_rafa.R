@@ -55,7 +55,7 @@ geocode_rafa <- function(input_table,
   checkmate::assert_logical(cache)
   checkmate::assert_names(
     names(input_table),
-    must.include = "ID"
+    must.include = "id"
   )
 
 
@@ -83,8 +83,8 @@ geocode_rafa <- function(input_table,
   # keep and rename colunms of input_padrao
   # keeping same column names used in our cnefe data set
   cols_padr <- grep("_padr", names(input_padrao_raw), value = TRUE)
-  input_padrao <- input_padrao_raw[, .SD, .SDcols = c("ID", cols_padr)]
-  names(input_padrao) <- c("ID", gsub("_padr", "", cols_padr))
+  input_padrao <- input_padrao_raw[, .SD, .SDcols = c("id", cols_padr)]
+  names(input_padrao) <- c("id", gsub("_padr", "", cols_padr))
 
   data.table::setnames(input_padrao, old = 'logradouro', new = 'logradouro_sem_numero')
   data.table::setnames(input_padrao, old = 'bairro', new = 'localidade')
@@ -190,7 +190,7 @@ geocode_rafa <- function(input_table,
       y = 'filtered_cnefe',
       output_tb = 'output_caso_01',
       key_cols <- cols_01,
-      precision = 1L
+      match_type = 1L
       )
 
     # UPDATE input_padrao_db: Remove observations found in previous step
@@ -224,7 +224,7 @@ geocode_rafa <- function(input_table,
       y = 'filtered_cnefe',
       output_tb = 'output_caso_02',
       key_cols <- cols_02,
-      precision = 2L
+      match_type = 2L
     )
 
     # UPDATE input_padrao_db: Remove observations found in previous step
@@ -255,7 +255,7 @@ geocode_rafa <- function(input_table,
       y = 'filtered_cnefe',
       output_tb = 'output_caso_03',
       key_cols <- cols_03,
-      precision = 3L
+      match_type = 3L
     )
 
     # UPDATE input_padrao_db: Remove observations found in previous step
@@ -287,7 +287,7 @@ geocode_rafa <- function(input_table,
     y = 'filtered_cnefe',
     output_tb = 'output_caso_04',
     key_cols <- cols_04,
-    precision = 4L
+    match_type = 4L
   )
 
   # UPDATE input_padrao_db: Remove observations found in previous step
@@ -320,7 +320,7 @@ geocode_rafa <- function(input_table,
     y = 'filtered_cnefe',
     output_tb = 'output_caso_05',
     key_cols <- cols_05,
-    precision = 5L
+    match_type = 5L
   )
 
   # UPDATE input_padrao_db: Remove observations found in previous step
@@ -353,7 +353,7 @@ geocode_rafa <- function(input_table,
       y = 'filtered_cnefe',
       output_tb = 'output_caso_06',
       key_cols <- cols_06,
-      precision = 6L
+      match_type = 6L
     )
 
     # UPDATE input_padrao_db: Remove observations found in previous step
@@ -384,7 +384,7 @@ geocode_rafa <- function(input_table,
       y = 'filtered_cnefe',
       output_tb = 'output_caso_07',
       key_cols <- cols_07,
-      precision = 7L
+      match_type = 7L
     )
 
     # UPDATE input_padrao_db: Remove observations found in previous step
@@ -416,7 +416,7 @@ geocode_rafa <- function(input_table,
       y = 'filtered_cnefe',
       output_tb = 'output_caso_08',
       key_cols <- cols_08,
-      precision = 8L
+      match_type = 8L
     )
 
     # UPDATE input_padrao_db: Remove observations found in previous step
@@ -447,7 +447,7 @@ geocode_rafa <- function(input_table,
       y = 'filtered_cnefe',
       output_tb = 'output_caso_09',
       key_cols <- cols_09,
-      precision = 9L
+      match_type = 9L
     )
 
     # UPDATE input_padrao_db: Remove observations found in previous step
@@ -478,7 +478,7 @@ geocode_rafa <- function(input_table,
       y = 'filtered_cnefe',
       output_tb = 'output_caso_10',
       key_cols <- cols_10,
-      precision = 10L
+      match_type = 10L
     )
 
     # UPDATE input_padrao_db: Remove observations found in previous step
@@ -509,7 +509,7 @@ geocode_rafa <- function(input_table,
       y = 'filtered_cnefe',
       output_tb = 'output_caso_11',
       key_cols <- cols_11,
-      precision = 11L
+      match_type = 11L
     )
 
     # UPDATE input_padrao_db: Remove observations found in previous step
@@ -540,7 +540,7 @@ geocode_rafa <- function(input_table,
         y = 'filtered_cnefe',
         output_tb = 'output_caso_12',
         key_cols <- cols_12,
-        precision = 12L
+        match_type = 12L
       )
 
       # UPDATE input_padrao_db: Remove observations found in previous step
@@ -603,7 +603,7 @@ geocode_rafa <- function(input_table,
 
   DBI::dbExecute(con, output_query)
 
-  # output with only ID and geocode columns
+  # output with only id and geocode columns
   if (isTRUE(output_simple)) {
 
     output_deterministic <- DBI::dbReadTable(con, 'output_db')
@@ -620,7 +620,7 @@ geocode_rafa <- function(input_table,
     output_deterministic <- merge_results(con,
                     x='input_padrao_db',
                     y='output_db',
-                    key_column='ID',
+                    key_column='id',
                     select_columns = x_columns)
 
   }

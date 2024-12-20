@@ -31,8 +31,8 @@ input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df
 input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df,input_df)
 input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df,input_df)
 input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df,input_df)
-input_df$ID <-  1:nrow(input_df)
-
+names(input_df)[1] <- 'id'
+input_df$id <-  1:nrow(input_df)
 
 
 # input_table = input_df

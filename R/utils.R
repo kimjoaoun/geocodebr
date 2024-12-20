@@ -141,29 +141,29 @@ update_input_db <- function(con, update_tb = 'input_padrao_db', reference_tb){
 
   query_remove_matched <- sprintf("
     DELETE FROM %s
-    WHERE ID IN (SELECT ID FROM %s)", update_tb, reference_tb)
+    WHERE id IN (SELECT id FROM %s)", update_tb, reference_tb)
   DBI::dbExecute(con, query_remove_matched)
 }
 
 
-#' Add a column with info of geocode precision
+#' Add a column with info of geocode match_type
 #'
 #' @param con A db connection
 #' @param update_tb String. Name of a table to be updated in con
-#' @param precision Integer. An integer
+#' @param match_type Integer. An integer
 #'
 #' @return Adds a new column to a table in con
 #'
 #' @keywords internal
-add_precision_col <- function(con, update_tb = NULL, precision = NULL){
+add_precision_col <- function(con, update_tb = NULL, match_type = NULL){
 
   # update_tb = "output_caso_01"
-  # precision = 1L
+  # match_type = 1L
 
   DBI::dbExecute(
     con,
     glue::glue(
-      "ALTER TABLE {update_tb} ADD COLUMN precision INTEGER DEFAULT {precision}"
+      "ALTER TABLE {update_tb} ADD COLUMN match_type INTEGER DEFAULT {match_type}"
       )
     )
 }
@@ -173,12 +173,12 @@ merge_results <- function(con, x, y, key_column, select_columns){
 
   # x = 'output_db'
   # y = 'output_caso_01'
-  # key_column = 'ID'
-  select_columns_y = c('lon', 'lat', 'precision')
+  # key_column = 'id'
+  select_columns_y = c('lon', 'lat', 'match_type')
 
 
   # Create the SELECT clause dynamically
-  # select_x <- paste0(x, '.', c('lon', 'lat', 'precision '), collapse = ', ')
+  # select_x <- paste0(x, '.', c('lon', 'lat', 'match_type '), collapse = ', ')
   select_x <- paste0(x, '.', c(select_columns), collapse = ', ')
   select_clause <- paste0(
     select_x, ',',

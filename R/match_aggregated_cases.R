@@ -5,12 +5,12 @@
 #' @param y String. Name of a table written in con
 #' @param output_tb Name of the new table to be written in con
 #' @param key_cols Vector. Vector with the names of columns to perform left join
-#' @param precision Integer. An integer
+#' @param match_type Integer. An integer
 #'
 #' @return Writes the result of the left join as a new table in con
 #'
 #' @keywords internal
-match_aggregated_cases <- function(con, x, y, output_tb, key_cols, precision){
+match_aggregated_cases <- function(con, x, y, output_tb, key_cols, match_type){
 
   # x = 'input_padrao_db'
   # y = 'filtered_cnefe_cep'
@@ -36,7 +36,7 @@ match_aggregated_cases <- function(con, x, y, output_tb, key_cols, precision){
       FROM %s
       GROUP BY %s
     )
-    SELECT %s.ID, pre_aggregated_cnefe.lon, pre_aggregated_cnefe.lat
+    SELECT %s.id, pre_aggregated_cnefe.lon, pre_aggregated_cnefe.lat
     FROM %s AS %s
     LEFT JOIN pre_aggregated_cnefe
     ON %s
@@ -53,11 +53,11 @@ match_aggregated_cases <- function(con, x, y, output_tb, key_cols, precision){
   # parse(query_match_case)
   temp_n <- DBI::dbExecute(con, query_aggregate_and_match)
 
-  # add precision column to output
+  # add match_type column to output
   add_precision_col(
     con,
     update_tb = output_tb,
-    precision = precision
+    match_type = match_type
   )
 
   return(temp_n)

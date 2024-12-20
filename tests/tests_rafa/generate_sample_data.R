@@ -30,7 +30,9 @@ rais <- ipeadatalake::ler_rais(
   as_data_frame = T,
   colunas = c("id_estab", "logradouro",
               "bairro", "codemun", "uf", "cep")) |>
-  dplyr::slice_sample(n = 50000) |> # sample 50K
+  filter(uf %in% c(12, 27, 33)) |> # only states of Acre, Alagoas and RJ
+  compute() |>
+  dplyr::slice_sample(n = 20000) |> # sample 50K
   filter(uf != "IG") |>
   filter(uf != "") |>
   collect()
@@ -83,7 +85,9 @@ cad <- ipeadatalake::ler_cadunico(
 
 # compose address fields
 cad <- cad |>
-  dplyr::slice_sample(n = 50000) |> # sample 20K
+  filter(co_uf %in% c(12, 27, 33)) |> # only states of Acre, Alagoas and RJ
+  compute() |>
+  dplyr::slice_sample(n = 20000) |> # sample 20K
   mutate(no_tip_logradouro_fam = ifelse(is.na(no_tip_logradouro_fam), '', no_tip_logradouro_fam),
          no_tit_logradouro_fam = ifelse(is.na(no_tit_logradouro_fam), '', no_tit_logradouro_fam),
          no_logradouro_fam = ifelse(is.na(no_logradouro_fam), '', no_logradouro_fam)
@@ -122,7 +126,66 @@ df <- rbind(input_df, cad, rais)
 
 setDT(df)
 df[, id := 1:nrow(df)]
-
+head(df)
 
 arrow::write_parquet(df, './inst/extdata/small_sample.parquet')
-fwrite(df, './inst/extdata/large_sample.csv')
+
+
+
+
+rafa <- function(){
+  df_duck_rafa <- geocodebr:::geocode_rafa(
+    input_table = df,
+    logradouro = "logradouro",
+    numero = "numero",
+    cep = "cep",
+    bairro = "bairro",
+    municipio = "municipio",
+    estado = "uf",
+    output_simple = F,
+    n_cores=7,
+    progress = T
+  )
+}
+
+
+dani <- function(){
+  fields <- geocodebr::setup_address_fields(
+    logradouro = 'logradouro',
+    numero = 'numero',
+    cep = 'cep',
+    bairro = 'bairro',
+    municipio = 'municipio',
+    estado = 'uf'
+  )
+
+
+  df_duck_dani <- geocodebr:::geocode(
+    addresses_table = df,
+    address_fields = fields,
+    n_cores = 7,
+    progress = T
+  )
+}
+
+microbenchmark::microbenchmark(dani = dani(),
+                               rafa = rafa(),
+                               times = 10
+                               )
+
+
+
+df_geo <- rafa()
+a <- table(df_geo$match_type) / nrow(df_geo)*100
+a
+a <- as.data.table(a)
+
+
+
+# numero
+sum(a$N[which(a$V1 %like% '01|02|03|04|05')])
+54.75767
+
+# logradouro
+sum(a$N[which(a$V1 %like% '01|02|03|04|05|06|07|08')])
+62.745
