@@ -66,7 +66,8 @@
 #'   estado = "nm_uf"
 #' )
 #'
-#' df <- geocode(input_df, address_fields = fields)
+#' df <- geocode(input_df, address_fields = fields, progress = FALSE)
+#' df
 #'
 #' @export
 geocode <- function(addresses_table,

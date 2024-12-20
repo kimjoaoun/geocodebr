@@ -91,6 +91,7 @@ fields <- setup_address_fields(
   estado = "nm_uf"
 )
 
-df <- geocode(input_df, address_fields = fields)
+df <- geocode(input_df, address_fields = fields, progress = FALSE)
+df
 \dontshow{\}) # examplesIf}
 }
