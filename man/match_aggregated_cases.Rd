@@ -4,7 +4,7 @@
 \alias{match_aggregated_cases}
 \title{Match aggregated cases with left_join}
 \usage{
-match_aggregated_cases(con, x, y, output_tb, key_cols, precision)
+match_aggregated_cases(con, x, y, output_tb, key_cols, match_type)
 }
 \arguments{
 \item{con}{A db connection}
@@ -17,7 +17,7 @@ match_aggregated_cases(con, x, y, output_tb, key_cols, precision)
 
 \item{key_cols}{Vector. Vector with the names of columns to perform left join}
 
-\item{precision}{Integer. An integer}
+\item{match_type}{Integer. An integer}
 }
 \value{
 Writes the result of the left join as a new table in con

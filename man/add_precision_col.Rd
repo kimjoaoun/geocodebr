@@ -2,21 +2,21 @@
 % Please edit documentation in R/utils.R
 \name{add_precision_col}
 \alias{add_precision_col}
-\title{Add a column with info of geocode precision}
+\title{Add a column with info of geocode match_type}
 \usage{
-add_precision_col(con, update_tb = NULL, precision = NULL)
+add_precision_col(con, update_tb = NULL, match_type = NULL)
 }
 \arguments{
 \item{con}{A db connection}
 
 \item{update_tb}{String. Name of a table to be updated in con}
 
-\item{precision}{Integer. An integer}
+\item{match_type}{Integer. An integer}
 }
 \value{
 Adds a new column to a table in con
 }
 \description{
-Add a column with info of geocode precision
+Add a column with info of geocode match_type
 }
 \keyword{internal}

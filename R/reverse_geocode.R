@@ -12,7 +12,6 @@
 #' @template cache
 #'
 #' @return A `"data.frame"` object.
-#' @export
 #' @family Reverse geocoding
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 #'
