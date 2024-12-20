@@ -5,6 +5,8 @@ library(data.table)
 library(ipeadatalake)
 set.seed(42)
 
+sample_size <- 10000
+
 data_path <- system.file("extdata/sample_1.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
 
@@ -32,7 +34,7 @@ rais <- ipeadatalake::ler_rais(
               "bairro", "codemun", "uf", "cep")) |>
   filter(uf %in% c(12, 27, 33)) |> # only states of Acre, Alagoas and RJ
   compute() |>
-  dplyr::slice_sample(n = 20000) |> # sample 50K
+  dplyr::slice_sample(n = sample_size) |> # sample 50K
   filter(uf != "IG") |>
   filter(uf != "") |>
   collect()
@@ -87,7 +89,7 @@ cad <- ipeadatalake::ler_cadunico(
 cad <- cad |>
   filter(co_uf %in% c(12, 27, 33)) |> # only states of Acre, Alagoas and RJ
   compute() |>
-  dplyr::slice_sample(n = 20000) |> # sample 20K
+  dplyr::slice_sample(n = sample_size) |> # sample 20K
   mutate(no_tip_logradouro_fam = ifelse(is.na(no_tip_logradouro_fam), '', no_tip_logradouro_fam),
          no_tit_logradouro_fam = ifelse(is.na(no_tit_logradouro_fam), '', no_tit_logradouro_fam),
          no_logradouro_fam = ifelse(is.na(no_logradouro_fam), '', no_logradouro_fam)
@@ -128,7 +130,7 @@ setDT(df)
 df[, id := 1:nrow(df)]
 head(df)
 
-arrow::write_parquet(df, './inst/extdata/small_sample.parquet')
+arrow::write_parquet(df, './inst/extdata/large_sample.parquet')
 
 
 
@@ -170,7 +172,7 @@ dani <- function(){
 
 microbenchmark::microbenchmark(dani = dani(),
                                rafa = rafa(),
-                               times = 10
+                               times = 5
                                )
 
 
@@ -184,8 +186,10 @@ a <- as.data.table(a)
 
 # numero
 sum(a$N[which(a$V1 %like% '01|02|03|04|05')])
+sum(a$N[which(a$V1 %in% 1:5)])
 54.75767
 
 # logradouro
 sum(a$N[which(a$V1 %like% '01|02|03|04|05|06|07|08')])
+sum(a$N[which(a$V1 %in% 1:8)])
 62.745

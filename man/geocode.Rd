@@ -19,7 +19,7 @@ column must represent an address field.}
 \item{address_fields}{A character vector. The correspondence between each
 address field and the name of the column that describes it in
 \code{addresses_table}. The \code{\link[=setup_address_fields]{setup_address_fields()}} function helps creating
-this vector and performs some assertions on the input. Address fields
+this vector and performs some checks on the input. Address fields
 passed as \code{NULL} are ignored and the function must receive at least one
 non-null field. If manually creating the vector, please note that the
 vector names should be the same names used in the \code{\link[=setup_address_fields]{setup_address_fields()}}
@@ -50,23 +50,24 @@ section.
 }
 \details{
 The input addresses are deterministically matched with CNEFE following 12
-different case patterns. The case used to match each address is indicated in
-the output by the \code{match_type} column. Despite the case, the function always
-calculates the average latitude and longitude of all addresses in CNEFE that
-match the input address. For example, for the strictest case, in which the
-function finds a perfect match for the address, think of a building with
-several apartments that match the same street address: their coordinates will
-differ very slightly, and we take their average. In the other hand, for the
-loosest case, in which only the state and the city match, we take the
-city-wide average coordinates, which tend to favor more densely populated
-areas. The columns considered in each of the 12 different match types are
-described below:
+different case patterns. The type of match found for each address in the
+input data is indicated by the \code{match_type} column in the output. In every
+match type, the function always calculates the average latitude and longitude
+of all addresses in CNEFE that match the input address. In the strictest case,
+the function finds a perfect match for all of the fields of a given address.
+Think for example of a building with several apartments that match the same
+street address. In such case, the coordinates of the apartments will differ
+very slightly, and {geocodebr} take the average of those coordinates. On the
+other hand, in the loosest case, in which only the state and the city are
+matched, geocodebr takes the city-wide average coordinates, which tends to
+favor more densely populated areas. The columns considered in each of the 12
+different match types are described below:
 \itemize{
 \item Case 01: estado, município, logradouro, número, cep e bairro;
 \item Case 02: estado, município, logradouro, número e cep;
 \item Case 03: estado, município, logradouro, número e bairro;
-\item Case 04: estado, município, logradouro, cep e bairro;
-\item Case 05: estado, município, logradouro e número;
+\item Case 04: estado, município, logradouro e número;
+\item Case 05: estado, município, logradouro, cep e bairro;
 \item Case 06: estado, município, logradouro e cep;
 \item Case 07: estado, município, logradouro e bairro;
 \item Case 08: estado, município e logradouro;
@@ -79,7 +80,7 @@ described below:
 \examples{
 \dontshow{if (identical(tolower(Sys.getenv("NOT_CRAN")), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 
-data_path <- system.file("extdata/sample_1.csv", package = "geocodebr")
+data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
 
 fields <- setup_address_fields(

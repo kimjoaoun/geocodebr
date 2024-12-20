@@ -22,18 +22,18 @@
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 #'
 #' # open input data
-#' data_path <- system.file("extdata/sample_1.csv", package = "geocodebr")
+#' data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
 #' input_df <- read.csv(data_path)
 #'
-#' # df <- geocodebr::geocode(
-#' #   input_table = input_df,
-#' #   logradouro = "nm_logradouro",
-#' #   numero = "Numero",
-#' #   cep = "Cep",
-#' #   bairro = "Bairro",
-#' #   municipio = "nm_municipio",
-#' #   estado = "nm_uf"
-#' #   )
+#' df_geo <- geocodebr:::geocode_rafa(
+#'    input_table = input_df,
+#'    logradouro = "nm_logradouro",
+#'    numero = "Numero",
+#'    cep = "Cep",
+#'    bairro = "Bairro",
+#'    municipio = "nm_municipio",
+#'    estado = "nm_uf"
+#'    )
 #'
 geocode_rafa <- function(input_table,
                          logradouro = NULL,
