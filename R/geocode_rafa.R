@@ -140,8 +140,8 @@ geocode_rafa <- function(input_table,
   # - case 01: match municipio, logradouro, numero, cep, localidade
   # - case 02: match municipio, logradouro, numero, cep
   # - case 03: match municipio, logradouro, numero, localidade
-  # - case 04: match municipio, logradouro, cep, localidade
-  # - case 05: match municipio, logradouro, numero
+  # - case 04: match municipio, logradouro, numero
+  # - case 05: match municipio, logradouro, cep, localidade
   # - case 06: match municipio, logradouro, cep
   # - case 07: match municipio, logradouro, localidade
   # - case 08: match municipio, logradouro
@@ -155,8 +155,8 @@ geocode_rafa <- function(input_table,
   cols_01 <- c("estado", "municipio", "logradouro_sem_numero", "numero", "cep", "localidade")
   cols_02 <- c("estado", "municipio", "logradouro_sem_numero", "numero", "cep")
   cols_03 <- c("estado", "municipio", "logradouro_sem_numero", "numero", "localidade")
-  cols_04 <- c("estado", "municipio", "logradouro_sem_numero", "cep", "localidade")
-  cols_05 <- c("estado", "municipio", "logradouro_sem_numero", "numero")
+  cols_04 <- c("estado", "municipio", "logradouro_sem_numero", "numero")
+  cols_05 <- c("estado", "municipio", "logradouro_sem_numero", "cep", "localidade")
   cols_06 <- c("estado", "municipio", "logradouro_sem_numero", "cep")
   cols_07 <- c("estado", "municipio", "logradouro_sem_numero", "localidade")
   cols_08 <- c("estado", "municipio", "logradouro_sem_numero")

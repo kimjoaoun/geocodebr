@@ -56,7 +56,10 @@ tictoc::toc()
 
 
 
-
+arc <- ipeadatalake::ler_cadunico(
+  data = 202312,
+  tipo = 'familia',
+  as_data_frame = F,geoloc = T)
 
 
 
@@ -105,7 +108,7 @@ cad <- cad |>
 
 
 # sample 10%
-# cad2 <- sample_frac(tbl = cad, 0.01)
+cad <- sample_frac(tbl = cad, 0.1)
 gc(T)
 
 tictoc::tic()
