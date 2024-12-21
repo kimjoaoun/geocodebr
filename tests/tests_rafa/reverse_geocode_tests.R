@@ -35,3 +35,9 @@ tictoc::toc()
 
 ttt <- data.frame(id=1, lat=-15.814192047159876, lon=-47.90534614672923)
 reverse_geocode(df = ttt)
+
+
+
+
+
+right join(uf, in)

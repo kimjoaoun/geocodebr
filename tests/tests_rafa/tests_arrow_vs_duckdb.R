@@ -98,7 +98,7 @@ microbenchmark::microbenchmark(dani = dani(),
 # precision ------------------------------------------------------------------
 
 input_df <- input_table <- data.frame(
-  ID=666,
+  id=666,
   nm_logradouro = 'SQS 308 Bloco C',
   Numero = 204,
   Complemento = 'Bloco C',
