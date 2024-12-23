@@ -23,27 +23,31 @@ knitr::opts_chunk$set(
 
 Reprex
 ```{r, eval = FALSE}
-
 library(geocodebr)
 
 # open input data
-data_path <- system.file("extdata/sample_1.csv", package = "geocodebr")
+data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
 
-geo_duck <- geocode_duck2(
-  input_table = input_df,
+# indicate the columns describing the address fields
+fields <- setup_address_fields(
   logradouro = "nm_logradouro",
   numero = "Numero",
-  complemento = "Complemento",
   cep = "Cep",
   bairro = "Bairro",
   municipio = "nm_municipio",
-  estado = "nm_uf",
-  output_simple = TRUE,
-  ncores = NULL,
-  showProgress = TRUE
-)
+  estado = "nm_uf"
+  )
 
+# geocode 
+df <- geocode(
+  addresses_table = input_df,
+  address_fields = fields,
+  n_cores = 1,
+  progress = TRUE
+  )
+
+head(df)
 ```
 
 

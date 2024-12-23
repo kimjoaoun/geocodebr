@@ -40,7 +40,37 @@ pak::pak("ipeaGIT/geocodebr")
 
 ## Usage
 
-Soon.
+
+## Usage
+
+```{r, eval=FALSE}
+library(geocodebr)
+
+# input data
+data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
+input_df <- read.csv(data_path)
+
+# indicate the columns describing the address fields
+fields <- setup_address_fields(
+  logradouro = "nm_logradouro",
+  numero = "Numero",
+  cep = "Cep",
+  bairro = "Bairro",
+  municipio = "nm_municipio",
+  estado = "nm_uf"
+  )
+
+# geocode 
+df <- geocode(
+  addresses_table = input_df,
+  address_fields = fields,
+  n_cores = 1,
+  progress = TRUE
+  )
+
+```
+
+
 
 ## Acknowledgement <a href="https://www.ipea.gov.br"><img src="man/figures/ipea_logo.png" alt="IPEA" align="right" width="300"/></a>
 
