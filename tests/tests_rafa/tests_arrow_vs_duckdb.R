@@ -113,6 +113,35 @@ df <- filter(cnefe_cep, cep =='70355-030') |> collect()
 
 
 
+
+# LIKE operator ------------------------------------------------------------------
+
+input_df <- input_table <- data.frame(
+  id=666,
+  logradouro = 'DESEMBARGADOR HUGO SIMAS',
+  numero = 581,
+  cep = 80520-250,
+  bairro = 'Bom Retiro',
+  municipio = 'Curitiba',
+  estado = 'Paraná'
+)
+
+fields <- geocodebr::setup_address_fields(
+  logradouro = 'logradouro',
+  numero = 'numero',
+  cep = 'cep',
+  bairro = 'bairro',
+  municipio = 'municipio',
+  estado = 'estado'
+)
+
+lik <- geocodebr:::geocode_like(
+  addresses_table = input_df,
+  address_fields = fields,
+  n_cores = 1, # 7
+  progress = T
+)
+
 ################## calculate precision as the area in m2
 range_lon <- max(df$lon) - min(df$lon)
 range_lat <- max(df$lat) - min(df$lat)

@@ -84,35 +84,35 @@ reverse_geocode <- function(input_table,
   con <- create_geocodebr_db(n_cores = n_cores)
 
   # Narrow search scope in cnefe to bounding box
+
   filtered_cnefe_coords <- arrow::open_dataset(get_cache_dir()) |>
-    dplyr::filter(lon > bbox_lon_min &
-                  lon < bbox_lon_max &
-                  lat > bbox_lat_min &
-                  lat < bbox_lat_max) |>
+    dplyr::select(
+      municipio,
+      logradouro = logradouro_sem_numero,
+      numero,
+      cep,
+      bairro = localidade,
+      lat_cnefe = lat,
+      lon_cnefe = lon
+    ) |>
+    dplyr::filter(lon_cnefe > bbox_lon_min &
+                  lon_cnefe < bbox_lon_max &
+                  lat_cnefe > bbox_lat_min &
+                  lat_cnefe < bbox_lat_max) |>
     dplyr::compute()
 
   duckdb::duckdb_register_arrow(con, "filtered_cnefe_coords",
                                 filtered_cnefe_coords)
 
 
-  # query_filter_cnefe_coords <- glue::glue("
-  # CREATE TEMPORARY TABLE filtered_cnefe_coords AS
-  # SELECT * FROM cnefe
-  # WHERE lon BETWEEN {bbox_lon_min} AND {bbox_lon_max}
-  #   AND lat BETWEEN {bbox_lat_min} AND {bbox_lat_max}
-  # ")
-  #
-  # DBI::dbExecute(con, query_filter_cnefe_coords)
-
-
-
 
   # find each row in the input data -------------------------------------------------------
 
   # function to reverse geocode one row of the data
-  reverse_geocode_single_row <- function(df, row_number){
+  reverse_geocode_single_row <- function(row_number, input_table, conn){
 
-    # row_number = 3
+
+    # row_number = 1
 
     # subset row
     temp_df <- input_table[row_number,]
@@ -128,49 +128,57 @@ reverse_geocode <- function(input_table,
     query_filter_cases_nearby <- glue::glue('
       SELECT *
       FROM filtered_cnefe_coords
-      WHERE lon BETWEEN {lon_min} AND {lon_max}
-      AND lat BETWEEN {lat_min} AND {lat_max};
+      WHERE lon_cnefe BETWEEN {lon_min} AND {lon_max}
+      AND lat_cnefe BETWEEN {lat_min} AND {lat_max};
       ')
 
-    cnefe_nearby <- duckdb::dbSendQuery(con, query_filter_cases_nearby)
-    cnefe_nearby <- duckdb::dbFetch(cnefe_nearby)
+    # DBI::dbGetQuery(con, query_filter_cases_nearby)
+    cnefe_nearby <- DBI::dbGetQuery(con, query_filter_cases_nearby)
 
     # find closest points
     data.table::setDT(cnefe_nearby)
-    cnefe_nearby[, lon_diff := abs(lon_inp - lon)]
-    cnefe_nearby[, lat_diff := abs(lat_inp - lat)]
+    cnefe_nearby[, lat_diff := abs(lat_inp - lat_cnefe)]
+    cnefe_nearby[, lon_diff := abs(lon_inp - lon_cnefe)]
 
-    cnefe_nearest <- cnefe_nearby[, .SD[which.min(lon_diff)]]
-    cnefe_nearest <- cnefe_nearest[, .SD[which.min(lat_diff)]]
+    cnefe_nearest <- cnefe_nearby[, .SD[which.min(lat_diff)]]
+    cnefe_nearest <- cnefe_nearest[, .SD[which.min(lon_diff)]]
 
     # organize output
     cnefe_nearest[, c('lon_diff', 'lat_diff') := NULL]
     temp_df[, c('lon_min', 'lon_max', 'lat_min', 'lat_max') := NULL]
-
-    data.table::setnames(
-      x = temp_df,
-      old = c('lon', 'lat'),
-      new = c('lon_input', 'lat_input')
-    )
 
     temp_output <- cbind(temp_df, cnefe_nearest)
 
     return(temp_output)
   }
 
+
   # apply function to all rows in the input table
   output <- pbapply::pblapply(
     X = 1:nrow(input_table),
     FUN = reverse_geocode_single_row,
-    df=input_table
+    input_table = input_table,
+    conn = con
   )
+
+  # if(n_cores>1){
+  #
+  #   future::plan(future::multisession, workers = n_cores) # parallelly::availableCores()
+  #
+  #
+  #   output <- furrr::future_map(.x = 1:nrow(input_table),
+  #                               .f = reverse_geocode_single_row,
+  #                               input_table = input_table,
+  #                               conn = con
+  #                               )
+  #   }
+
 
   output <- data.table::rbindlist(output)
 
   # Disconnect from DuckDB when done
-  duckdb::duckdb_unregister_arrow(con, 'cnefe')
+  duckdb::duckdb_unregister_arrow(con, 'filtered_cnefe_coords')
   duckdb::dbDisconnect(con, shutdown=TRUE)
-  gc()
 
   return(output)
 }

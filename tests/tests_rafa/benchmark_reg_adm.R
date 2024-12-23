@@ -22,7 +22,7 @@ rais <- ipeadatalake::ler_rais(
   select("id_estab", "logradouro", "bairro", "codemun", "uf", "cep",
          'lat', 'lon', 'Addr_type', 'Match_addr') |>
   compute() |>
-  dplyr::slice_sample(n = 50000) |> # sample 50K
+  dplyr::slice_sample(n = 1000000) |> # sample 50K
   filter(uf != "IG") |>
   filter(uf != "") |>
   collect()
@@ -60,6 +60,18 @@ rais <- geocodebr:::geocode(
   n_cores = 20, # 7
   progress = T
 )
+
+data.table::setnames(rais, old = 'match_type', new = 'match_type_equal')
+data.table::setnames(rais, old = 'lon', new = 'lon_equal')
+data.table::setnames(rais, old = 'lat', new = 'lat_equal')
+
+rais_like <- geocodebr:::geocode_like(
+  addresses_table = rais,
+  address_fields = fields,
+  n_cores = 20, # 7
+  progress = T
+)
+
 tictoc::toc()
 
 
