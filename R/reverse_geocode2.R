@@ -278,7 +278,6 @@ reverse_geocode_filter <- function(input_table,
 
   # Find cases nearby -------------------------------------------------------
 
-  tictoc::tic()
   query_filter_cases_nearby <- glue::glue("
     CREATE TABLE cases_nearby AS
     SELECT
@@ -300,7 +299,6 @@ reverse_geocode_filter <- function(input_table,
                    )
 
   temp_n <- DBI::dbExecute(con, query_filter_cases_nearby)
-  tictoc::toc()
 
   # find closest points -------------------------------------------------------
 
