@@ -9,11 +9,13 @@ Authors@R: c(
            comment = c(ORCID = "0000-0003-2125-7465")),
     person("Ipea - Institute for Applied Economic Research", role = c("cph", "fnd"))
   )
-Description: Enables one to geocode Brazilian addresses and to reverse
-    geocode spatial coordinates using the National Registry of Addresses
-    for Statistical Purposes (english for Cadastro Nacional de Endereços
-    para Fins Estatísticos, - CNEFE). CNEFE is published by the Brazilian
-    official statistics and geography office, IBGE
+Description: Simple and efficient way to geocode data in Brazil. The package 
+    provides functions to geocode from addresses to spatial coordinates and to 
+    reverse-geocode from spatial coordinates to addresses. The package is built 
+    on top of open spatial data sets of Brazilian  addresses, mainly using the 
+    National Registry of Addresses for Statistical Purposes (English for 
+    *Cadastro Nacional de Endereços para Fins Estatísticos*, CNEFE). CNEFE is 
+    published by the Brazilian official statistics and geography office, IBGE
     (<https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html>).
 License: MIT + file LICENSE
 URL: https://github.com/ipeaGIT/geocodebr,
