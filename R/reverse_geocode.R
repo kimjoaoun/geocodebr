@@ -70,14 +70,24 @@ reverse_geocode <- function(input_table,
     ymax = 5.27184108017288)
 
   error_msg <- 'Input coordinates outside the bounding box of Brazil.'
-  if(bbox_lon_min < bbox_brazil$xmin){stop(error_msg)}
-  if(bbox_lon_max > bbox_brazil$xmax){stop(error_msg)}
-  if(bbox_lat_min < bbox_brazil$ymin){stop(error_msg)}
-  if(bbox_lat_max > bbox_brazil$ymax){stop(error_msg)}
+  if(bbox_lon_min < bbox_brazil$xmin |
+     bbox_lon_max > bbox_brazil$xmax |
+     bbox_lat_min < bbox_brazil$ymin |
+     bbox_lat_max > bbox_brazil$ymax) {stop(error_msg)}
 
   # download cnefe  -------------------------------------------------------
 
-  download_cnefe(state = "all", progress = progress)
+  # determine potential states
+  bbox_states <- data.table::fread(system.file("extdata/states_bbox.csv", package = "geocodebr"))
+  potential_states <- dplyr::filter(
+    bbox_states,
+    xmin > bbox_lon_min &
+    xmax < bbox_lon_max &
+    ymin > bbox_lat_min &
+    ymax < bbox_lat_max)$abbrev_state
+
+
+  download_cnefe(state = potential_states, progress = progress)
 
 
   # create db connection -------------------------------------------------------

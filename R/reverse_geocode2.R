@@ -1,10 +1,9 @@
 #' Reverse geocoding coordinates in Brazil based on CNEFE data
 #'
 #' @description
-#' Takes a data frame containing coordinates (latitude and longitude) and
-#' returns  the address in CNEFE that is the closest to the input coordinates.
-#' Latitude and longitude inputs are limited to possible values within the
-#' bounding box of Brazil.
+#' all operations done entirely in duckdb with one single join based on
+#' condition between coordinates
+#'
 #'
 #' @param input_table A data frame. It must contain the columns `'id'`,  `'lat'`, `'lon'`.
 #' @template n_cores
@@ -180,10 +179,8 @@ reverse_geocode_join <- function(input_table,
 #' Reverse geocoding coordinates in Brazil based on CNEFE data
 #'
 #' @description
-#' Takes a data frame containing coordinates (latitude and longitude) and
-#' returns  the address in CNEFE that is the closest to the input coordinates.
-#' Latitude and longitude inputs are limited to possible values within the
-#' bounding box of Brazil.
+#' all operations done entirely in duckdb with one single FILTER operation followed
+#' by join
 #'
 #' @param input_table A data frame. It must contain the columns `'id'`,  `'lat'`, `'lon'`.
 #' @template n_cores
@@ -358,10 +355,7 @@ reverse_geocode_filter <- function(input_table,
 #' Reverse geocoding coordinates in Brazil based on CNEFE data
 #'
 #' @description
-#' Takes a data frame containing coordinates (latitude and longitude) and
-#' returns  the address in CNEFE that is the closest to the input coordinates.
-#' Latitude and longitude inputs are limited to possible values within the
-#' bounding box of Brazil.
+#' all operations done entirely in arrow
 #'
 #' @param input_table A data frame. It must contain the columns `'id'`,  `'lat'`, `'lon'`.
 #' @template n_cores
@@ -427,18 +421,29 @@ reverse_geocode_arrow <- function(input_table,
     ymax = 5.27184108017288)
 
   error_msg <- 'Input coordinates outside the bounding box of Brazil.'
-  if(bbox_lon_min < bbox_brazil$xmin){stop(error_msg)}
-  if(bbox_lon_max > bbox_brazil$xmax){stop(error_msg)}
-  if(bbox_lat_min < bbox_brazil$ymin){stop(error_msg)}
-  if(bbox_lat_max > bbox_brazil$ymax){stop(error_msg)}
+  if(bbox_lon_min < bbox_brazil$xmin |
+     bbox_lon_max > bbox_brazil$xmax |
+     bbox_lat_min < bbox_brazil$ymin |
+     bbox_lat_max > bbox_brazil$ymax) {stop(error_msg)}
 
   # download cnefe  -------------------------------------------------------
 
-  download_cnefe(state = "all", progress = progress)
+  # determine potential states
+  bbox_states <- data.table::fread(system.file("extdata/states_bbox.csv", package = "geocodebr"))
+  potential_states <- dplyr::filter(
+    bbox_states,
+    xmin > bbox_lon_min &
+      xmax < bbox_lon_max &
+      ymin > bbox_lat_min &
+      ymax < bbox_lat_max)$abbrev_state
+
+
+  download_cnefe(state = potential_states, progress = progress)
 
 
 
   # Narrow search scope in cnefe to bounding box
+
   filtered_cnefe_coords <- arrow::open_dataset(get_cache_dir()) |>
     dplyr::select(
       municipio,
