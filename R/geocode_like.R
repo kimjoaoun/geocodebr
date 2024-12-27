@@ -70,7 +70,6 @@
 #' df <- geocode(input_df, address_fields = fields, progress = FALSE)
 #' df
 #'
-#' @export
 geocode_like <- function(addresses_table,
                     address_fields = setup_address_fields(),
                     n_cores = 1,
@@ -193,12 +192,15 @@ geocode_like <- function(addresses_table,
 
     if (all(relevant_cols %in% names(standard_locations))) {
       join_condition <- paste(
-        glue::glue("standard_locations.{relevant_cols} = aggregated_cnefe.{lookup_vector[relevant_cols]}"),
+        glue::glue("aggregated_cnefe.{lookup_vector[relevant_cols]} = standard_locations.{relevant_cols}"),
         collapse = " AND "
       )
 
       # use LIKE for logradouro
-      join_condition <- gsub('logradouro_padr =', 'logradouro_padr LIKE', join_condition)
+      join_condition <- gsub("= standard_locations.logradouro_padr", "LIKE '%' || standard_locations.logradouro_padr || '%'", join_condition)
+
+
+
 
       cnefe_cols <- paste(lookup_vector[relevant_cols], collapse = ", ")
 
