@@ -24,7 +24,7 @@ library(dplyr)
 
 
 # open input data
-data_path <- system.file("extdata/sample_1.csv", package = "geocodebr")
+data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
 input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df,input_df)
 input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df,input_df)
@@ -45,7 +45,7 @@ input_df$id <-  1:nrow(input_df)
 # estado = "nm_uf"
 # progress = TRUE
 # output_simple = TRUE
-# ncores = NULL
+# n_cores = 1
 # cache = TRUE
 
 # benchmark different approaches ------------------------------------------------------------------
@@ -115,32 +115,61 @@ df <- filter(cnefe_cep, cep =='70355-030') |> collect()
 
 
 # LIKE operator ------------------------------------------------------------------
+input_df$Complemento <- NULL
+input_df$code_muni <- NULL
 
-input_df <- input_table <- data.frame(
+input_df_like <- data.frame(
   id=666,
-  logradouro = 'DESEMBARGADOR HUGO SIMAS',
-  numero = 581,
-  cep = 80520-250,
-  bairro = 'Bom Retiro',
-  municipio = 'Curitiba',
-  estado = 'Paraná'
+  nm_logradouro = 'DESEMBARGADOR HUGO SIMAS',
+  Numero = 1948,
+  Cep = '80520-250',
+  Bairro = 'BOM RETIRO',
+  nm_municipio = 'CURITIBA',
+  nm_uf = 'PARANA'
 )
 
+input_df_like <- rbind(input_df_like, input_df)
+
 fields <- geocodebr::setup_address_fields(
-  logradouro = 'logradouro',
-  numero = 'numero',
-  cep = 'cep',
-  bairro = 'bairro',
-  municipio = 'municipio',
-  estado = 'estado'
+  logradouro = 'nm_logradouro',
+  numero = 'Numero',
+  cep = 'Cep',
+  bairro = 'Bairro',
+  municipio = 'nm_municipio',
+  estado = 'nm_uf'
 )
 
 lik <- geocodebr:::geocode_like(
-  addresses_table = input_df,
+  addresses_table = input_df_like,
   address_fields = fields,
   n_cores = 1, # 7
+  progress = F
+)
+
+head(lik)
+
+lik <- geocodebr:::geocode_rafa_like(
+  input_table = input_df_like,
+  logradouro = "nm_logradouro",
+  numero = "Numero",
+  cep = "Cep",
+  bairro = "Bairro",
+  municipio = "nm_municipio",
+  estado = "nm_uf",
+  output_simple = F,
+  n_cores=7,
   progress = T
 )
+
+geocodebr::get_cache_dir() |>
+  geocodebr:::arrow_open_dataset()  |>
+  filter(estado=="PR") |>
+  filter(municipio == "CURITIBA") |>
+  dplyr::compute() |>
+  filter(logradouro_sem_numero %like% "DESEMBARGADOR HUGO SIMAS") |>
+  dplyr::collect()
+
+
 
 ################## calculate precision as the area in m2
 range_lon <- max(df$lon) - min(df$lon)

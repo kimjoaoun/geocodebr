@@ -6,11 +6,17 @@ library(ipeadatalake)
 library(mapview)
 library(sfheaders)
 library(sf)
-
+options(scipen = 999)
 mapview::mapviewOptions(platform = 'leafgl')
 set.seed(42)
 
-
+#' take-away
+#' 1) a performance do geocodebr fica muito proxima do arcgis
+#' 2) o que precisa fazer eh checar os casos em q a gente encontra com baixa
+#' precisao e arcgis com alta. O que a gente pode fazer para melhorar o match?
+#' Usar o LIKE logradouro na join ja melhorou muito, mas ainda daria pra melhorar?
+#'
+#' t <- subset(rais_like, match_type=='case_09' & Addr_type==	'PointAddress')
 
 # rais --------------------------------------------------------------------
 
@@ -58,7 +64,7 @@ rais <- geocodebr:::geocode(
   addresses_table = rais,
   address_fields = fields,
   n_cores = 20, # 7
-  progress = T
+  progress = F
 )
 
 data.table::setnames(rais, old = 'match_type', new = 'match_type_equal')
@@ -69,16 +75,17 @@ rais_like <- geocodebr:::geocode_like(
   addresses_table = rais,
   address_fields = fields,
   n_cores = 20, # 7
-  progress = T
+  progress = F
 )
 
 tictoc::toc()
 
+table(rais_like$match_type_equal, rais_like$match_type)
 
-result_arcgis <- table(rais$Addr_type) / nrow(rais) *100
-result_geocodebr <- table(rais$match_type) / nrow(rais) *100
+result_arcgis <- table(rais_like$Addr_type) / nrow(rais_like) *100
+result_geocodebr <- table(rais_like$match_type) / nrow(rais_like) *100
 
-aaaa <- table(rais$match_type, rais$Addr_type) / nrow(rais) *100
+aaaa <- table(rais_like$match_type, rais_like$Addr_type) / nrow(rais_like) *100
 aaaa <- as.data.frame(aaaa)
 aaaa <- subset(aaaa, Freq>0)
 
@@ -87,7 +94,7 @@ data.table::fwrite(aaaa, 'rais.csv', dec = ',', sep = '-')
 
 
 
-t <- subset(rais, match_type=='case_09' & Addr_type==	'PointAddress')
+t <- subset(rais_like, match_type=='case_09' & Addr_type==	'PointAddress')
 
 t_arc <- sfheaders::sf_point(t[1,], x = 'lon_arcgis', y = 'lat_arcgis',keep = T)
 t_geo <- sfheaders::sf_point(t[1,], x = 'lon', y = 'lat',keep = T)
