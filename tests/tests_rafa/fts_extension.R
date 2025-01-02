@@ -17,7 +17,6 @@ query_fuzzy_match <- "CREATE TEMPORARY TABLE output_caso_01 AS
   ON input_padrao_db.estado = filtered_cnefe_cep.estado -- Still using exact match for 'estado'
   AND input_padrao_db.municipio = filtered_cnefe_cep.municipio -- Still using exact match for 'municipio'
   WHERE match_bm25(
-      CONCAT(input_padrao_db.logradouro, ' ', input_padrao_db.numero, ' ', input_padrao_db.cep, ' ', input_padrao_db.bairro),
-      CONCAT(filtered_cnefe_cep.logradouro, ' ', filtered_cnefe_cep.numero, ' ', filtered_cnefe_cep.cep, ' ', filtered_cnefe_cep.bairro)
-    ) > 0 -- Filter for positive BM25 scores, meaning a match is found
+      input_padrao_db.logradouro,
+      filtered_cnefe_cep.logradouro) > 0 -- Filter for positive BM25 scores, meaning a match is found
   GROUP BY input_padrao_db.ID;"

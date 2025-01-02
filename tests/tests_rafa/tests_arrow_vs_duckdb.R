@@ -1,9 +1,24 @@
-#' TODO
+#' all possible cases
+#'
+#' 01:04 logradouro_deterministico & numero exato
+#' 05:08 logradouro_deterministico & numero interpolado
+#' 09:12 logradouro_deterministico & numero 'S/N'
+#'
+#' 13:16 logradouro_probabilistico & numero exato
+#' 17:20 logradouro_probabilistico & numero interpolado
+#' 21:24 logradouro_probabilistico & numero 'S/N'
+#'
+#'  25 municipio, cep, localidade
+#'  26 municipio, cep
+#'  27 municipio, localidade
+#'  28 municipio
+#'
+#'
+#' TO DO
+#'
 #' instalar extensoes do duckdb
-#' - allocate memory
-#' - spatial
-#' - arrow
-#' - jemalloc (memory allocation) / not available on windows
+#' - spatial - acho q nao vale a pena por agora
+#' - arrow - faria diferenca?
 #'
 #' #' (non-deterministic search)
 #' - fts - Adds support for Full-Text Search Indexes / "https://medium.com/@havus.it/enhancing-database-search-full-text-search-fts-in-mysql-1bb548f4b9ba"
@@ -12,6 +27,23 @@
 #'
 #' adicionar dados de POI da Meta /overture
 #' adicionar dados de enderecos Meta /overture
+#'   # NEXT STEPS
+#'   - (ok) interpolar numeros na mesma rua
+#'   - join probabilistico com fts_main_documents.match_bm25
+#'   - optimize disk and parallel operations in duckdb
+#'   - exceptional cases (no info on municipio input)
+#'   - calcular nivel de erro
+
+
+
+## CASE 999 --------------------------------------------------------------------
+# TO DO
+# WHAT SHOULD BE DONE FOR CASES NOT FOUND ?
+# AND THEIR EFFECT ON THE PROGRESS BAR
+
+
+
+
 
 devtools::load_all('.')
 library(tictoc)
@@ -50,8 +82,8 @@ input_df$id <-  1:nrow(input_df)
 
 # benchmark different approaches ------------------------------------------------------------------
 
-rafa <- function(){
-  df_duck_rafa <- geocodebr:::geocode_rafa(
+rafa_verb <- function(){
+  df_rafa <- geocodebr:::geocode_rafa_verbose(
     input_table = input_df,
     logradouro = "nm_logradouro",
     numero = "Numero",
@@ -62,6 +94,48 @@ rafa <- function(){
     output_simple = F,
     n_cores=7,
     progress = T
+  )
+}
+
+
+rafa_loop <- function(){
+  fields <- geocodebr::setup_address_fields(
+    logradouro = 'nm_logradouro',
+    numero = 'Numero',
+    cep = 'Cep',
+    bairro = 'Bairro',
+    municipio = 'nm_municipio',
+    estado = 'nm_uf'
+  )
+
+
+  df_rafa_loop <- geocodebr:::geocode_rafa(
+    addresses_table = input_df,
+    address_fields = fields,
+    n_cores = 7,
+    progress = T,
+    cache=T
+  )
+}
+
+
+rafa_loc <- function(){
+  fields <- geocodebr::setup_address_fields(
+    logradouro = 'nm_logradouro',
+    numero = 'Numero',
+    cep = 'Cep',
+    bairro = 'Bairro',
+    municipio = 'nm_municipio',
+    estado = 'nm_uf'
+  )
+
+
+  df_rafa_loop <- geocodebr:::geocode_rafa_local(
+    addresses_table = input_df,
+    address_fields = fields,
+    n_cores = 7,
+    progress = T,
+    cache=T
   )
 }
 
@@ -85,129 +159,87 @@ dani <- function(){
   )
 }
 
-microbenchmark::microbenchmark(dani = dani(),
-                               rafa = rafa(),
-                               times = 10
+microbenchmark::microbenchmark(
+  # dani = dani(),
+  rafa_loop = rafa_loop(),
+  rafa_loc = rafa_loc(),
+  times = 5
+  )
+
+# expr           min       lq     mean   median       uq      max neval
+#      dani 8.387754 8.422850 8.795608 8.677266 8.897707 9.785240    10
+# rafa_loop 7.052954 7.208139 7.358788 7.340292 7.501446 7.778086    10
+#      rafa 6.907185 6.991580 7.215487 7.036608 7.380152 8.095192    10
+
+
+# rafa loop: 12,4995.6 per second com 917K cases
+
+# First open a connection to the database
+
+
+####### persistent db ----------------------------------------
+# tabelas pre-agregadas ok pq ficam menores, mas sao varias
+# mas ainda precisaria do dado completo para fazer interpolacao de coordenadas
+# tabelas pre-agregadas salva certo tempo, mas teria q narrow scope para os merges
+# entao soh testando pra saber se compensa
+
+devtools::load_all('.')
+library(dplyr)
+
+con <- duckdb::dbConnect(duckdb::duckdb(), dbdir= 'geo.duckdb' ) # db_path ":memory:"
+cnefe <- arrow::open_dataset(get_cache_dir())
+nrow(cnefe)
+
+
+DBI::dbWriteTableArrow(con, "cnefe", cnefe,
+                     temporary = FALSE, overwrite = TRUE)
+
+data <- data.frame(id = 1:5, value = letters[1:5])
+data
+DBI::dbWriteTable(con, "example_table", data)
+
+
+# nao funciona
+# duckdb::duckdb_register_arrow(con, "cnefe", cnefe)
+
+# ?
+# DBI::dbCreateTableArrow(con, "cnefe", cnefe,
+#                      temporary = FALSE, overwrite = TRUE)
+
+DBI::dbDisconnect(con, shutdown = TRUE)
+
+
+# new session
+con2 <- duckdb::dbConnect(duckdb::duckdb(), dbdir = 'geo.duckdb')
+DBI::dbListTables(con2)
+
+DBI::dbGetQuery(con, "SELECT * FROM cnefe LIMIT 5;")
+DBI::dbGetQueryArrow(con, "SELECT * FROM cnefe LIMIT 5;")
+
+a <- DBI::dbSendQueryArrow(con, "SELECT * FROM cnefe LIMIT 5;")
+
+DBI::dbGetQuery(con,
+'SELECT COUNT(*) AS row_count
+ FROM cnefe;'
 )
 
-# expr       min        lq      mean    median        uq      max neval
-# dani 16.006761 16.859789 18.569111 17.691887 20.367627 22.86581    10
-# rafa  7.586888  8.178381  9.156078  8.865305  9.168628 13.42151    10
 
-
-# precision ------------------------------------------------------------------
-
-input_df <- input_table <- data.frame(
-  id=666,
-  nm_logradouro = 'SQS 308 Bloco C',
-  Numero = 204,
-  Complemento = 'Bloco C',
-  Cep = 70355030,
-  Bairro = 'Asa sul',
-  nm_municipio = 'Brasilia',
-  nm_uf = 'DF'
+microbenchmark::microbenchmark(
+  # dani = dani(),
+  rafa_loop = rafa_loop(),
+  rafa_loc = rafa_loc(),
+  times = 5
 )
 
-cnefe_cep <- arrow::open_dataset( geocodebr::get_cache_dir())
-df <- filter(cnefe_cep, cep =='70355-030') |> collect()
+# large sample
+#      expr      min       lq     mean   median       uq      max neval
+# rafa_loop 40.81682 42.97777 44.17992 44.41040 45.27371 47.42092     5
+#  rafa_loc 17.54525 17.97168 18.54324 18.33696 19.21377 19.64852     5
 
-
-
-
-# LIKE operator ------------------------------------------------------------------
-input_df$Complemento <- NULL
-input_df$code_muni <- NULL
-
-input_df_like <- data.frame(
-  id=666,
-  nm_logradouro = 'DESEMBARGADOR HUGO SIMAS',
-  Numero = 1948,
-  Cep = '80520-250',
-  Bairro = 'BOM RETIRO',
-  nm_municipio = 'CURITIBA',
-  nm_uf = 'PARANA'
-)
-
-input_df_like <- rbind(input_df_like, input_df)
-
-fields <- geocodebr::setup_address_fields(
-  logradouro = 'nm_logradouro',
-  numero = 'Numero',
-  cep = 'Cep',
-  bairro = 'Bairro',
-  municipio = 'nm_municipio',
-  estado = 'nm_uf'
-)
-
-lik <- geocodebr:::geocode_like(
-  addresses_table = input_df_like,
-  address_fields = fields,
-  n_cores = 1, # 7
-  progress = F
-)
-
-head(lik)
-
-lik <- geocodebr:::geocode_rafa_like(
-  input_table = input_df_like,
-  logradouro = "nm_logradouro",
-  numero = "Numero",
-  cep = "Cep",
-  bairro = "Bairro",
-  municipio = "nm_municipio",
-  estado = "nm_uf",
-  output_simple = F,
-  n_cores=7,
-  progress = T
-)
-
-geocodebr::get_cache_dir() |>
-  geocodebr:::arrow_open_dataset()  |>
-  filter(estado=="PR") |>
-  filter(municipio == "CURITIBA") |>
-  dplyr::compute() |>
-  filter(logradouro_sem_numero %like% "DESEMBARGADOR HUGO SIMAS") |>
-  dplyr::collect()
-
-
-
-################## calculate precision as the area in m2
-range_lon <- max(df$lon) - min(df$lon)
-range_lat <- max(df$lat) - min(df$lat)
-
-lon_meters <- 111320 * range_lon * cos(mean(df$lat))
-lat_meters <- 111320 * range_lat
-
-area = pi * lon_meters * lat_meters
-area
-##################
-range_lon <- sd(df$lon) *2
-range_lat <- sd(df$lat) *2
-
-
-
-query_aggregate_and_match <- sprintf(
-  "CREATE TABLE %s AS
-    WITH pre_aggregated_cnefe AS (
-      SELECT %s AVG(lon) AS lon, AVG(lat) AS lat,
-      2 * STDDEV_SAMP(lon) as range_lon, 2 * STDDEV_SAMP(lat) as range_lat
-      FROM %s
-      GROUP BY %s
-    )
-    SELECT %s.ID, pre_aggregated_cnefe.lon, pre_aggregated_cnefe.lat,
-    pre_aggregated_cnefe.range_lon, pre_aggregated_cnefe.range_lat
-    FROM %s AS %s
-    LEFT JOIN pre_aggregated_cnefe
-    ON %s
-    WHERE pre_aggregated_cnefe.lon IS NOT NULL;",
-  output_tb,     # new table
-  cols_select,   # select
-  y,             # from
-  cols_group,    # group
-  x,             # select
-  x, x,          # from
-  join_condition # on
-)
+# small sample
+#      expr       min        lq      mean    median        uq       max neval
+# rafa_loop 10.080199 10.963517 10.996075 11.193744 11.246779 11.496137     5
+#  rafa_loc  6.980258  6.982212  7.071433  6.997702  7.166068  7.230925     5
 
 
 
