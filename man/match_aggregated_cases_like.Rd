@@ -2,7 +2,7 @@
 % Please edit documentation in R/match_aggregated_cases.R
 \name{match_aggregated_cases_like}
 \alias{match_aggregated_cases_like}
-\title{Match aggregated cases with left_join}
+\title{Match aggregated cases with left_join LIKE}
 \usage{
 match_aggregated_cases_like(con, x, y, output_tb, key_cols, match_type)
 }
@@ -23,6 +23,6 @@ match_aggregated_cases_like(con, x, y, output_tb, key_cols, match_type)
 Writes the result of the left join as a new table in con
 }
 \description{
-Match aggregated cases with left_join
+Match aggregated cases with left_join LIKE
 }
 \keyword{internal}
