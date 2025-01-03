@@ -119,8 +119,6 @@ add_abbrev_state_col <- function(con, update_tb = "input_padrao_db"){
 }
 
 
-
-
 #' Update input_padrao_db to remove observations previously matched
 #'
 #' @param con A db connection
@@ -228,4 +226,37 @@ create_index <- function(con, tb, cols, operation, overwrite=TRUE){
 
   query_index <- sprintf('%s INDEX %s ON %s(%s);', operation, idx, tb, cols_group)
   DBI::dbExecute(con, query_index)
+}
+
+
+get_relevant_cols_rafa <- function(case) {
+  relevant_cols <- if (case == 1) {
+    c("estado", "municipio", "logradouro_sem_numero", "numero", "cep", "localidade")
+  } else if (case == 2) {
+    c("estado", "municipio", "logradouro_sem_numero", "numero", "cep")
+  } else if (case == 3) {
+    c("estado", "municipio", "logradouro_sem_numero", "numero", "localidade")
+  } else if (case == 4) {
+    c("estado", "municipio", "logradouro_sem_numero", "numero")
+  } else if (case == 44) {
+    c("estado", "municipio", "logradouro_sem_numero")
+  } else if (case == 5) {
+    c("estado", "municipio", "logradouro_sem_numero", "cep", "localidade")
+  } else if (case == 6) {
+    c("estado", "municipio", "logradouro_sem_numero", "cep")
+  } else if (case == 7) {
+    c("estado", "municipio", "logradouro_sem_numero", "localidade")
+  } else if (case == 8) {
+    c("estado", "municipio", "logradouro_sem_numero")
+  } else if (case == 9) {
+    c("estado", "municipio", "cep", "localidade")
+  } else if (case == 10) {
+    c("estado", "municipio", "cep")
+  } else if (case == 11) {
+    c("estado", "municipio", "localidade")
+  } else if (case == 12) {
+    c("estado", "municipio")
+  }
+
+  return(relevant_cols)
 }

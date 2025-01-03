@@ -5,41 +5,31 @@
 \title{Geocoding addresses based on CNEFE data}
 \usage{
 geocode_rafa(
-  input_table,
-  logradouro = NULL,
-  numero = NULL,
-  cep = NULL,
-  bairro = NULL,
-  municipio = NULL,
-  estado = NULL,
+  addresses_table,
+  address_fields = setup_address_fields(),
+  n_cores = 1,
   progress = TRUE,
-  output_simple = TRUE,
-  n_cores = NULL,
   cache = TRUE
 )
 }
 \arguments{
-\item{input_table}{A data frame.}
+\item{addresses_table}{A data frame. The addresses to be geocoded. Each
+column must represent an address field.}
 
-\item{logradouro}{A string.}
-
-\item{numero}{A string.}
-
-\item{cep}{A string.}
-
-\item{bairro}{A string.}
-
-\item{municipio}{A string.}
-
-\item{estado}{A string.}
-
-\item{progress}{A logical. Whether to display progress bars when downloading
-CNEFE data and when geocoding the addresses. Defaults to \code{TRUE}.}
-
-\item{output_simple}{Logic. Defaults to \code{TRUE}}
+\item{address_fields}{A character vector. The correspondence between each
+address field and the name of the column that describes it in
+\code{addresses_table}. The \code{\link[=setup_address_fields]{setup_address_fields()}} function helps creating
+this vector and performs some checks on the input. Address fields
+passed as \code{NULL} are ignored and the function must receive at least one
+non-null field. If manually creating the vector, please note that the
+vector names should be the same names used in the \code{\link[=setup_address_fields]{setup_address_fields()}}
+parameters.}
 
 \item{n_cores}{A number. The number of cores to be used in parallel
 execution. Defaults to 1.}
+
+\item{progress}{A logical. Whether to display progress bars when downloading
+CNEFE data and when geocoding the addresses. Defaults to \code{TRUE}.}
 
 \item{cache}{A logical. Whether CNEFE data should be saved to/read from
 cache, reducing processing time in future calls. Defaults to \code{TRUE}. When

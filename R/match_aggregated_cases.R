@@ -25,6 +25,9 @@ match_aggregated_cases <- function(con, x, y, output_tb, key_cols, match_type){
     collapse = ' AND '
   )
 
+  # pulo do gato aqui 6666666666666
+  # join_condition <- gsub("= input_padrao_db.logradouro_sem_numero", "LIKE '%' || input_padrao_db.logradouro_sem_numero || '%'", join_condition)
+
   # Build the dynamic select and group statement
   cols_select <- paste0(paste(key_cols, collapse = ", "),",")
   cols_group <- paste(key_cols, collapse = ", ")
@@ -34,22 +37,30 @@ match_aggregated_cases <- function(con, x, y, output_tb, key_cols, match_type){
     "CREATE OR REPLACE VIEW pre_aggregated_cnefe AS
         SELECT {cols_select} AVG(lon) AS lon, AVG(lat) AS lat
         FROM {y}
+        WHERE {y}.numero != 'S/N'
         GROUP BY {cols_group};"
-    )
+      )
 
-  temp_n <- DBI::dbExecute(con, query_aggregate)
+  if (match_type %in% 5:12) {
+    query_aggregate <- gsub("WHERE filtered_cnefe.numero != 'S/N'", "", query_aggregate)
+  }
 
-  # Build the query using the provided parameters
+  DBI::dbExecute(con, query_aggregate)
+
+  # query for left join
   query_match <- glue::glue(
     "CREATE TEMPORARY TABLE {output_tb} AS
       SELECT {x}.id, pre_aggregated_cnefe.lon, pre_aggregated_cnefe.lat
       FROM {x}
       LEFT JOIN pre_aggregated_cnefe
       ON {join_condition}
-      WHERE pre_aggregated_cnefe.lon IS NOT NULL;"
-  )
+      WHERE {x}.numero != 'S/N' AND pre_aggregated_cnefe.lon IS NOT NULL;"
+    )
 
-  # parse(query_match_case)
+  if (match_type %in% 5:12) {
+    query_match <- gsub("WHERE input_padrao_db.numero != 'S/N' AND", "WHERE", query_match)
+    }
+
   temp_n <- DBI::dbExecute(con, query_match)
 
 
@@ -60,13 +71,20 @@ match_aggregated_cases <- function(con, x, y, output_tb, key_cols, match_type){
     match_type = match_type
   )
 
+  # UPDATE input_padrao_db: Remove observations found in previous step
+  update_input_db(
+    con,
+    update_tb = x,
+    reference_tb = output_tb
+  )
+
   return(temp_n)
 }
 
 
 
 
-#' Match aggregated cases with left_join
+#' Match aggregated cases with left_join LIKE
 #'
 #' @param con A db connection
 #' @param x String. Name of a table written in con
@@ -93,6 +111,7 @@ match_aggregated_cases_like <- function(con, x, y, output_tb, key_cols, match_ty
     collapse = ' AND '
   )
 
+  # pulo do gato aqui 6666666666666
   join_condition <- gsub("= input_padrao_db.logradouro_sem_numero", "LIKE '%' || input_padrao_db.logradouro_sem_numero || '%'", join_condition)
 
   # Build the dynamic select and group statement
@@ -126,6 +145,13 @@ match_aggregated_cases_like <- function(con, x, y, output_tb, key_cols, match_ty
     con,
     update_tb = output_tb,
     match_type = match_type
+  )
+
+  # UPDATE input_padrao_db: remove observations previously matched
+  update_input_db(
+    con,
+    update_tb = x,
+    reference_tb = output_tb
   )
 
   return(temp_n)
