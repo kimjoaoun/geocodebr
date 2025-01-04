@@ -45,18 +45,19 @@ coordinates found based on CNEFE data.
 \examples{
 \dontshow{if (identical(tolower(Sys.getenv("NOT_CRAN")), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 
-# open input data
 data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
 
-df_geo <- geocodebr:::geocode_rafa(
-   input_table = input_df,
-   logradouro = "nm_logradouro",
-   numero = "Numero",
-   cep = "Cep",
-   bairro = "Bairro",
-   municipio = "nm_municipio",
-   estado = "nm_uf"
-   )
+fields <- setup_address_fields(
+  logradouro = "nm_logradouro",
+  numero = "Numero",
+  cep = "Cep",
+  bairro = "Bairro",
+  municipio = "nm_municipio",
+  estado = "nm_uf"
+)
+
+#df <- geocodebr:::geocode_rafa_local(input_df, address_fields = fields, progress = FALSE)
+#df
 \dontshow{\}) # examplesIf}
 }
