@@ -23,19 +23,20 @@
 #'
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 #'
-#' # open input data
 #' data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
 #' input_df <- read.csv(data_path)
 #'
-#' df_geo <- geocodebr:::geocode_rafa(
-#'    input_table = input_df,
-#'    logradouro = "nm_logradouro",
-#'    numero = "Numero",
-#'    cep = "Cep",
-#'    bairro = "Bairro",
-#'    municipio = "nm_municipio",
-#'    estado = "nm_uf"
-#'    )
+#' fields <- setup_address_fields(
+#'   logradouro = "nm_logradouro",
+#'   numero = "Numero",
+#'   cep = "Cep",
+#'   bairro = "Bairro",
+#'   municipio = "nm_municipio",
+#'   estado = "nm_uf"
+#' )
+#'
+#' df <- geocodebr:::geocode_rafa(input_df, address_fields = fields, progress = FALSE)
+#' df
 #'
 geocode_rafa <- function(addresses_table,
                               address_fields = setup_address_fields(),
@@ -43,7 +44,6 @@ geocode_rafa <- function(addresses_table,
                               progress = TRUE,
                               cache = TRUE){
 
-  # check input
   # check input
   assert_address_fields(address_fields, addresses_table)
   checkmate::assert_data_frame(addresses_table)
@@ -120,10 +120,10 @@ geocode_rafa <- function(addresses_table,
 
   # 6666
   # this is necessary to use match with weighted cases
-  # duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
-  filtered_cnefe <- dplyr::collect(filtered_cnefe)
-  duckdb::dbWriteTable(con, "filtered_cnefe", filtered_cnefe,
-                       temporary = TRUE, overwrite = TRUE)
+   duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
+  #filtered_cnefe <- dplyr::collect(filtered_cnefe)
+  #duckdb::dbWriteTable(con, "filtered_cnefe", filtered_cnefe,
+  #                     temporary = TRUE, overwrite = TRUE)
 
 
 
@@ -167,6 +167,7 @@ geocode_rafa <- function(addresses_table,
 
       # select match function
       match_fun <- ifelse(case != 44, match_aggregated_cases, match_aggregated_cases_weighted)
+
       n_rows_affected <- match_fun(
         con,
         x = 'input_padrao_db',
@@ -187,34 +188,22 @@ geocode_rafa <- function(addresses_table,
   # THIS could BE IMPROVED / optimized
 
   # list all table outputs
-  all_output_tbs <- c(
-    ifelse( DBI::dbExistsTable(con, 'output_caso_01'), 'output_caso_01', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_02'), 'output_caso_02', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_03'), 'output_caso_03', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_04'), 'output_caso_04', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_44'), 'output_caso_44', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_05'), 'output_caso_05', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_06'), 'output_caso_06', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_07'), 'output_caso_07', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_08'), 'output_caso_08', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_09'), 'output_caso_09', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_10'), 'output_caso_10', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_11'), 'output_caso_11', 'empty'),
-    ifelse( DBI::dbExistsTable(con, 'output_caso_12'), 'output_caso_12', 'empty')
-  )
-  all_output_tbs <- all_output_tbs[!grepl('empty', all_output_tbs)]
+  all_possible_tables <- glue::glue("output_caso_{formatC(1:12, width = 2, flag = '0')}")
 
-  # elegant union
-  # output_tables <- glue::glue("output_case_{formatC(1:12, width = 2, flag = '0')}")
-  # output_select_clause <- paste(
-  #   glue::glue("SELECT {cols_to_keep} FROM {output_tables}"),
-  #   collapse = " UNION ALL "
-  # )
+  # check which tables have been created
+  output_tables <- lapply(
+    X= all_possible_tables,
+    FUN = function(i){ ifelse( DBI::dbExistsTable(con, i), i, 'empty') }) |>
+    unlist()
+
+  all_output_tbs <- output_tables[!grepl('empty', output_tables)]
 
   # save output to db
-  output_query <- paste("CREATE TEMPORARY TABLE output_db AS",
+  output_query <- paste("CREATE OR REPLACE VIEW output_db AS",
                         paste0("SELECT ", paste0('*', " FROM ", all_output_tbs),
-                               collapse = " UNION ALL "))
+                               collapse = " UNION ALL ")
+                        )
+
 
   DBI::dbExecute(con, output_query)
 
@@ -234,7 +223,6 @@ geocode_rafa <- function(addresses_table,
   )
 
   # Disconnect from DuckDB when done
-  duckdb::duckdb_unregister_arrow(con, 'filtered_cnefe')
   duckdb::dbDisconnect(con, shutdown=TRUE)
 
   # Return the result

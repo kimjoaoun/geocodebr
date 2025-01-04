@@ -39,7 +39,6 @@ Imports:
     rlang,
     tibble,
     tools,
-    utils,
     zip
 Suggests:
     covr,

@@ -261,16 +261,3 @@ for_sf <- left_join(fort_wa, rent, by = c('code_weighting'='V0011'))
 ggplot() +
   geom_sf(data=for_sf, aes(fill = avgrent), color=NA)
 
-
-
-
-
-
-
-
-
-
-
-
-
-

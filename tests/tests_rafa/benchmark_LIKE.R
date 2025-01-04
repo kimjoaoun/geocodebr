@@ -46,20 +46,6 @@ input_df <- arrow::read_parquet(data_path)
 # benchmark different approaches ------------------------------------------------------------------
 ncores <- 7
 
-rafa_verb <- function(){
-  df_rafav <- geocodebr:::geocode_rafa_verbose(
-    input_table = input_df,
-    logradouro = "logradouro",
-    numero = "numero",
-    cep = "cep",
-    bairro = "bairro",
-    municipio = "municipio",
-    estado = "uf",
-    output_simple = F,
-    n_cores=ncores,
-    progress = T
-  )
-}
 
 # round(table(df_duck_rafa$match_type)/nrow(df_duck_rafa)*100 ,2)
 #     1     2     3     4     44      9    10    11    12
@@ -100,12 +86,11 @@ rafa_loop <- function(){
     estado = 'uf'
   )
 
-
   df_rafa <- geocodebr:::geocode_rafa(
     addresses_table = input_df,
     address_fields = fields,
     n_cores = ncores,
-    progress = T
+    progress = F
   )
 }
 
@@ -120,14 +105,36 @@ rafa_loc <- function(){
     estado = 'uf'
   )
 
-
-  df_rafa <- geocodebr:::geocode_rafa_local(
+  df_rafa_local <- geocodebr:::geocode_rafa_local(
     addresses_table = input_df,
     address_fields = fields,
     n_cores = ncores,
-    progress = T
+    progress = F,
+    cache=T
+    )
+}
+
+
+
+rafa_loc2 <- function(){
+  fields <- geocodebr::setup_address_fields(
+    logradouro = 'logradouro',
+    numero = 'numero',
+    cep = 'cep',
+    bairro = 'bairro',
+    municipio = 'municipio',
+    estado = 'uf'
+  )
+
+  df_rafa_local2 <- geocodebr:::geocode_rafa_local2(
+    addresses_table = input_df,
+    address_fields = fields,
+    n_cores = ncores,
+    progress = F,
+    cache=T
   )
 }
+
 dani <- function(){
   fields <- geocodebr::setup_address_fields(
     logradouro = 'logradouro',
@@ -139,7 +146,7 @@ dani <- function(){
   )
 
 
-  df_duck_dani <- geocodebr:::geocode(
+  df_dani <- geocodebr:::geocode(
     addresses_table = input_df,
     address_fields = fields,
     n_cores = ncores,
@@ -170,13 +177,13 @@ dani_like <- function(){
 mb <- microbenchmark::microbenchmark(
   dani = dani(),
   rafa_loop = rafa_loop(),
-  rafa_verb = rafa_verb(),
   rafa_loc = rafa_loc(),
+  rafa_loc2 = rafa_loc2(),
 #  dani_L = dani_like(),
 #  rafa_like = rafa_like(),
-  times  = 10
+  times  = 1
 )
-
+mb
 # 20 K
 # Unit: seconds
 #      expr      min       lq     mean   median       uq      max neval

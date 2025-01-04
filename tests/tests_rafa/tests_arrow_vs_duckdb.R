@@ -58,13 +58,7 @@ library(dplyr)
 # open input data
 data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
-input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df,input_df)
-input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df,input_df)
-input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df,input_df)
-input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df,input_df)
-input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df,input_df)
-names(input_df)[1] <- 'id'
-input_df$id <-  1:nrow(input_df)
+
 
 
 # input_table = input_df
@@ -82,22 +76,6 @@ input_df$id <-  1:nrow(input_df)
 
 # benchmark different approaches ------------------------------------------------------------------
 
-rafa_verb <- function(){
-  df_rafa <- geocodebr:::geocode_rafa_verbose(
-    input_table = input_df,
-    logradouro = "nm_logradouro",
-    numero = "Numero",
-    cep = "Cep",
-    bairro = "Bairro",
-    municipio = "nm_municipio",
-    estado = "nm_uf",
-    output_simple = F,
-    n_cores=7,
-    progress = T
-  )
-}
-
-
 rafa_loop <- function(){
   fields <- geocodebr::setup_address_fields(
     logradouro = 'nm_logradouro',
@@ -107,7 +85,6 @@ rafa_loop <- function(){
     municipio = 'nm_municipio',
     estado = 'nm_uf'
   )
-
 
   df_rafa_loop <- geocodebr:::geocode_rafa(
     addresses_table = input_df,
@@ -129,8 +106,28 @@ rafa_loc <- function(){
     estado = 'nm_uf'
   )
 
+  df_rafa_local <- geocodebr:::geocode_rafa_local(
+    addresses_table = input_df,
+    address_fields = fields,
+    n_cores = 7,
+    progress = T,
+    cache=T
+  )
+}
 
-  df_rafa_loop <- geocodebr:::geocode_rafa_local(
+
+rafa_loc2 <- function(){
+  fields <- geocodebr::setup_address_fields(
+    logradouro = 'nm_logradouro',
+    numero = 'Numero',
+    cep = 'Cep',
+    bairro = 'Bairro',
+    municipio = 'nm_municipio',
+    estado = 'nm_uf'
+  )
+
+
+  df_rafa_local <- geocodebr:::geocode_rafa_local2(
     addresses_table = input_df,
     address_fields = fields,
     n_cores = 7,
@@ -150,7 +147,6 @@ dani <- function(){
     estado = 'nm_uf'
   )
 
-
   df_duck_dani <- geocodebr:::geocode(
     addresses_table = input_df,
     address_fields = fields,
@@ -160,10 +156,11 @@ dani <- function(){
 }
 
 microbenchmark::microbenchmark(
-  # dani = dani(),
+  dani = dani(),
   rafa_loop = rafa_loop(),
   rafa_loc = rafa_loc(),
-  times = 5
+  rafa_loc2 = rafa_loc2(),
+  times = 1
   )
 
 # expr           min       lq     mean   median       uq      max neval
