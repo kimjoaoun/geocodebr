@@ -199,7 +199,7 @@ geocode_rafa <- function(addresses_table,
   all_output_tbs <- output_tables[!grepl('empty', output_tables)]
 
   # save output to db
-  output_query <- paste("CREATE OR REPLACE VIEW output_db AS",
+  output_query <- paste("CREATE OR REPLACE TEMPORARY VIEW output_db AS",
                         paste0("SELECT ", paste0('*', " FROM ", all_output_tbs),
                                collapse = " UNION ALL ")
                         )

@@ -51,7 +51,7 @@ match_aggregated_cases_weighted <- function(con, x, y, output_tb, key_cols, matc
 
   # Construct the SQL match query
   query_match <- glue::glue(
-    "CREATE OR REPLACE VIEW temp_db AS
+    "CREATE OR REPLACE TEMPORARY VIEW temp_db AS
       SELECT {x}.id, {x}.numero, {y}.numero as numero_1, {y}.lat, {y}.lon
       FROM {x}
       LEFT JOIN {y}
