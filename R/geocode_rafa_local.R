@@ -92,16 +92,15 @@ geocode_rafa_local <- function(addresses_table,
 
 
 
-  # downloading cnefe. we only need to download the states present in the
-  # addresses table, which may save us some time.
-  input_states <- unique(input_padrao$estado)
+  # downloading cnefe
+
   # cnefe_dir <- download_cnefe(
   #   input_states,
   #   progress = progress,
   #   cache = cache
   # )
 
-  ### temporary
+  ### temporary 66666666
   input_padrao[, numero := as.integer(numero)]
 
   # creating a temporary db and register the input table data
@@ -130,6 +129,8 @@ geocode_rafa_local <- function(addresses_table,
   # register cnefe data to db, but only include states and municipalities
   # present in the input table, reducing the search scope and consequently
   # reducing processing time and memory usage
+
+  input_states <- unique(input_padrao$estado)
 
   input_municipio <- unique(input_padrao$municipio)
   input_municipio <- input_municipio[!is.na(input_municipio)]
@@ -538,11 +539,11 @@ geocode_rafa_local2 <- function(addresses_table,
 #' #df
 #'
 geocode_rafa_local_arrow <- function(addresses_table,
-                                address_fields = setup_address_fields(),
-                                n_cores = 1,
-                                progress = TRUE,
-                                cache = TRUE
-){
+                                     address_fields = setup_address_fields(),
+                                     n_cores = 1,
+                                     progress = TRUE,
+                                     cache = TRUE
+                                     ){
 
   # check input
   assert_address_fields(address_fields, addresses_table)

@@ -30,12 +30,17 @@ data_path <- system.file("extdata/large_sample.parquet", package = "geocodebr")
 input_df <- arrow::read_parquet(data_path)
 
 
-# address_fields = fields
 # addresses_table = input_df
-# n_cores = ncores
+# n_cores = 7
 # progress = T
 # cache = TRUE
-
+# address_fields <- geocodebr::setup_address_fields(
+#   logradouro = 'logradouro',
+#   numero = 'numero',
+#   cep = 'cep',
+#   bairro = 'bairro',
+#   municipio = 'municipio',
+#   estado = 'uf')
 
 # benchmark different approaches ------------------------------------------------------------------
 ncores <- 7
@@ -442,3 +447,113 @@ d <- cnf |>
 'DESEMBARGADOR'
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+library(data.table)
+
+mb01 <- microbenchmark::microbenchmark(
+  dani = dani(),
+  rafa = rafa_loop(),
+  rafa_db_1tab = rafa_loc(),
+  rafa_db_many_tab = rafa_loc2(),
+  rafa_arrow_many_tab = rafa_loc_arrow(),
+  #  dani_L = dani_like(),
+  #  rafa_like = rafa_like(),
+  times  = 10
+)
+
+mb02 <- microbenchmark::microbenchmark(
+  dani = dani(),
+  rafa = rafa_loop(),
+  rafa_db_1tab = rafa_loc(),
+  rafa_db_many_tab = rafa_loc2(),
+  rafa_arrow_many_tab = rafa_loc_arrow(),
+  #  dani_L = dani_like(),
+  #  rafa_like = rafa_like(),
+  times  = 10
+)
+
+
+mb03 <- microbenchmark::microbenchmark(
+  dani = dani(),
+  rafa = rafa_loop(),
+  rafa_db_1tab = rafa_loc(),
+  rafa_db_many_tab = rafa_loc2(),
+  rafa_arrow_many_tab = rafa_loc_arrow(),
+  #  dani_L = dani_like(),
+  #  rafa_like = rafa_like(),
+  times  = 10
+)
+
+mb04 <- microbenchmark::microbenchmark(
+  dani = dani(),
+  rafa = rafa_loop(),
+  rafa_db_1tab = rafa_loc(),
+  rafa_db_many_tab = rafa_loc2(),
+  rafa_arrow_many_tab = rafa_loc_arrow(),
+  #  dani_L = dani_like(),
+  #  rafa_like = rafa_like(),
+  times  = 10
+)
+
+mb05 <- microbenchmark::microbenchmark(
+  dani = dani(),
+  rafa = rafa_loop(),
+  rafa_db_1tab = rafa_loc(),
+  rafa_db_many_tab = rafa_loc2(),
+  rafa_arrow_many_tab = rafa_loc_arrow(),
+  #  dani_L = dani_like(),
+  #  rafa_like = rafa_like(),
+  times  = 10
+)
+
+mb06 <- microbenchmark::microbenchmark(
+  dani = dani(),
+  rafa = rafa_loop(),
+  rafa_db_1tab = rafa_loc(),
+  rafa_db_many_tab = rafa_loc2(),
+  rafa_arrow_many_tab = rafa_loc_arrow(),
+  #  dani_L = dani_like(),
+  #  rafa_like = rafa_like(),
+  times  = 10
+)
+
+get_df <- function(mb, round){
+
+  dt <- as.data.table(mb)
+  dt <- dt[, mean(time)/1000000000, by = expr]
+  dt[, round := round]
+  return(dt)
+}
+
+df_mb01 <- get_df(mb01, round = 1)
+df_mb02 <- get_df(mb02, round = 2)
+df_mb03 <- get_df(mb03, round = 3)
+df_mb04 <- get_df(mb04, round = 4)
+df_mb05 <- get_df(mb05, round = 5)
+df_mb06 <- get_df(mb06, round = 6)
+
+df <- data.table::rbindlist(
+  list(df_mb01,
+       df_mb02,
+       df_mb03,
+       df_mb04,
+       df_mb05,
+       df_mb06)
+)
