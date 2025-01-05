@@ -30,16 +30,10 @@ data_path <- system.file("extdata/large_sample.parquet", package = "geocodebr")
 input_df <- arrow::read_parquet(data_path)
 
 
-# input_table = input_df
-# logradouro = "logradouro"
-# numero = "numero"
-# cep = "cep"
-# bairro = "bairro"
-# municipio = "municipio"
-# estado = "uf"
-# progress = TRUE
-# output_simple = FALSE
-# n_cores = 1
+# address_fields = fields
+# addresses_table = input_df
+# n_cores = ncores
+# progress = T
 # cache = TRUE
 
 
@@ -90,7 +84,7 @@ rafa_loop <- function(){
     addresses_table = input_df,
     address_fields = fields,
     n_cores = ncores,
-    progress = F
+    progress = T,
   )
 }
 
@@ -109,7 +103,7 @@ rafa_loc <- function(){
     addresses_table = input_df,
     address_fields = fields,
     n_cores = ncores,
-    progress = F,
+    progress = T,
     cache=T
     )
 }
@@ -130,7 +124,27 @@ rafa_loc2 <- function(){
     addresses_table = input_df,
     address_fields = fields,
     n_cores = ncores,
-    progress = F,
+    progress = T,
+    cache=T
+  )
+}
+
+
+rafa_loc_arrow <- function(){
+  fields <- geocodebr::setup_address_fields(
+    logradouro = 'logradouro',
+    numero = 'numero',
+    cep = 'cep',
+    bairro = 'bairro',
+    municipio = 'municipio',
+    estado = 'uf'
+  )
+
+  df_rafa_localarrow <- geocodebr:::geocode_rafa_local_arrow(
+    addresses_table = input_df,
+    address_fields = fields,
+    n_cores = ncores,
+    progress = T,
     cache=T
   )
 }
@@ -170,27 +184,60 @@ dani_like <- function(){
     addresses_table = input_df,
     address_fields = fields,
     n_cores = ncores,
-    progress = F
+    progress = T
   )
 }
 
-mb <- microbenchmark::microbenchmark(
+mb10 <- microbenchmark::microbenchmark(
   dani = dani(),
-  rafa_loop = rafa_loop(),
-  rafa_loc = rafa_loc(),
-  rafa_loc2 = rafa_loc2(),
-#  dani_L = dani_like(),
+  rafa = rafa_loop(),
+  rafa_db_1tab = rafa_loc(),
+  rafa_db_many_tab = rafa_loc2(),
+  rafa_arrow_many_tab = rafa_loc_arrow(),
+  #  dani_L = dani_like(),
 #  rafa_like = rafa_like(),
-  times  = 1
+  times  = 10
 )
 mb
-# 20 K
+
+
+
+
+# 20K FRESH
 # Unit: seconds
-#      expr      min       lq     mean   median       uq      max neval
-#      dani 64.42213 67.48675 68.67454 69.02506 69.84371 73.79225    10
-# rafa_loop 42.33964 45.44855 47.62467 47.87818 48.17084 56.25725    10
-# rafa_verb 34.85304 44.25750 47.44078 48.59672 51.40361 55.08280    10
-#  rafa_loc 28.13357 37.20932 42.52181 44.34479 47.29532 53.42182    10
+#                expr      min        lq      mean    median        uq       max neval
+#                dani 9.512572 10.533384 12.133840 12.476621 13.874084 14.055381    10
+#                rafa 7.492592  9.478630 10.139055 10.651887 11.185148 11.704214    10
+#        rafa_db_1tab 6.010795 12.823882 15.698666 16.877027 19.802574 20.927360    10
+#    rafa_db_many_tab 3.888666  4.368634  6.519762  6.546503  7.850455  9.715533    10
+# rafa_arrow_many_tab 5.413124  5.452995  5.837255  5.945242  6.020612  6.348533    10
+
+# second run
+# Unit: seconds
+#                expr      min        lq      mean    median        uq       max neval
+#                dani 14.78138 15.823292 15.884216 15.938587 16.095994 16.554124    10
+#                rafa 12.56624 12.963294 13.282075 13.240145 13.794640 13.979016    10
+#        rafa_db_1tab 23.64002 24.674406 25.698825 26.092317 26.524272 26.785120    10
+#    rafa_db_many_tab 10.68212 11.360587 11.476701 11.565440 11.858326 11.991334    10
+# rafa_arrow_many_tab  6.40248  6.507919  6.640216  6.635447  6.699444  7.006282    10
+
+# 3rd round
+# Unit: seconds
+#                expr      min        lq      mean    median        uq       max neval
+#                dani 16.434306 16.690377 17.227660 16.973456 17.543389 19.05615    10
+#                rafa 13.694437 14.106194 14.293463 14.261572 14.399382 15.20275    10
+#        rafa_db_1tab 28.205305 29.230116 29.643057 29.660076 30.093959 30.46253    10
+#    rafa_db_many_tab 12.844879 13.127918 13.369812 13.414421 13.534294 13.92704    10
+# rafa_arrow_many_tab  6.538901  6.779183  7.038967  7.041431  7.310856  7.62508    10
+
+# 4th round
+# Unit: seconds
+#                expr      min        lq      mean    median        uq       max neval
+#                dani 15.519423 17.139488 17.654553 17.615109 18.181859 19.560416   100
+#                rafa 13.801301 14.694592 15.139558 15.097101 15.545994 17.266722   100
+#        rafa_db_1tab 26.722454 30.388957 31.262250 31.386270 32.028582 33.840385   100
+#    rafa_db_many_tab 12.556474 13.995775 14.364552 14.311128 14.736766 15.684131   100
+# rafa_arrow_many_tab  6.721275  7.141642  7.376419  7.345936  7.575968  8.398091   100
 
 
 bm <- bench::mark(

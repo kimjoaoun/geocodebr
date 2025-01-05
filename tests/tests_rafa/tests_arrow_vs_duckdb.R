@@ -61,18 +61,11 @@ input_df <- read.csv(data_path)
 
 
 
-# input_table = input_df
-# logradouro = "nm_logradouro"
-# numero = "Numero"
-# complemento = "Complemento"
-# cep = "Cep"
-# bairro = "Bairro"
-# municipio = "nm_municipio"
-# estado = "nm_uf"
-# progress = TRUE
-# output_simple = TRUE
-# n_cores = 1
-# cache = TRUE
+# addresses_table = input_df
+# address_fields = fields
+# n_cores = 7
+# progress = T
+# cache=T
 
 # benchmark different approaches ------------------------------------------------------------------
 
