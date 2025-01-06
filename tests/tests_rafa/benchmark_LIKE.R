@@ -547,6 +547,19 @@ mb06 <- microbenchmark::microbenchmark(
   times  = 5
 )
 
+
+mb07 <- microbenchmark::microbenchmark(
+  dani = dani(),
+  rafa = rafa_loop(),
+  rafa_db_1tab = rafa_loc(),
+  rafa_db_many_tab = rafa_loc2(),
+  rafa_arrow_many_tab = rafa_loc_arrow(),
+  #  dani_L = dani_like(),
+  #  rafa_like = rafa_like(),
+  times  = 100
+)
+
+
 get_df <- function(mb, round){
 
   dt <- as.data.table(mb)
@@ -561,6 +574,7 @@ df_mb03 <- get_df(mb03, round = 3)
 df_mb04 <- get_df(mb04, round = 4)
 df_mb05 <- get_df(mb05, round = 5)
 df_mb06 <- get_df(mb06, round = 6)
+df_mb07 <- get_df(mb07, round = 7)
 
 df <- data.table::rbindlist(
   list(df_mb01,
@@ -568,7 +582,8 @@ df <- data.table::rbindlist(
        df_mb03,
        df_mb04,
        df_mb05,
-       df_mb06)
+       df_mb06,
+       df_mb07)
 )
 
 library(ggplot2)
