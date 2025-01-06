@@ -140,7 +140,7 @@ geocode_rafa_local <- function(addresses_table,
   state_select <- paste0("'", gsub("'", "''", input_states), "'", collapse = ", ")
 
   query_filter_cnefe <- glue::glue("
-  CREATE OR REPLACE TEMPORARY TABLE filtered_cnefe AS
+  CREATE TEMPORARY TABLE filtered_cnefe AS
   SELECT estado, municipio, logradouro_sem_numero, numero, cep, localidade, lat, lon
   FROM logradouro_numero_cep_localidade
   WHERE estado IN ({state_select}) AND municipio IN ({muni_select});"
@@ -222,7 +222,7 @@ geocode_rafa_local <- function(addresses_table,
   all_output_tbs <- output_tables[!grepl('empty', output_tables)]
 
   # save output to db
-  output_query <- paste("CREATE OR REPLACE TEMPORARY VIEW output_db AS",
+  output_query <- paste("CREATE TEMPORARY VIEW output_db AS",
                         paste0("SELECT ", paste0('*', " FROM ", all_output_tbs),
                                collapse = " UNION ALL ")
   )
@@ -464,7 +464,7 @@ geocode_rafa_local2 <- function(addresses_table,
   all_output_tbs <- output_tables[!grepl('empty', output_tables)]
 
   # save output to db
-  output_query <- paste("CREATE OR REPLACE TEMPORARY VIEW output_db AS",
+  output_query <- paste("CREATE TEMPORARY VIEW output_db AS",
                         paste0("SELECT ", paste0('*', " FROM ", all_output_tbs),
                                collapse = " UNION ALL ")
   )
@@ -693,7 +693,7 @@ geocode_rafa_local_arrow <- function(addresses_table,
   all_output_tbs <- output_tables[!grepl('empty', output_tables)]
 
   # save output to db
-  output_query <- paste("CREATE OR REPLACE TEMPORARY VIEW output_db AS",
+  output_query <- paste("CREATE TEMPORARY VIEW output_db AS",
                         paste0("SELECT ", paste0('*', " FROM ", all_output_tbs),
                                collapse = " UNION ALL ")
   )

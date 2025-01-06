@@ -75,7 +75,7 @@ ncores <- 7
 
 
 
-rafa_loop <- function(){
+rafa_loop <- function(){ message('rafa_loop')
   fields <- geocodebr::setup_address_fields(
     logradouro = 'logradouro',
     numero = 'numero',
@@ -94,7 +94,7 @@ rafa_loop <- function(){
 }
 
 
-rafa_loc <- function(){
+rafa_loc <- function(){ message('rafa_loc')
   fields <- geocodebr::setup_address_fields(
     logradouro = 'logradouro',
     numero = 'numero',
@@ -115,7 +115,7 @@ rafa_loc <- function(){
 
 
 
-rafa_loc2 <- function(){
+rafa_loc2 <- function(){ message('rafa_loc2')
   fields <- geocodebr::setup_address_fields(
     logradouro = 'logradouro',
     numero = 'numero',
@@ -135,7 +135,7 @@ rafa_loc2 <- function(){
 }
 
 
-rafa_loc_arrow <- function(){
+rafa_loc_arrow <- function(){ message('rafa_loc_arrow')
   fields <- geocodebr::setup_address_fields(
     logradouro = 'logradouro',
     numero = 'numero',
@@ -154,7 +154,7 @@ rafa_loc_arrow <- function(){
   )
 }
 
-dani <- function(){
+dani <- function(){ message('dani')
   fields <- geocodebr::setup_address_fields(
     logradouro = 'logradouro',
     numero = 'numero',
@@ -464,7 +464,13 @@ d <- cnf |>
 
 
 
+# 5.314673
+# 5.467121
+#expr                     min       lq     mean   median       uq      max neval
+#rafa_arrow_many_tab 4.926556 4.951964 5.314673 5.088485 5.625931 5.980431     5
+#rafa_arrow_many_tab 4.944741 5.340474 5.467121 5.521033 5.742732 5.786627     5
 
+devtools::load_all('.')
 library(data.table)
 
 mb01 <- microbenchmark::microbenchmark(
@@ -475,8 +481,15 @@ mb01 <- microbenchmark::microbenchmark(
   rafa_arrow_many_tab = rafa_loc_arrow(),
   #  dani_L = dani_like(),
   #  rafa_like = rafa_like(),
-  times  = 10
+  times  = 5
 )
+
+#                expr       min        lq      mean    median        uq       max neval
+#                dani 10.375007 12.247182 12.237117 12.800108 12.845822 12.917467     5
+#                rafa  7.327960  7.402672  8.153484  7.655536  8.580643  9.800608     5
+#        rafa_db_1tab  7.206572  9.197473 11.098398 11.685918 13.108194 14.293833     5
+#    rafa_db_many_tab  3.354288  4.821311  4.743353  4.932382  5.204425  5.404357     5
+# rafa_arrow_many_tab  5.585149  5.673980  5.896249  5.811516  5.984594  6.426007     5
 
 mb02 <- microbenchmark::microbenchmark(
   dani = dani(),
@@ -486,7 +499,7 @@ mb02 <- microbenchmark::microbenchmark(
   rafa_arrow_many_tab = rafa_loc_arrow(),
   #  dani_L = dani_like(),
   #  rafa_like = rafa_like(),
-  times  = 10
+  times  = 5
 )
 
 
@@ -498,7 +511,7 @@ mb03 <- microbenchmark::microbenchmark(
   rafa_arrow_many_tab = rafa_loc_arrow(),
   #  dani_L = dani_like(),
   #  rafa_like = rafa_like(),
-  times  = 10
+  times  = 5
 )
 
 mb04 <- microbenchmark::microbenchmark(
@@ -509,7 +522,7 @@ mb04 <- microbenchmark::microbenchmark(
   rafa_arrow_many_tab = rafa_loc_arrow(),
   #  dani_L = dani_like(),
   #  rafa_like = rafa_like(),
-  times  = 10
+  times  = 5
 )
 
 mb05 <- microbenchmark::microbenchmark(
@@ -520,7 +533,7 @@ mb05 <- microbenchmark::microbenchmark(
   rafa_arrow_many_tab = rafa_loc_arrow(),
   #  dani_L = dani_like(),
   #  rafa_like = rafa_like(),
-  times  = 10
+  times  = 5
 )
 
 mb06 <- microbenchmark::microbenchmark(
@@ -531,7 +544,7 @@ mb06 <- microbenchmark::microbenchmark(
   rafa_arrow_many_tab = rafa_loc_arrow(),
   #  dani_L = dani_like(),
   #  rafa_like = rafa_like(),
-  times  = 10
+  times  = 5
 )
 
 get_df <- function(mb, round){
@@ -557,3 +570,9 @@ df <- data.table::rbindlist(
        df_mb05,
        df_mb06)
 )
+
+library(ggplot2)
+
+ggplot() +
+  geom_line(data=df, aes(x=factor(round), y = V1,
+                         group = expr, color=expr))

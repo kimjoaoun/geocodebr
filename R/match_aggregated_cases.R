@@ -12,6 +12,11 @@
 #' @keywords internal
 match_aggregated_cases <- function(con, x, y, output_tb, key_cols, match_type){
 
+  # table table - 7.993404
+  # view table--- 7.047993
+  # table view -- 8.874689
+  # view view --- 7.780372
+
   # Build the dynamic select and group statement
   cols_select <- paste0(paste(key_cols, collapse = ", "),",")
   cols_group <- paste(key_cols, collapse = ", ")
@@ -45,7 +50,7 @@ match_aggregated_cases <- function(con, x, y, output_tb, key_cols, match_type){
 
   # query for left join
   query_match <- glue::glue(
-    "CREATE OR REPLACE TEMPORARY TABLE {output_tb} AS
+    "CREATE TEMPORARY TABLE {output_tb} AS
       SELECT {x}.id, pre_aggregated_cnefe.lon, pre_aggregated_cnefe.lat, {match_type} as match_type
       FROM {x}
       LEFT JOIN pre_aggregated_cnefe
@@ -94,13 +99,18 @@ match_aggregated_cases <- function(con, x, y, output_tb, key_cols, match_type){
 #' @keywords internal
 match_aggregated_cases_local <- function(con, x, y, output_tb, key_cols, match_type){
 
+  # table table 8.904772
+  # view table 16.78523
+  # table view 23.72793
+  # view view 25.58421
+
   # Build the dynamic select and group statement
   cols_select <- paste0(paste(key_cols, collapse = ", "),",")
   cols_group <- paste(key_cols, collapse = ", ")
 
   # pre-aggregate cnefe
   query_aggregate <- glue::glue(
-    "CREATE OR REPLACE TEMPORARY VIEW pre_aggregated_cnefe AS
+    "CREATE OR REPLACE TEMPORARY TABLE pre_aggregated_cnefe AS
         SELECT {cols_select} AVG(lon) AS lon, AVG(lat) AS lat
         FROM {y}
         WHERE {y}.numero IS NOT NULL
@@ -126,7 +136,7 @@ match_aggregated_cases_local <- function(con, x, y, output_tb, key_cols, match_t
 
   # query for left join >>>>>> TEMPORARY VIEW ?????
   query_match <- glue::glue(
-    "CREATE OR REPLACE TEMPORARY TABLE {output_tb} AS
+    "CREATE TEMPORARY TABLE {output_tb} AS
       SELECT {x}.id, pre_aggregated_cnefe.lon, pre_aggregated_cnefe.lat, {match_type} as match_type
       FROM {x}
       LEFT JOIN pre_aggregated_cnefe
@@ -183,6 +193,12 @@ match_aggregated_cases_local2 <- function(con,
                                           input_municipio
                                           ){
 
+  # table table 13
+  # view table 8.4
+  # table view 20.61975
+  # view view 6.269719
+
+
   table_name <- paste(key_cols, collapse = "_")
   table_name <- gsub('estado_municipio_logradouro_sem_numero', 'logradouro', table_name)
   y <- table_name
@@ -222,7 +238,7 @@ match_aggregated_cases_local2 <- function(con,
 
   # query for left join
   query_match <- glue::glue(
-    "CREATE OR REPLACE TEMPORARY TABLE {output_tb} AS
+    "CREATE TEMPORARY VIEW {output_tb} AS
       SELECT {x}.id, filtered_cnefe.lon, filtered_cnefe.lat, {match_type} as match_type
       FROM {x}
       LEFT JOIN filtered_cnefe
@@ -318,7 +334,7 @@ match_aggregated_cases_local_arrow <- function(con,
 
   # query for left join
   query_match <- glue::glue(
-    "CREATE OR REPLACE TEMPORARY TABLE {output_tb} AS
+    "CREATE TEMPORARY TABLE {output_tb} AS
       SELECT {x}.id, filtered_cnefe.lon, filtered_cnefe.lat, {match_type} as match_type
       FROM {x}
       LEFT JOIN filtered_cnefe
