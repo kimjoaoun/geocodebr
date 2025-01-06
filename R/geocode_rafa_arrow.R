@@ -17,7 +17,6 @@
 #' @template n_cores
 #' @template progress
 #' @template cache
-
 #'
 #' @return An arrow `Dataset` or a `"data.frame"` object.
 #'
@@ -35,7 +34,7 @@
 #'   estado = "nm_uf"
 #' )
 #'
-#' df <- geocodebr:::geocode_rafa(
+#' df <- geocodebr:::geocode_rafa_arrow(
 #'   addresses_table = input_df,
 #'   address_fields = fields,
 #'   progress = FALSE
@@ -43,11 +42,12 @@
 #'
 #' head(df)
 #'
-geocode_rafa <- function(addresses_table,
-                              address_fields = setup_address_fields(),
-                              n_cores = 1,
-                              progress = TRUE,
-                              cache = TRUE){
+geocode_rafa_arrow <- function(addresses_table,
+                                     address_fields = setup_address_fields(),
+                                     n_cores = 1,
+                                     progress = TRUE,
+                                     cache = TRUE
+                                     ){
 
   # check input
   assert_address_fields(address_fields, addresses_table)
@@ -59,6 +59,7 @@ geocode_rafa <- function(addresses_table,
     names(addresses_table),
     must.include = "id"
   )
+
 
   # normalize input data -------------------------------------------------------
 
@@ -80,6 +81,7 @@ geocode_rafa <- function(addresses_table,
     formato_estados = "sigla"
   )
 
+
   # keep and rename colunms of input_padrao to use the
   # same column names used in cnefe data set
   data.table::setDT(input_padrao)
@@ -92,15 +94,19 @@ geocode_rafa <- function(addresses_table,
     old = c('logradouro', 'bairro'),
     new = c('logradouro_sem_numero', 'localidade'))
 
+
+
   # downloading cnefe. we only need to download the states present in the
   # addresses table, which may save us some time.
-  input_states <- unique(input_padrao$estado)
-  cnefe_dir <- download_cnefe(
-    input_states,
-    progress = progress,
-    cache = cache
-  )
 
+  # cnefe_dir <- download_cnefe(
+  #   input_states,
+  #   progress = progress,
+  #   cache = cache
+  # )
+
+  ### temporary
+  input_padrao[, numero := as.numeric(numero)]
 
   # creating a temporary db and register the input table data
   con <- create_geocodebr_db(n_cores = n_cores)
@@ -108,27 +114,6 @@ geocode_rafa <- function(addresses_table,
   # Convert input data frame to DuckDB table
   duckdb::dbWriteTable(con, "input_padrao_db", input_padrao, temporary = TRUE)
 
-
-  # register cnefe data to db, but only include states and municipalities
-  # present in the input table, reducing the search scope and consequently
-  # reducing processing time and memory usage
-
-  input_municipio <- unique(input_padrao$municipio)
-  input_municipio <- input_municipio[!is.na(input_municipio)]
-  if(is.null(input_municipio)){ input_municipio <- "*"}
-
-  # Load CNEFE data and write to DuckDB
-  filtered_cnefe <- arrow::open_dataset(get_cache_dir()) |>
-    dplyr::filter(estado %in% input_states) |>
-    dplyr::filter(municipio %in% input_municipio) |>
-    dplyr::compute()
-
-  # 6666
-  # this is necessary to use match with weighted cases
-   duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
-  #filtered_cnefe <- dplyr::collect(filtered_cnefe)
-  #duckdb::dbWriteTable(con, "filtered_cnefe", filtered_cnefe,
-  #                     temporary = TRUE, overwrite = TRUE)
 
 
 
@@ -158,6 +143,13 @@ geocode_rafa <- function(addresses_table,
     message_looking_for_matches()
   }
 
+  # determine geographical scope of the search
+  input_states <- unique(input_padrao$estado)
+  input_municipio <- unique(input_padrao$municipio)
+
+  input_municipio <- input_municipio[!is.na(input_municipio)]
+  if(is.null(input_municipio)){ input_municipio <- "*"}
+
 
   # (case in c(1:4, 44, 5:12))
   for (case in c(1:4,  5:12)) {
@@ -171,22 +163,23 @@ geocode_rafa <- function(addresses_table,
     if (all(relevant_cols %in% names(input_padrao))) {
 
       # select match function
-      match_fun <- ifelse(case != 44, match_aggregated_cases, match_aggregated_cases_weighted)
+      match_fun <- ifelse(case != 44, match_aggregated_cases_arrow, match_aggregated_cases_weighted)
 
       n_rows_affected <- match_fun(
         con,
         x = 'input_padrao_db',
-        y = 'filtered_cnefe',
+        y = 'filtered_cnefe', # desnecessario
         output_tb = paste0('output_caso_', formatted_case),
         key_cols = relevant_cols,
-        match_type = case
+        match_type = case,
+        input_states = input_states,
+        input_municipio = input_municipio
       )
     }
 
   }
 
   if (progress) finish_progress_bar(n_rows_affected)
-
 
 
   # prepare output -----------------------------------------------
@@ -204,10 +197,10 @@ geocode_rafa <- function(addresses_table,
   all_output_tbs <- output_tables[!grepl('empty', output_tables)]
 
   # save output to db
-  output_query <- paste("CREATE OR REPLACE TEMPORARY VIEW output_db AS",
+  output_query <- paste("CREATE TEMPORARY VIEW output_db AS",
                         paste0("SELECT ", paste0('*', " FROM ", all_output_tbs),
                                collapse = " UNION ALL ")
-                        )
+  )
 
 
   DBI::dbExecute(con, output_query)

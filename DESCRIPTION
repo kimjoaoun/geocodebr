@@ -34,7 +34,6 @@ Imports:
     glue,
     httr2,
     parallel,
-    pbapply,
     purrr,
     rlang,
     tibble,

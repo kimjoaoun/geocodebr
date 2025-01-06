@@ -1,3 +1,47 @@
+#' all possible cases
+#'
+#' 01:04 logradouro_deterministico & numero exato
+#' 05:08 logradouro_deterministico & numero interpolado
+#' 09:12 logradouro_deterministico & numero 'S/N'
+#'
+#' 13:16 logradouro_probabilistico & numero exato
+#' 17:20 logradouro_probabilistico & numero interpolado
+#' 21:24 logradouro_probabilistico & numero 'S/N'
+#'
+#'  25 municipio, cep, localidade
+#'  26 municipio, cep
+#'  27 municipio, localidade
+#'  28 municipio
+#'
+#'
+#' TO DO
+#'
+#' instalar extensoes do duckdb
+#' - spatial - acho q nao vale a pena por agora
+#' - arrow - faria diferenca?
+#'
+#' #' (non-deterministic search)
+#' - fts - Adds support for Full-Text Search Indexes / "https://medium.com/@havus.it/enhancing-database-search-full-text-search-fts-in-mysql-1bb548f4b9ba"
+#'
+#'
+#'
+#' adicionar dados de POI da Meta /overture
+#' adicionar dados de enderecos Meta /overture
+#'   # NEXT STEPS
+#'   - (ok) interpolar numeros na mesma rua
+#'   - join probabilistico com fts_main_documents.match_bm25
+#'   - optimize disk and parallel operations in duckdb
+#'   - exceptional cases (no info on municipio input)
+#'   - calcular nivel de erro
+
+
+
+## CASE 999 --------------------------------------------------------------------
+# TO DO
+# WHAT SHOULD BE DONE FOR CASES NOT FOUND ?
+# AND THEIR EFFECT ON THE PROGRESS BAR
+
+
 
 #' take-away
 #' 1) incluir LIKE no campo d elogradouro melhor MUITO performance, encontrando
@@ -298,85 +342,6 @@ set.seed(42)
 
 
 
-# rais --------------------------------------------------------------------
-
-rais <- ipeadatalake::ler_rais(
-  ano = 2019,
-  tipo = 'estabelecimento',
-  as_data_frame = F,
-  geoloc = T) |>
-  select("id_estab", "logradouro", "bairro", "codemun", "uf", "cep",
-         'lat', 'lon', 'Addr_type', 'Match_addr') |>
-  compute() |>
-  dplyr::slice_sample(n = 1000000) |> # sample 50K
-  filter(uf != "IG") |>
-  filter(uf != "") |>
-  collect()
-
-# rais <- head(rais, n = 1000) |> collect() |> dput()
-data.table::setDT(rais)
-
-# create column number
-rais[, numero := gsub("[^0-9]", "", logradouro)]
-
-# remove numbers from logradouro
-rais[, logradouro_no_numbers := gsub("\\d+", "", logradouro)]
-rais[, logradouro_no_numbers := gsub(",", "", logradouro_no_numbers)]
-
-
-data.table::setnames(
-  rais,
-  old = c('lat', 'lon'),
-  new = c('lat_arcgis', 'lon_arcgis')
-)
-
-tictoc::tic()
-fields <- geocodebr::setup_address_fields(
-  logradouro = 'logradouro_no_numbers',
-  numero = 'numero',
-  cep = 'cep',
-  bairro = 'bairro',
-  municipio = 'codemun',
-  estado = 'uf'
-)
-
-rais <- geocodebr:::geocode(
-  addresses_table = rais,
-  address_fields = fields,
-  n_cores = 20, # 7
-  progress = F
-)
-
-data.table::setnames(rais, old = 'match_type', new = 'match_type_equal')
-data.table::setnames(rais, old = 'lon', new = 'lon_equal')
-data.table::setnames(rais, old = 'lat', new = 'lat_equal')
-
-rais_like <- geocodebr:::geocode_like(
-  addresses_table = rais,
-  address_fields = fields,
-  n_cores = 20, # 7
-  progress = F
-)
-
-tictoc::toc()
-
-table(rais_like$match_type_equal, rais_like$match_type)
-
-result_arcgis <- table(rais_like$Addr_type) / nrow(rais_like) *100
-result_geocodebr <- table(rais_like$match_type) / nrow(rais_like) *100
-
-aaaa <- table(rais_like$match_type, rais_like$Addr_type) / nrow(rais_like) *100
-aaaa <- as.data.frame(aaaa)
-aaaa <- subset(aaaa, Freq>0)
-
-
-data.table::fwrite(aaaa, 'rais.csv', dec = ',', sep = '-')
-
-
-
-t <- subset(rais_like, match_type=='case_09' & Addr_type==	'PointAddress')
-
-
 
 
 # LIKE operator ------------------------------------------------------------------
@@ -451,143 +416,37 @@ d <- cnf |>
 
 
 
+# small sample data ------------------------------------------------------------------
+
+
+# open input data
+data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
+input_df <- read.csv(data_path)
 
 
 
+# addresses_table = input_df
+# address_fields = fields
+# n_cores = 7
+# progress = T
+# cache=T
 
 
+rafa_loop <- function(){
+  fields <- geocodebr::setup_address_fields(
+    logradouro = 'nm_logradouro',
+    numero = 'Numero',
+    cep = 'Cep',
+    bairro = 'Bairro',
+    municipio = 'nm_municipio',
+    estado = 'nm_uf'
+  )
 
-
-
-
-
-
-
-
-# 5.314673
-# 5.467121
-#expr                     min       lq     mean   median       uq      max neval
-#rafa_arrow_many_tab 4.926556 4.951964 5.314673 5.088485 5.625931 5.980431     5
-#rafa_arrow_many_tab 4.944741 5.340474 5.467121 5.521033 5.742732 5.786627     5
-
-devtools::load_all('.')
-library(data.table)
-
-mb01 <- microbenchmark::microbenchmark(
-  dani = dani(),
-  rafa = rafa_loop(),
-  rafa_db_1tab = rafa_loc(),
-  rafa_db_many_tab = rafa_loc2(),
-  rafa_arrow_many_tab = rafa_loc_arrow(),
-  #  dani_L = dani_like(),
-  #  rafa_like = rafa_like(),
-  times  = 5
-)
-
-#                expr       min        lq      mean    median        uq       max neval
-#                dani 10.375007 12.247182 12.237117 12.800108 12.845822 12.917467     5
-#                rafa  7.327960  7.402672  8.153484  7.655536  8.580643  9.800608     5
-#        rafa_db_1tab  7.206572  9.197473 11.098398 11.685918 13.108194 14.293833     5
-#    rafa_db_many_tab  3.354288  4.821311  4.743353  4.932382  5.204425  5.404357     5
-# rafa_arrow_many_tab  5.585149  5.673980  5.896249  5.811516  5.984594  6.426007     5
-
-mb02 <- microbenchmark::microbenchmark(
-  dani = dani(),
-  rafa = rafa_loop(),
-  rafa_db_1tab = rafa_loc(),
-  rafa_db_many_tab = rafa_loc2(),
-  rafa_arrow_many_tab = rafa_loc_arrow(),
-  #  dani_L = dani_like(),
-  #  rafa_like = rafa_like(),
-  times  = 5
-)
-
-
-mb03 <- microbenchmark::microbenchmark(
-  dani = dani(),
-  rafa = rafa_loop(),
-  rafa_db_1tab = rafa_loc(),
-  rafa_db_many_tab = rafa_loc2(),
-  rafa_arrow_many_tab = rafa_loc_arrow(),
-  #  dani_L = dani_like(),
-  #  rafa_like = rafa_like(),
-  times  = 5
-)
-
-mb04 <- microbenchmark::microbenchmark(
-  dani = dani(),
-  rafa = rafa_loop(),
-  rafa_db_1tab = rafa_loc(),
-  rafa_db_many_tab = rafa_loc2(),
-  rafa_arrow_many_tab = rafa_loc_arrow(),
-  #  dani_L = dani_like(),
-  #  rafa_like = rafa_like(),
-  times  = 5
-)
-
-mb05 <- microbenchmark::microbenchmark(
-  dani = dani(),
-  rafa = rafa_loop(),
-  rafa_db_1tab = rafa_loc(),
-  rafa_db_many_tab = rafa_loc2(),
-  rafa_arrow_many_tab = rafa_loc_arrow(),
-  #  dani_L = dani_like(),
-  #  rafa_like = rafa_like(),
-  times  = 5
-)
-
-mb06 <- microbenchmark::microbenchmark(
-  dani = dani(),
-  rafa = rafa_loop(),
-  rafa_db_1tab = rafa_loc(),
-  rafa_db_many_tab = rafa_loc2(),
-  rafa_arrow_many_tab = rafa_loc_arrow(),
-  #  dani_L = dani_like(),
-  #  rafa_like = rafa_like(),
-  times  = 5
-)
-
-
-mb07 <- microbenchmark::microbenchmark(
-  dani = dani(),
-  rafa = rafa_loop(),
-  rafa_db_1tab = rafa_loc(),
-  rafa_db_many_tab = rafa_loc2(),
-  rafa_arrow_many_tab = rafa_loc_arrow(),
-  #  dani_L = dani_like(),
-  #  rafa_like = rafa_like(),
-  times  = 100
-)
-
-
-get_df <- function(mb, round){
-
-  dt <- as.data.table(mb)
-  dt <- dt[, mean(time)/1000000000, by = expr]
-  dt[, round := round]
-  return(dt)
+  df_rafa_loop <- geocodebr:::geocode_rafa(
+    addresses_table = input_df,
+    address_fields = fields,
+    n_cores = 7,
+    progress = T,
+    cache=T
+  )
 }
-
-df_mb01 <- get_df(mb01, round = 1)
-df_mb02 <- get_df(mb02, round = 2)
-df_mb03 <- get_df(mb03, round = 3)
-df_mb04 <- get_df(mb04, round = 4)
-df_mb05 <- get_df(mb05, round = 5)
-df_mb06 <- get_df(mb06, round = 6)
-df_mb07 <- get_df(mb07, round = 7)
-
-df <- data.table::rbindlist(
-  list(df_mb01,
-       df_mb02,
-       df_mb03,
-       df_mb04,
-       df_mb05,
-       df_mb06,
-       df_mb07)
-)
-
-library(ggplot2)
-
-ggplot() +
-  geom_line(data=df, aes(x=factor(round), y = V1,
-                         group = expr, color=expr))
