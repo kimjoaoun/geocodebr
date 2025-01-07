@@ -1,0 +1,30 @@
+
+create_progress_bar <- function(standard_locations, .envir = parent.frame()) {
+  cli::cli_progress_bar(
+    total = nrow(standard_locations),
+    format = "Matched addresses: {formatC(cli::pb_current, big.mark = ',', format = 'd')}/{formatC(cli::pb_total, big.mark = ',', format = 'd')} {cli::pb_bar} {cli::pb_percent} - {cli::pb_status}",
+    clear = FALSE,
+    .envir = .envir
+  )
+}
+
+update_progress_bar <- function(n_rows_affected,
+                                formatted_case,
+                                .envir = parent.frame()) {
+  cli::cli_progress_update(
+    inc = n_rows_affected,
+    status = glue::glue("Looking for case {formatted_case} matches"),
+    force = TRUE,
+    .envir = .envir
+  )
+}
+
+finish_progress_bar <- function(n_rows_affected, .envir = parent.frame()) {
+  cli::cli_progress_update(
+    inc = n_rows_affected,
+    status = "Done!",
+    force = TRUE,
+    .envir = .envir
+  )
+}
+
