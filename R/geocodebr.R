@@ -28,7 +28,7 @@ cache_config_file <- fs::path(
 utils::globalVariables(
   c(
     "year", "temp_local_file", "lon_min", "lon_max", "lat_min", "lat_max", ".",
-    "lon_diff", "lat_diff", "lon", "lat", "estado", "municipio",
+    "lon_diff", "lat_diff", "lon", "lat", "estado", "municipio", "tempidgeocodebr",
 
     # due to reverse geocoding draft
     "cep", "lat_cnefe", "localidade", "logradouro_sem_numero", "lon_cnefe",

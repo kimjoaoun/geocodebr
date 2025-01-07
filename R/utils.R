@@ -139,7 +139,7 @@ update_input_db <- function(con, update_tb = 'input_padrao_db', reference_tb){
 
   query_remove_matched <- sprintf("
     DELETE FROM %s
-    WHERE id IN (SELECT id FROM %s)", update_tb, reference_tb)
+    WHERE tempidgeocodebr IN (SELECT tempidgeocodebr FROM %s)", update_tb, reference_tb)
   DBI::dbExecute(con, query_remove_matched)
 }
 
@@ -171,13 +171,16 @@ merge_results <- function(con, x, y, key_column, select_columns){
 
   # x = 'output_db'
   # y = 'output_caso_01'
-  # key_column = 'id'
+  # key_column = 'tempidgeocodebr'
   select_columns_y = c('lon', 'lat', 'match_type')
 
+  # drop temp id column
+  select_columns <- select_columns[select_columns!='tempidgeocodebr']
 
   # Create the SELECT clause dynamically
   # select_x <- paste0(x, '.', c('lon', 'lat', 'match_type '), collapse = ', ')
   select_x <- paste0(x, '.', c(select_columns), collapse = ', ')
+
   select_clause <- paste0(
     select_x, ',',
     paste0(y, ".", select_columns_y, collapse = ", ")

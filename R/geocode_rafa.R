@@ -55,10 +55,7 @@ geocode_rafa <- function(addresses_table,
   checkmate::assert_number(n_cores, lower = 1, finite = TRUE)
   checkmate::assert_logical(progress, any.missing = FALSE, len = 1)
   checkmate::assert_logical(cache, any.missing = FALSE, len = 1)
-  checkmate::assert_names(
-    names(addresses_table),
-    must.include = "id"
-  )
+
 
   # normalize input data -------------------------------------------------------
 
@@ -84,16 +81,20 @@ geocode_rafa <- function(addresses_table,
   # same column names used in cnefe data set
   data.table::setDT(input_padrao)
   cols_padr <- grep("_padr", names(input_padrao), value = TRUE)
-  input_padrao <- input_padrao[, .SD, .SDcols = c("id", cols_padr)]
-  names(input_padrao) <- c("id", gsub("_padr", "", cols_padr))
+  input_padrao <- input_padrao[, .SD, .SDcols = c(cols_padr)]
+  names(input_padrao) <- c(gsub("_padr", "", cols_padr))
 
   data.table::setnames(
     x = input_padrao,
     old = c('logradouro', 'bairro'),
     new = c('logradouro_sem_numero', 'localidade'))
 
+  # temp id
+  input_padrao[, tempidgeocodebr := 1:nrow(input_padrao) ]
+
   ### temporary
   input_padrao[, numero := as.numeric(numero)]
+
 
   # downloading cnefe. we only need to download the states present in the
   # addresses table, which may save us some time.
@@ -234,7 +235,7 @@ geocode_rafa <- function(addresses_table,
     con,
     x='input_padrao_db',
     y='output_db',
-    key_column='id',
+    key_column='tempidgeocodebr',
     select_columns = x_columns
   )
 

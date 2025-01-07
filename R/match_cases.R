@@ -51,7 +51,7 @@ match_cases <- function(con, x, y, output_tb, key_cols, match_type){
   # query for left join
   query_match <- glue::glue(
     "CREATE TEMPORARY TABLE {output_tb} AS
-      SELECT {x}.id, pre_aggregated_cnefe.lon, pre_aggregated_cnefe.lat, {match_type} as match_type
+      SELECT {x}.tempidgeocodebr, pre_aggregated_cnefe.lon, pre_aggregated_cnefe.lat, {match_type} as match_type
       FROM {x}
       LEFT JOIN pre_aggregated_cnefe
       ON {join_condition}
@@ -145,7 +145,7 @@ match_cases_arrow <- function(con,
   # query for left join
   query_match <- glue::glue(
     "CREATE TEMPORARY TABLE {output_tb} AS
-      SELECT {x}.id, filtered_cnefe.lon, filtered_cnefe.lat, {match_type} as match_type
+      SELECT {x}.tempidgeocodebr, filtered_cnefe.lon, filtered_cnefe.lat, {match_type} as match_type
       FROM {x}
       LEFT JOIN filtered_cnefe
       ON {join_condition}

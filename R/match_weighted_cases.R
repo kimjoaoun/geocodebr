@@ -20,14 +20,14 @@ match_weighted_cases <- function(con, x, y, output_tb, key_cols, match_type){
 
 
 #   # Build the dynamic select and group statement
-#   cols_select <- c('id', key_cols, 'numero')
+#   cols_select <- c('tempidgeocodebr', key_cols, 'numero')
 #   cols_select <- paste( glue::glue("{x}.{cols_select}"), collapse = ', ')
-#   cols_group <- paste(c('id', key_cols, 'numero'), collapse = ", ")
+#   cols_group <- paste(c('tempidgeocodebr', key_cols, 'numero'), collapse = ", ")
 
   # Construct the SQL match query
   query_match <- glue::glue(
     "CREATE OR REPLACE TEMPORARY VIEW temp_db AS
-      SELECT {x}.id, {x}.numero, {y}.numero as numero_db, {y}.lat, {y}.lon
+      SELECT {x}.tempidgeocodebr, {x}.numero, {y}.numero as numero_db, {y}.lat, {y}.lon
       FROM {x}
       LEFT JOIN {y}
       ON {join_condition}
@@ -39,12 +39,12 @@ match_weighted_cases <- function(con, x, y, output_tb, key_cols, match_type){
   # summarize
   query_aggregate <- glue::glue(
     "CREATE TEMPORARY TABLE {output_tb} AS
-    SELECT id,
+    SELECT tempidgeocodebr,
     SUM((1/ABS(numero - numero_db) * lon)) / SUM(1/ABS(numero - numero_db)) AS lon,
     SUM((1/ABS(numero - numero_db) * lat)) / SUM(1/ABS(numero - numero_db)) AS lat,
     {match_type} as match_type
     FROM temp_db
-    GROUP BY id;"
+    GROUP BY tempidgeocodebr;"
     )
   temp_n <- DBI::dbExecute(con, query_aggregate)
 
@@ -113,7 +113,7 @@ match_weighted_cases_arrow <- function(con,
   # Construct the SQL match query
   query_match <- glue::glue(
     "CREATE OR REPLACE TEMPORARY VIEW temp_db AS
-      SELECT {x}.id, {x}.numero, {y}.numero as numero_db, {y}.lat, {y}.lon
+      SELECT {x}.tempidgeocodebr, {x}.numero, {y}.numero as numero_db, {y}.lat, {y}.lon
       FROM {x}
       LEFT JOIN {y}
       ON {join_condition}
@@ -125,12 +125,12 @@ match_weighted_cases_arrow <- function(con,
   # summarize
   query_aggregate <- glue::glue(
     "CREATE TEMPORARY TABLE {output_tb} AS
-    SELECT id,
+    SELECT tempidgeocodebr,
     SUM((1/ABS(numero - numero_db) * lon)) / SUM(1/ABS(numero - numero_db)) AS lon,
     SUM((1/ABS(numero - numero_db) * lat)) / SUM(1/ABS(numero - numero_db)) AS lat,
     {match_type} as match_type
     FROM temp_db
-    GROUP BY id;"
+    GROUP BY tempidgeocodebr;"
   )
 
   temp_n <- DBI::dbExecute(con, query_aggregate)

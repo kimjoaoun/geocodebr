@@ -172,7 +172,7 @@ mb <- microbenchmark::microbenchmark(
   dani = dani(),
   rafa = rafa(),
   rafa_arrow = rafa_arrow(),
-  times  = 5
+  times  = 10
 )
 mb
 
