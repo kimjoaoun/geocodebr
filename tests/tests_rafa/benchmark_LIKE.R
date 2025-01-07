@@ -76,6 +76,7 @@ input_df <- arrow::read_parquet(data_path)
 
 # addresses_table = input_df
 # n_cores = 7
+# ncores <- 7
 # progress = T
 # cache = TRUE
 # address_fields <- geocodebr::setup_address_fields(
@@ -85,6 +86,8 @@ input_df <- arrow::read_parquet(data_path)
 #   bairro = 'bairro',
 #   municipio = 'municipio',
 #   estado = 'uf')
+
+
 
 # benchmark different approaches ------------------------------------------------------------------
 ncores <- 7
@@ -102,24 +105,10 @@ ncores <- 7
 # checar se isso ocore
 
 
-# rafa_like <- function(){
-#   df_duck_rafa2 <- geocodebr:::geocode_rafa_like(
-#     input_table = input_df,
-#     logradouro = "logradouro",
-#     numero = "numero",
-#     cep = "cep",
-#     bairro = "bairro",
-#     municipio = "municipio",
-#     estado = "uf",
-#     output_simple = F,
-#     n_cores=ncores,
-#     progress = F
-#   )
-# }
 
 
 
-rafa_loop <- function(){ message('rafa_loop')
+rafa <- function(){ message('rafa')
   fields <- geocodebr::setup_address_fields(
     logradouro = 'logradouro',
     numero = 'numero',
@@ -133,12 +122,13 @@ rafa_loop <- function(){ message('rafa_loop')
     addresses_table = input_df,
     address_fields = fields,
     n_cores = ncores,
-    progress = T,
+    progress = T
   )
 }
 
 
-rafa_loc <- function(){ message('rafa_loc')
+
+rafa_arrow <- function(){ message('rafa_arrow')
   fields <- geocodebr::setup_address_fields(
     logradouro = 'logradouro',
     numero = 'numero',
@@ -148,53 +138,11 @@ rafa_loc <- function(){ message('rafa_loc')
     estado = 'uf'
   )
 
-  df_rafa_local <- geocodebr:::geocode_rafa_local(
+  df_rafa_arrow <- geocodebr:::geocode_rafa_arrow(
     addresses_table = input_df,
     address_fields = fields,
     n_cores = ncores,
-    progress = T,
-    cache=T
-    )
-}
-
-
-
-rafa_loc2 <- function(){ message('rafa_loc2')
-  fields <- geocodebr::setup_address_fields(
-    logradouro = 'logradouro',
-    numero = 'numero',
-    cep = 'cep',
-    bairro = 'bairro',
-    municipio = 'municipio',
-    estado = 'uf'
-  )
-
-  df_rafa_local2 <- geocodebr:::geocode_rafa_local2(
-    addresses_table = input_df,
-    address_fields = fields,
-    n_cores = ncores,
-    progress = T,
-    cache=T
-  )
-}
-
-
-rafa_loc_arrow <- function(){ message('rafa_loc_arrow')
-  fields <- geocodebr::setup_address_fields(
-    logradouro = 'logradouro',
-    numero = 'numero',
-    cep = 'cep',
-    bairro = 'bairro',
-    municipio = 'municipio',
-    estado = 'uf'
-  )
-
-  df_rafa_localarrow <- geocodebr:::geocode_rafa_local_arrow(
-    addresses_table = input_df,
-    address_fields = fields,
-    n_cores = ncores,
-    progress = T,
-    cache=T
+    progress = T
   )
 }
 
@@ -218,34 +166,13 @@ dani <- function(){ message('dani')
 }
 
 
-dani_like <- function(){
-  fields <- geocodebr::setup_address_fields(
-    logradouro = 'logradouro',
-    numero = 'numero',
-    cep = 'cep',
-    bairro = 'bairro',
-    municipio = 'municipio',
-    estado = 'uf'
-  )
 
 
-  df_duck_daniL <- geocodebr:::geocode_like(
-    addresses_table = input_df,
-    address_fields = fields,
-    n_cores = ncores,
-    progress = T
-  )
-}
-
-mb10 <- microbenchmark::microbenchmark(
+mb <- microbenchmark::microbenchmark(
   dani = dani(),
-  rafa = rafa_loop(),
-  rafa_db_1tab = rafa_loc(),
-  rafa_db_many_tab = rafa_loc2(),
-  rafa_arrow_many_tab = rafa_loc_arrow(),
-  #  dani_L = dani_like(),
-#  rafa_like = rafa_like(),
-  times  = 10
+  rafa = rafa(),
+  rafa_arrow = rafa_arrow(),
+  times  = 5
 )
 mb
 

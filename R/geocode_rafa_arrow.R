@@ -112,7 +112,8 @@ geocode_rafa_arrow <- function(addresses_table,
   con <- create_geocodebr_db(n_cores = n_cores)
 
   # Convert input data frame to DuckDB table
-  duckdb::dbWriteTable(con, "input_padrao_db", input_padrao, temporary = TRUE)
+  duckdb::dbWriteTable(con, "input_padrao_db", input_padrao,
+                       overwrite = TRUE, temporary = TRUE)
 
 
 
@@ -136,13 +137,6 @@ geocode_rafa_arrow <- function(addresses_table,
   # - case 11: match municipio, localidade
   # - case 12: match municipio
 
-  if (progress) {
-    prog <- create_progress_bar(input_padrao)
-    n_rows_affected <- 0
-
-    message_looking_for_matches()
-  }
-
   # determine geographical scope of the search
   input_states <- unique(input_padrao$estado)
   input_municipio <- unique(input_padrao$municipio)
@@ -151,8 +145,14 @@ geocode_rafa_arrow <- function(addresses_table,
   if(is.null(input_municipio)){ input_municipio <- "*"}
 
 
-  # (case in c(1:4, 44, 5:12))
-  for (case in c(1:4,  5:12)) {
+  if (progress) {
+    prog <- create_progress_bar(input_padrao)
+    n_rows_affected <- 0
+
+    message_looking_for_matches()
+  }
+
+  for (case in c(1:4, 44, 5:12)) {
 
     relevant_cols <- get_relevant_cols_rafa(case)
     formatted_case <- formatC(case, width = 2, flag = "0")
@@ -163,7 +163,7 @@ geocode_rafa_arrow <- function(addresses_table,
     if (all(relevant_cols %in% names(input_padrao))) {
 
       # select match function
-      match_fun <- ifelse(case != 44, match_aggregated_cases_arrow, match_aggregated_cases_weighted)
+      match_fun <- ifelse(case != 44, match_cases_arrow, match_weighted_cases_arrow)
 
       n_rows_affected <- match_fun(
         con,
@@ -186,7 +186,7 @@ geocode_rafa_arrow <- function(addresses_table,
   # THIS could BE IMPROVED / optimized
 
   # list all table outputs
-  all_possible_tables <- glue::glue("output_caso_{formatC(1:12, width = 2, flag = '0')}")
+  all_possible_tables <- glue::glue("output_caso_{formatC(c(1:12,44), width = 2, flag = '0')}")
 
   # check which tables have been created
   output_tables <- lapply(

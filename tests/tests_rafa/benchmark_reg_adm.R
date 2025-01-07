@@ -1,13 +1,12 @@
 devtools::load_all('.')
-library(tictoc)
+library(ipeadatalake)
 library(dplyr)
 library(data.table)
-library(ipeadatalake)
-library(mapview)
-library(sfheaders)
-library(sf)
-options(scipen = 999)
-mapview::mapviewOptions(platform = 'leafgl')
+# library(mapview)
+# library(sfheaders)
+# library(sf)
+# options(scipen = 999)
+# mapview::mapviewOptions(platform = 'leafgl')
 set.seed(42)
 
 #' take-away
@@ -17,6 +16,8 @@ set.seed(42)
 #' Usar o LIKE logradouro na join ja melhorou muito, mas ainda daria pra melhorar?
 #'
 #' t <- subset(rais_like, match_type=='case_09' & Addr_type==	'PointAddress')
+
+2+2
 
 # rais --------------------------------------------------------------------
 
@@ -28,7 +29,7 @@ rais <- ipeadatalake::ler_rais(
   select("id_estab", "logradouro", "bairro", "codemun", "uf", "cep",
          'lat', 'lon', 'Addr_type', 'Match_addr') |>
   compute() |>
-  dplyr::slice_sample(n = 1000000) |> # sample 50K
+  dplyr::slice_sample(n = 10000000) |> # sample 10 million
   filter(uf != "IG") |>
   filter(uf != "") |>
   collect()
@@ -43,6 +44,7 @@ rais[, numero := gsub("[^0-9]", "", logradouro)]
 rais[, logradouro_no_numbers := gsub("\\d+", "", logradouro)]
 rais[, logradouro_no_numbers := gsub(",", "", logradouro_no_numbers)]
 
+rais[, id := 1:nrow(rais)]
 
 data.table::setnames(
   rais,
@@ -50,7 +52,7 @@ data.table::setnames(
   new = c('lat_arcgis', 'lon_arcgis')
   )
 
-tictoc::tic()
+
 fields <- geocodebr::setup_address_fields(
   logradouro = 'logradouro_no_numbers',
   numero = 'numero',
@@ -60,12 +62,58 @@ fields <- geocodebr::setup_address_fields(
   estado = 'uf'
 )
 
-rais <- geocodebr:::geocode(
-  addresses_table = rais,
-  address_fields = fields,
-  n_cores = 20, # 7
-  progress = F
+dani <- function(){ message('dani')
+  rais <- geocodebr::geocode(
+    addresses_table = rais,
+    address_fields = fields,
+    n_cores = 20, # 7
+    progress = T
+  )
+}
+
+
+rafa <- function(){ message('rafa')
+  rais <- geocodebr:::geocode_rafa(
+    addresses_table = rais,
+    address_fields = fields,
+    n_cores = 20, # 7
+    progress = T
+  )
+}
+
+rafa_arrow <- function(){ message('rafa_arrow')
+  rais <- geocodebr:::geocode_rafa_arrow(
+    addresses_table = rais,
+    address_fields = fields,
+    n_cores = 20, # 7
+    progress = T
+  )
+}
+
+mb <- microbenchmark::microbenchmark(
+  dani = dani(),
+  rafa = rafa(),
+  rafa_arrow = rafa_arrow(),
+  times  = 5
 )
+
+mb
+# 8.6 milhoes de linhas
+# Unit: seconds
+#       expr      min       lq     mean   median       uq      max neval
+#       dani 423.3079 423.3079 423.3079 423.3079 423.3079 423.3079     1
+#       rafa 542.9040 542.9040 542.9040 542.9040 542.9040 542.9040     1
+# rafa_arrow 260.3829 260.3829 260.3829 260.3829 260.3829 260.3829     1
+
+
+
+
+
+
+
+
+
+
 
 data.table::setnames(rais, old = 'match_type', new = 'match_type_equal')
 data.table::setnames(rais, old = 'lon', new = 'lon_equal')
@@ -121,6 +169,10 @@ subset(jp , logradouro_sem_numero %like% "DESEMBARGADOR SOUTO MAIOR")
 subset(t , logradouro_no_numbers %like% "DESEMBARGADOR SOUTO MAIOR")
 
 
+
+
+
+
 # cad unico --------------------------------------------------------------------
 
 cad <- ipeadatalake::ler_cadunico(
@@ -140,7 +192,7 @@ cad <- ipeadatalake::ler_cadunico(
 
 # compose address fields
 cad <- cad |>
-  dplyr::slice_sample(n = 50000) |> # sample 20K
+  #  dplyr::slice_sample(n = 50000) |> # sample 20K
   mutate(no_tip_logradouro_fam = ifelse(is.na(no_tip_logradouro_fam), '', no_tip_logradouro_fam),
          no_tit_logradouro_fam = ifelse(is.na(no_tit_logradouro_fam), '', no_tit_logradouro_fam),
          no_logradouro_fam = ifelse(is.na(no_logradouro_fam), '', no_logradouro_fam)
@@ -160,12 +212,12 @@ cad <- cad |>
          bairro) |>
   dplyr::collect()
 
+setDT(cad)
+cad[, id := 1:nrow(cad)]
 
 
-gc(T)
 
-tictoc::tic()
-fields <- geocodebr::setup_address_fields(
+fields_cad <- geocodebr::setup_address_fields(
   logradouro = 'logradouro',
   numero = 'numero',
   cep = 'cep',
@@ -174,15 +226,70 @@ fields <- geocodebr::setup_address_fields(
   estado = 'abbrev_state'
 )
 
-df_geo <- geocodebr:::geocode(
-  addresses_table = cad,
-  address_fields = fields,
-  n_cores = 20, # 7
-  progress = T
-)
-tictoc::toc()
 
-# 43.8 mi: 1131.28 sec elapsed (19 min)
+dani <- function(){ message('dani')
+  rais <- geocodebr::geocode(
+    addresses_table = cad,
+    address_fields = fields_cad,
+    n_cores = 20, # 7
+    progress = T
+  )
+}
+
+
+rafa <- function(){ message('rafa')
+  rais <- geocodebr:::geocode_rafa(
+    addresses_table = cad,
+    address_fields = fields_cad,
+    n_cores = 20, # 7
+    progress = T
+  )
+}
+
+rafa_arrow <- function(){ message('rafa_arrow')
+  rais <- geocodebr:::geocode_rafa_arrow(
+    addresses_table = cad,
+    address_fields = fields_cad,
+    n_cores = 20, # 7
+    progress = T
+  )
+}
+
+mb_cad <- microbenchmark::microbenchmark(
+  dani = dani(),
+  rafa = rafa(),
+  rafa_arrow = rafa_arrow(),
+  times  = 5
+)
+
+mb_cad
+# 43 milhoes
+# Unit: seconds
+#       expr       min        lq     mean   median       uq      max neval
+#       dani 3803.3419 4046.2027 4928.299 4858.996 5228.297 6704.660     5
+#       rafa 1096.2143 1564.2752 2961.816 3455.412 4250.800 4442.381     5
+# rafa_arrow  788.2813  915.4166 1362.994 1691.666 1697.608 1721.999     5
+
+# aprox. 465.13 soh a padronizacao dos enderecos
+
+
+
+campos <- enderecobr::correspondencia_campos(
+  logradouro = "logradouro",
+  numero = "numero",
+  cep = "cep",
+  bairro = "bairro",
+  municipio = "code_muni",
+  estado = "abbrev_state"
+)
+
+system.time(
+  cad_pdr <- enderecobr::padronizar_enderecos(
+    enderecos = cad,
+    campos_do_endereco = campos)
+)
+
+
 
 a <- table(df_geo$match_type) / nrow(df_geo)*100
 a

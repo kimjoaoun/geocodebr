@@ -92,6 +92,9 @@ geocode_rafa <- function(addresses_table,
     old = c('logradouro', 'bairro'),
     new = c('logradouro_sem_numero', 'localidade'))
 
+  ### temporary
+  input_padrao[, numero := as.numeric(numero)]
+
   # downloading cnefe. we only need to download the states present in the
   # addresses table, which may save us some time.
   input_states <- unique(input_padrao$estado)
@@ -106,7 +109,8 @@ geocode_rafa <- function(addresses_table,
   con <- create_geocodebr_db(n_cores = n_cores)
 
   # Convert input data frame to DuckDB table
-  duckdb::dbWriteTable(con, "input_padrao_db", input_padrao, temporary = TRUE)
+  duckdb::dbWriteTable(con, "input_padrao_db", input_padrao,
+                       overwrite = TRUE, temporary = TRUE)
 
 
   # register cnefe data to db, but only include states and municipalities
@@ -121,15 +125,23 @@ geocode_rafa <- function(addresses_table,
   filtered_cnefe <- arrow::open_dataset(get_cache_dir()) |>
     dplyr::filter(estado %in% input_states) |>
     dplyr::filter(municipio %in% input_municipio) |>
+    dplyr::mutate(numero = dplyr::if_else(numero=='S/N', NA, numero)) |>
+    dplyr::mutate(numero = as.numeric(numero)) |>
     dplyr::compute()
 
   # 6666
   # this is necessary to use match with weighted cases
    duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
-  #filtered_cnefe <- dplyr::collect(filtered_cnefe)
-  #duckdb::dbWriteTable(con, "filtered_cnefe", filtered_cnefe,
-  #                     temporary = TRUE, overwrite = TRUE)
-
+  # #filtered_cnefe <- dplyr::collect(filtered_cnefe)
+  # #duckdb::dbWriteTable(con, "filtered_cnefe", filtered_cnefe,
+  # #                     temporary = TRUE, overwrite = TRUE)
+  #
+  #
+  #  DBI::dbExecute(
+  #    con,
+  #    glue::glue("UPDATE filtered_cnefe SET numero = TRY_CAST(numero AS INTEGER);
+  #            ALTER TABLE filtered_cnefe ALTER COLUMN numero TYPE INTEGER USING TRY_CAST(numero AS INTEGER);")
+  #  )
 
 
   # START DETERMINISTIC MATCHING -----------------------------------------------
@@ -159,8 +171,7 @@ geocode_rafa <- function(addresses_table,
   }
 
 
-  # (case in c(1:4, 44, 5:12))
-  for (case in c(1:4,  5:12)) {
+  for (case in c(1:4, 44, 5:12)) {
 
     relevant_cols <- get_relevant_cols_rafa(case)
     formatted_case <- formatC(case, width = 2, flag = "0")
@@ -171,7 +182,7 @@ geocode_rafa <- function(addresses_table,
     if (all(relevant_cols %in% names(input_padrao))) {
 
       # select match function
-      match_fun <- ifelse(case != 44, match_aggregated_cases, match_aggregated_cases_weighted)
+      match_fun <- ifelse(case != 44, match_cases, match_weighted_cases)
 
       n_rows_affected <- match_fun(
         con,
@@ -193,7 +204,7 @@ geocode_rafa <- function(addresses_table,
   # THIS could BE IMPROVED / optimized
 
   # list all table outputs
-  all_possible_tables <- glue::glue("output_caso_{formatC(1:12, width = 2, flag = '0')}")
+  all_possible_tables <- glue::glue("output_caso_{formatC(c(1:12,44), width = 2, flag = '0')}")
 
   # check which tables have been created
   output_tables <- lapply(
