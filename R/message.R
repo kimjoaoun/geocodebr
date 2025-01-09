@@ -9,3 +9,11 @@ geocodebr_message <- function(message, .envir = parent.frame()) {
 
   cli::cli_inform(message, class = message_classes, .envir = .envir)
 }
+
+message_standardizing_addresses <- function() {
+  geocodebr_message(c("i" = "Standardizing input addresses"))
+}
+
+message_looking_for_matches <- function() {
+  geocodebr_message(c("i" = "Looking for matches in CNEFE"))
+}
