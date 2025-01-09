@@ -28,7 +28,7 @@ Uma vez que você tenha uma tabela (`data.frame`) com endereços, a geolocaliza�
 
 2. O segundo passo é utilizar a função `geocode()` para encontrar as coordenadas geográficas dos endereços de entrada.
 
-```{r, eval=FALSE}
+```{r, eval=TRUE}
 library(geocodebr)
 
 # leitura de dados de input

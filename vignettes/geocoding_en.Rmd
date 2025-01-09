@@ -28,7 +28,7 @@ Once you have a  table (`data.frame`) with addresses, geolocating the data with 
 
 2. The second step is to use the `geocode()` function to find the geographic coordinates of input addresses.
 
-```{r, eval=FALSE}
+```{r, eval=TRUE}
 library(geocodebr)
 
 # read input sample data
