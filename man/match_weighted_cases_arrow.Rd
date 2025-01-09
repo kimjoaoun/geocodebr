@@ -26,7 +26,7 @@ match_weighted_cases_arrow(
 
 \item{key_cols}{Vector. Vector with the names of columns to perform left join}
 
-\item{match_type}{Integer. An integer}
+\item{match_type}{Character.}
 
 \item{input_states}{Vector. Passed from above}
 

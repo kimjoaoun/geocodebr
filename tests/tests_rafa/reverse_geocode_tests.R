@@ -13,6 +13,8 @@ df_coords <- data.frame(
 df_coords <- rbind(df_coords,df_coords,df_coords,df_coords,df_coords,df_coords)
 df_coords$id <-  1:nrow(df_coords)
 
+sf_coords <- sfheaders::sf_point(df_coords, x='lon', y='lat', keep = TRUE)
+sf::st_crs(sf_coords) <- 4674
 
 
 

@@ -63,62 +63,6 @@ cache_message <- function(local_file = parent.frame()$local_file,
   }
 
 
-
-
-#' Add a column of state abbreviations
-#'
-#' @param con A db connection
-#' @param update_tb String. Name of a table to be updated in con
-#'
-#' @return Adds a new column to a table in con
-#'
-#' @keywords internal
-add_abbrev_state_col <- function(con, update_tb = "input_padrao_db"){
-  # Assuming `con` is your DuckDB connection and `input_padrao` already exists as a table
-
-  # # Step 1: Add a new empty column to the existing table
-  # DBI::dbExecute(con, sprintf("ALTER TABLE %s ADD COLUMN abbrev_state VARCHAR", update_tb))
-
-  # Step 2: Update the new column with the state abbreviations using CASE WHEN
-  query_update <- sprintf("
-  UPDATE %s
-  SET estado = CASE
-    WHEN estado = 'RONDONIA' THEN 'RO'
-    WHEN estado = 'ACRE' THEN 'AC'
-    WHEN estado = 'AMAZONAS' THEN 'AM'
-    WHEN estado = 'RORAIMA' THEN 'RR'
-    WHEN estado = 'PARA' THEN 'PA'
-    WHEN estado = 'AMAPA' THEN 'AP'
-    WHEN estado = 'TOCANTINS' THEN 'TO'
-    WHEN estado = 'MARANHAO' THEN 'MA'
-    WHEN estado = 'PIAUI' THEN 'PI'
-    WHEN estado = 'CEARA' THEN 'CE'
-    WHEN estado = 'RIO GRANDE DO NORTE' THEN 'RN'
-    WHEN estado = 'PARAIBA' THEN 'PB'
-    WHEN estado = 'PERNAMBUCO' THEN 'PE'
-    WHEN estado = 'ALAGOAS' THEN 'AL'
-    WHEN estado = 'SERGIPE' THEN 'SE'
-    WHEN estado = 'BAHIA' THEN 'BA'
-    WHEN estado = 'MINAS GERAIS' THEN 'MG'
-    WHEN estado = 'ESPIRITO SANTO' THEN 'ES'
-    WHEN estado = 'RIO DE JANEIRO' THEN 'RJ'
-    WHEN estado = 'SAO PAULO' THEN 'SP'
-    WHEN estado = 'PARANA' THEN 'PR'
-    WHEN estado = 'SANTA CATARINA' THEN 'SC'
-    WHEN estado = 'RIO GRANDE DO SUL' THEN 'RS'
-    WHEN estado = 'MATO GROSSO DO SUL' THEN 'MS'
-    WHEN estado = 'MATO GROSSO' THEN 'MT'
-    WHEN estado = 'GOIAS' THEN 'GO'
-    WHEN estado = 'DISTRITO FEDERAL' THEN 'DF'
-    ELSE NULL
-  END",
-    update_tb)
-
-  # Execute the update query
-  DBI::dbExecute(con, query_update)
-}
-
-
 #' Update input_padrao_db to remove observations previously matched
 #'
 #' @param con A db connection
@@ -148,23 +92,41 @@ update_input_db <- function(con, update_tb = 'input_padrao_db', reference_tb){
 #'
 #' @param con A db connection
 #' @param update_tb String. Name of a table to be updated in con
-#' @param match_type Integer. An integer
 #'
 #' @return Adds a new column to a table in con
 #'
 #' @keywords internal
-add_precision_col <- function(con, update_tb = NULL, match_type = NULL){
+add_precision_col <- function(con, update_tb = NULL){
 
-  # update_tb = "output_caso_01"
-  # match_type = 1L
+  # update_tb = "output_db"
 
+  # add empty column
   DBI::dbExecute(
     con,
-    glue::glue(
-      "ALTER TABLE {update_tb} ADD COLUMN match_type INTEGER DEFAULT {match_type}"
-      )
-    )
+    glue::glue("ALTER TABLE {update_tb} ADD COLUMN precision TEXT;")
+  )
+
+  # populate column
+  query_precision <- glue::glue("
+  UPDATE {update_tb}
+  SET precision = CASE
+  WHEN match_type IN ('en01', 'en02', 'en03', 'en04',
+                      'pn01', 'pn02', 'pn03', 'pn04') THEN 'numero'
+  WHEN match_type IN ('ei01', 'ei02', 'ei03', 'ei04',
+                      'pi01', 'pi02', 'pi03', 'pi04') THEN 'numero_interpolado'
+  WHEN match_type IN ('er01', 'er02', 'er03', 'er04',
+                      'pr01', 'pr02', 'pr03', 'pr04') THEN 'rua'
+  WHEN match_type IN ('ec01', 'ec02') THEN 'cep'
+  WHEN match_type = 'eb01' THEN 'bairro'
+  WHEN match_type = 'em01' THEN 'municipio'
+  ELSE NULL
+  END;")
+
+  DBI::dbExecute( con, query_precision )
 }
+
+
+
 
 
 merge_results <- function(con, x, y, key_column, select_columns){
@@ -172,7 +134,7 @@ merge_results <- function(con, x, y, key_column, select_columns){
   # x = 'output_db'
   # y = 'output_caso_01'
   # key_column = 'tempidgeocodebr'
-  select_columns_y = c('lon', 'lat', 'match_type')
+  select_columns_y = c('lon', 'lat', 'match_type', 'precision')
 
   # drop temp id column
   select_columns <- select_columns[select_columns!='tempidgeocodebr']
@@ -263,3 +225,66 @@ get_relevant_cols_rafa <- function(case) {
 
   return(relevant_cols)
 }
+
+
+get_relevant_cols_arrow <- function(case) {
+  relevant_cols <- if (case %in% c('en01', 'pn01') ) {
+    c("estado", "municipio", "logradouro_sem_numero", "numero", "cep", "localidade")
+  } else if (case %in% c('en02', 'pn02')) {
+    c("estado", "municipio", "logradouro_sem_numero", "numero", "cep")
+  } else if (case %in% c('en03', 'pn03')) {
+    c("estado", "municipio", "logradouro_sem_numero", "numero", "localidade")
+  } else if (case %in% c('en04', 'pn04')) {
+    c("estado", "municipio", "logradouro_sem_numero", "numero")
+  } else if (case %in% c('er01', 'pr01', 'ei01', 'pi01')) {
+    c("estado", "municipio", "logradouro_sem_numero", "cep", "localidade")
+  } else if (case %in% c('er02', 'pr02', 'ei02', 'pi02')) {
+    c("estado", "municipio", "logradouro_sem_numero", "cep")
+  } else if (case %in% c('er03', 'pr03', 'ei03', 'pi03')) {
+    c("estado", "municipio", "logradouro_sem_numero", "localidade")
+  } else if (case %in% c('er04', 'pr04', 'ei04', 'pi04')) {
+    c("estado", "municipio", "logradouro_sem_numero")
+  } else if (case == 'ec01') {
+    c("estado", "municipio", "cep", "localidade")
+  } else if (case == 'ec02') {
+    c("estado", "municipio", "cep")
+  } else if (case == 'eb01') {
+    c("estado", "municipio", "localidade")
+  } else if (case == 'em01') {
+    c("estado", "municipio")
+  }
+
+  return(relevant_cols)
+}
+
+
+all_possible_match_types <- c(
+  "en01", "en02", "en03", "en04",
+  "ei01", "ei02", "ei03", "ei04",
+  "er01", "er02", "er03", "er04",
+  #  "pn01", "pn02", "pn03", "pn04",  # we're not working with probabilistic matching yet
+  #  "pi01", "pi02", "pi03", "pi04",  # we're not working with probabilistic matching yet
+  #  "pr01", "pr02", "pr03", "pr04",  # we're not working with probabilistic matching yet
+  "ec01", "ec02", "eb01", "em01"
+)
+
+number_interpolation_types <- c(
+  "ei01", "ei02", "ei03", "ei04",
+  "pi01", "pi02", "pi03", "pi04"
+)
+
+number_exact_types <- c(
+  "en01", "en02", "en03", "en04",
+  "pn01", "pn02", "pn03", "pn04"
+)
+
+possible_match_types_no_number <- c(
+  "er01", "er02", "er03", "er04",
+  "pr01", "pr02", "pr03", "pr04",
+  "ec01", "ec02", "eb01", "em01"
+)
+
+
+
+
+

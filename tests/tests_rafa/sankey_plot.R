@@ -2,13 +2,15 @@
 ############## sankey plot ----------------------------------------
 library(ggplot2)
 library(ggsankey)
+library(dplyr)
+library(data.table)
 
-system.time(dani <- dani()) # 60.10
-system.time(rafa <- rafa()) # 39.54
+system.time(danid <- dani()) # 60.10
+system.time(rafad <- rafa()) # 39.54
 
 
-df <- left_join(select(dani, c('id', 'match_type')),
-                select(rafa, c('id', 'match_type')), by='id')
+df <- left_join(select(danid, c('id', 'match_type')),
+                select(rafad, c('id', 'match_type')), by='id')
 
 data.table::setDT(df)
 data.table::setnames(

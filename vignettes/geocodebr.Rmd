@@ -51,3 +51,20 @@ head(df)
 ```
 
 
+
+#' Think for example of a building with several apartments that match the same
+#' street address. In such case, the coordinates of the apartments will differ
+#' very slightly, and {geocodebr} take the average of those coordinates. On the
+#' other hand, in the loosest case, in which only the state and the city are
+#' matched, geocodebr takes the city-wide average coordinates, which tends to
+#' favor more densely populated areas. The columns considered in each of the 12
+#' different match types are described below:
+
+#' In a less rigorous example, in which only the fields (estado, municipio, bairro) are
+#' matched, {geocodebr} calculates average coordinates of all addresses in CNEFE
+#' 
+#' 
+#' , which tends to
+#' favor more densely populated areas. The columns considered in each of the 12
+#' different match types are described below:
+

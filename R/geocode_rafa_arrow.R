@@ -1,13 +1,15 @@
-#' Geocoding addresses based on CNEFE data
+#' Geocode Brazilian addresses
 #'
-#' @description
-#' Takes a data frame containing addresses as an input and returns the spatial
-#' coordinates found based on CNEFE data.
+#' Geocodes Brazilian addresses based on CNEFE data. Addresses must be passed as
+#' a data frame in which each column describes one address field (street name,
+#' street number, neighborhood, etc). The input addresses are matched with CNEFE
+#' following different precision levels For more info, please see the Details
+#' section.
 #'
 #' @param addresses_table A data frame. The addresses to be geocoded. Each
 #'   column must represent an address field.
 #' @param address_fields A character vector. The correspondence between each
-#'   address field and the name of the column that describes it in
+#'   address field and the name of the column that describes it in the
 #'   `addresses_table`. The [setup_address_fields()] function helps creating
 #'   this vector and performs some checks on the input. Address fields
 #'   passed as `NULL` are ignored and the function must receive at least one
@@ -18,7 +20,12 @@
 #' @template progress
 #' @template cache
 #'
-#' @return An arrow `Dataset` or a `"data.frame"` object.
+#' @return Returns the data frame passed in `addresses_table` with the latitude
+#'   (`lat`) and longitude (`lon`) of each matched address, as well as two
+#'   columns (`precision` and `match_type`) indicating the precision level with
+#'   which the address was matched.
+#'
+#' @template precision_section
 #'
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 #'
@@ -48,14 +55,12 @@ geocode_rafa_arrow <- function(addresses_table,
                                      progress = TRUE,
                                      cache = TRUE
                                      ){
-
   # check input
   assert_address_fields(address_fields, addresses_table)
   checkmate::assert_data_frame(addresses_table)
   checkmate::assert_number(n_cores, lower = 1, finite = TRUE)
   checkmate::assert_logical(progress, any.missing = FALSE, len = 1)
   checkmate::assert_logical(cache, any.missing = FALSE, len = 1)
-
 
   # normalize input data -------------------------------------------------------
 
@@ -77,7 +82,6 @@ geocode_rafa_arrow <- function(addresses_table,
     formato_estados = "sigla"
   )
 
-
   # keep and rename colunms of input_padrao to use the
   # same column names used in cnefe data set
   data.table::setDT(input_padrao)
@@ -90,7 +94,7 @@ geocode_rafa_arrow <- function(addresses_table,
     old = c('logradouro', 'bairro'),
     new = c('logradouro_sem_numero', 'localidade'))
 
-  # temp id
+  # create temp id
   input_padrao[, tempidgeocodebr := 1:nrow(input_padrao) ]
 
   # downloading cnefe. we only need to download the states present in the
@@ -102,8 +106,11 @@ geocode_rafa_arrow <- function(addresses_table,
   #   cache = cache
   # )
 
-  ### temporary
-  input_padrao[, numero := as.numeric(numero)]
+  ### convert "numero" to numeric
+  withCallingHandlers(
+    expr = input_padrao[, numero := as.numeric(numero)],
+    warning = function(cnd) cli::cli_warn("The input of the field 'number' has observations with non numeric characters. These observations were transformed to NA.")
+    )
 
   # creating a temporary db and register the input table data
   con <- create_geocodebr_db(n_cores = n_cores)
@@ -113,26 +120,7 @@ geocode_rafa_arrow <- function(addresses_table,
                        overwrite = TRUE, temporary = TRUE)
 
 
-
-
-  # START DETERMINISTIC MATCHING -----------------------------------------------
-
-  # when merging the data, we have several different cases with different confidence
-  # levels. from best to worst, they are:
-
-  # - case 01: match municipio, logradouro, numero, cep, localidade
-  # - case 02: match municipio, logradouro, numero, cep
-  # - case 03: match municipio, logradouro, numero, localidade
-  # - case 04: match municipio, logradouro, numero
-  # - case 44: match municipio, logradouro, numero (interpolado)
-  # - case 05: match municipio, logradouro, cep, localidade
-  # - case 06: match municipio, logradouro, cep
-  # - case 07: match municipio, logradouro, localidade
-  # - case 08: match municipio, logradouro
-  # - case 09: match municipio, cep, localidade
-  # - case 10: match municipio, cep
-  # - case 11: match municipio, localidade
-  # - case 12: match municipio
+  # START MATCHING -----------------------------------------------
 
   # determine geographical scope of the search
   input_states <- unique(input_padrao$estado)
@@ -149,24 +137,24 @@ geocode_rafa_arrow <- function(addresses_table,
     message_looking_for_matches()
   }
 
-  for (case in c(1:4, 44, 5:12)) {
 
-    relevant_cols <- get_relevant_cols_rafa(case)
-    formatted_case <- formatC(case, width = 2, flag = "0")
+  for (case in all_possible_match_types ) {
 
-    if (progress) update_progress_bar(n_rows_affected, formatted_case)
+    relevant_cols <- get_relevant_cols_arrow(case)
+
+    if (progress) update_progress_bar(n_rows_affected, case)
 
 
     if (all(relevant_cols %in% names(input_padrao))) {
 
       # select match function
-      match_fun <- ifelse(case != 44, match_cases_arrow, match_weighted_cases_arrow)
+      match_fun <- ifelse(case %in% number_interpolation_types, match_weighted_cases_arrow, match_cases_arrow)
 
       n_rows_affected <- match_fun(
         con,
         x = 'input_padrao_db',
         y = 'filtered_cnefe', # desnecessario
-        output_tb = paste0('output_caso_', formatted_case),
+        output_tb = paste0('output_', case),
         key_cols = relevant_cols,
         match_type = case,
         input_states = input_states,
@@ -183,7 +171,7 @@ geocode_rafa_arrow <- function(addresses_table,
   # THIS could BE IMPROVED / optimized
 
   # list all table outputs
-  all_possible_tables <- glue::glue("output_caso_{formatC(c(1:12,44), width = 2, flag = '0')}")
+  all_possible_tables <- glue::glue("output_{all_possible_match_types}")
 
   # check which tables have been created
   output_tables <- lapply(
@@ -194,14 +182,15 @@ geocode_rafa_arrow <- function(addresses_table,
   all_output_tbs <- output_tables[!grepl('empty', output_tables)]
 
   # save output to db
-  output_query <- paste("CREATE TEMPORARY VIEW output_db AS",
+  output_query <- paste("CREATE TEMPORARY TABLE output_db AS",
                         paste0("SELECT ", paste0('*', " FROM ", all_output_tbs),
                                collapse = " UNION ALL ")
-  )
-
+                        )
 
   DBI::dbExecute(con, output_query)
 
+  # add precision column
+  add_precision_col(con, update_tb = 'output_db')
 
   # output with all original columns
   duckdb::dbWriteTable(con, "input_padrao_db", input_padrao,

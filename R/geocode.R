@@ -9,7 +9,7 @@
 #' @param addresses_table A data frame. The addresses to be geocoded. Each
 #'   column must represent an address field.
 #' @param address_fields A character vector. The correspondence between each
-#'   address field and the name of the column that describes it in
+#'   address field and the name of the column that describes it in the
 #'   `addresses_table`. The [setup_address_fields()] function helps creating
 #'   this vector and performs some checks on the input. Address fields
 #'   passed as `NULL` are ignored and the function must receive at least one

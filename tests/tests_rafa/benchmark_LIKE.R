@@ -1,24 +1,7 @@
-#' all possible cases
-#'
-#' 01:04 logradouro_deterministico & numero exato
-#' 05:08 logradouro_deterministico & numero interpolado
-#' 09:12 logradouro_deterministico & numero 'S/N'
-#'
-#' 13:16 logradouro_probabilistico & numero exato
-#' 17:20 logradouro_probabilistico & numero interpolado
-#' 21:24 logradouro_probabilistico & numero 'S/N'
-#'
-#'  25 municipio, cep, localidade
-#'  26 municipio, cep
-#'  27 municipio, localidade
-#'  28 municipio
-#'
-#'
 #' TO DO
 #'
 #' instalar extensoes do duckdb
 #' - spatial - acho q nao vale a pena por agora
-#' - arrow - faria diferenca?
 #'
 #' #' (non-deterministic search)
 #' - fts - Adds support for Full-Text Search Indexes / "https://medium.com/@havus.it/enhancing-database-search-full-text-search-fts-in-mysql-1bb548f4b9ba"
@@ -33,13 +16,9 @@
 #'   - optimize disk and parallel operations in duckdb
 #'   - exceptional cases (no info on municipio input)
 #'   - calcular nivel de erro
-
-
-
-## CASE 999 --------------------------------------------------------------------
-# TO DO
-# WHAT SHOULD BE DONE FOR CASES NOT FOUND ?
-# AND THEIR EFFECT ON THE PROGRESS BAR
+#'   - casos de rodovias
+#'   - interpolar numeros separando impares e pares
+#'   - CASES NOT FOUND ? AND THEIR EFFECT ON THE PROGRESS BAR
 
 
 

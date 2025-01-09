@@ -2,7 +2,7 @@
 % Please edit documentation in R/geocode_rafa_arrow.R
 \name{geocode_rafa_arrow}
 \alias{geocode_rafa_arrow}
-\title{Geocoding addresses based on CNEFE data}
+\title{Geocode Brazilian addresses}
 \usage{
 geocode_rafa_arrow(
   addresses_table,
@@ -17,7 +17,7 @@ geocode_rafa_arrow(
 column must represent an address field.}
 
 \item{address_fields}{A character vector. The correspondence between each
-address field and the name of the column that describes it in
+address field and the name of the column that describes it in the
 \code{addresses_table}. The \code{\link[=setup_address_fields]{setup_address_fields()}} function helps creating
 this vector and performs some checks on the input. Address fields
 passed as \code{NULL} are ignored and the function must receive at least one
@@ -36,12 +36,125 @@ cache, reducing processing time in future calls. Defaults to \code{TRUE}. When
 \code{FALSE}, CNEFE data is downloaded to a temporary directory.}
 }
 \value{
-An arrow \code{Dataset} or a \code{"data.frame"} object.
+Returns the data frame passed in \code{addresses_table} with the latitude
+(\code{lat}) and longitude (\code{lon}) of each matched address, as well as two
+columns (\code{precision} and \code{match_type}) indicating the precision level with
+which the address was matched.
 }
 \description{
-Takes a data frame containing addresses as an input and returns the spatial
-coordinates found based on CNEFE data.
+Geocodes Brazilian addresses based on CNEFE data. Addresses must be passed as
+a data frame in which each column describes one address field (street name,
+street number, neighborhood, etc). The input addresses are matched with CNEFE
+following different precision levels For more info, please see the Details
+section.
 }
+\details{
+Precision categories:
+}
+\section{Precision}{
+The results of {geocodebr} are classified into six broad \code{precision} categories:
+\itemize{
+\item "numero"
+\item "numero_interpolado"
+\item "rua"
+\item "cep"
+\item "bairro"
+\item "municipio"
+\item \code{NA} (not found)
+}
+
+Each precision level can be disaggregated into more refined match types.
+}
+
+\section{Match Type}{
+The column \code{match_type} provides more refined information on how exactly each
+input address was matched with CNEFE. In every category, {geocodebr} takes
+the average latitude and longitude of the addresses included in CNEFE that
+match the input address based on combinations of different fields. In the
+strictest case, for example, the function finds a deterministic match for all
+of the fields of a given address (estado, municipio, logradouro, numero, cep,
+localidade). Think for example of a building with several apartments that
+match the same street address and number. In such case, the coordinates of
+the apartments will differ very slightly, and {geocodebr} takes the average
+of those coordinates. In a less rigorous example, in which only the fields
+(estado, municipio, rua, bairro) are matched, {geocodebr} calculates the
+average coordinates of all the addresses in CNEFE along that street and which
+fall within the same neighborhood.
+
+The complete list of precision levels and match type categories are:
+\itemize{
+\item Precision: \strong{"numero"}
+\itemize{
+\item match_type:
+\itemize{
+\item en01: logradouro, numero, cep e bairro
+\item en02: logradouro, numero e cep
+\item en03: logradouro, numero e bairro
+\item en04: logradouro e numero
+\item pn01: logradouro, numero, cep e bairro
+\item pn02: logradouro, numero e cep
+\item pn03: logradouro, numero e bairro
+\item pn04: logradouro e numero
+}
+}
+\item Precision: \strong{"numero_interpolado"}
+\itemize{
+\item match_type:
+\itemize{
+\item ei01: logradouro, numero, cep e bairro
+\item ei02: logradouro, numero e cep
+\item ei03: logradouro, numero e bairro
+\item ei04: logradouro e numero
+\item pi01: logradouro, numero, cep e bairro
+\item pi02: logradouro, numero e cep
+\item pi03: logradouro, numero e bairro
+\item pi04: logradouro e numero
+}
+}
+\item Precision: \strong{"rua"} (when input number is missing 'S/N')
+\itemize{
+\item match_type:
+\itemize{
+\item er01: logradouro, cep e bairro
+\item er02: logradouro e cep
+\item er03: logradouro e bairro
+\item er04: logradouro
+\item pr01: logradouro, cep e bairro
+\item pr02: logradouro e cep
+\item pr03: logradouro e bairro
+\item pr04: logradouro
+}
+}
+\item Precision: \strong{"cep"}
+\itemize{
+\item match_type:
+\itemize{
+\item ec01 municipio, cep, localidade
+\item ec02 municipio, cep
+}
+}
+\item Precision: \strong{"bairro"}
+\itemize{
+\item match_type:
+\itemize{
+\item eb01 municipio, localidade
+}
+}
+\item Precision: \strong{"municipio"}
+\itemize{
+\item match_type:
+\itemize{
+\item em01 municipio
+}
+}
+}
+
+Note: Match types starting with 'p' use probabilistic matching of the
+logradouro field, while types starting with 'e' use deterministic matching
+only. Match types with probabilistic matching ARE NOT implemented in
+{geocodebr} yet.
+}
+
 \examples{
 \dontshow{if (identical(tolower(Sys.getenv("NOT_CRAN")), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 

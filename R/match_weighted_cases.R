@@ -66,7 +66,7 @@ match_weighted_cases <- function(con, x, y, output_tb, key_cols, match_type){
 #' @param y String. Name of a table written in con
 #' @param output_tb Name of the new table to be written in con
 #' @param key_cols Vector. Vector with the names of columns to perform left join
-#' @param match_type Integer. An integer
+#' @param match_type Character.
 #' @param input_states Vector. Passed from above
 #' @param input_municipio Vector. Passed from above
 #'
@@ -83,9 +83,8 @@ match_weighted_cases_arrow <- function(con,
                                        input_municipio){
 
   # read correspondind parquet file
-  table_name <- paste(c(key_cols, 'numero'), collapse = "_")
-  table_name <- gsub('estado_municipio_logradouro_sem_numero', 'logradouro', table_name)
-  y <- table_name
+  table_name <- paste(c(key_cols), collapse = "_")
+  table_name <- gsub('estado_municipio_logradouro_sem', 'logradouro', table_name)
 
   path_to_parquet <- paste0("C:/Users/r1701707/AppData/Local/R/cache/R/geocodebr/test_db/", table_name, '.parquet')
   # filter cnefe to include only states and municipalities
@@ -128,7 +127,7 @@ match_weighted_cases_arrow <- function(con,
     SELECT tempidgeocodebr,
     SUM((1/ABS(numero - numero_db) * lon)) / SUM(1/ABS(numero - numero_db)) AS lon,
     SUM((1/ABS(numero - numero_db) * lat)) / SUM(1/ABS(numero - numero_db)) AS lat,
-    {match_type} as match_type
+    '{match_type}' as match_type
     FROM temp_db
     GROUP BY tempidgeocodebr;"
   )
