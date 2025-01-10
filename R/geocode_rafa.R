@@ -35,13 +35,13 @@
 #'   estado = "nm_uf"
 #' )
 #'
-#' df <- geocodebr:::geocode_rafa(
-#'   addresses_table = input_df,
-#'   address_fields = fields,
-#'   progress = FALSE
-#'   )
-#'
-#' head(df)
+#'#df <- geocodebr:::geocode_rafa(
+#'#  addresses_table = input_df,
+#'#  address_fields = fields,
+#'#  progress = FALSE
+#'#  )
+#'#
+#'#head(df)
 #'
 geocode_rafa <- function(addresses_table,
                               address_fields = setup_address_fields(),
@@ -100,7 +100,6 @@ geocode_rafa <- function(addresses_table,
   # addresses table, which may save us some time.
   input_states <- unique(input_padrao$estado)
   cnefe_dir <- download_cnefe(
-    input_states,
     progress = progress,
     cache = cache
   )

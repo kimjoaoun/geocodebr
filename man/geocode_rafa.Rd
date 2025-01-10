@@ -57,12 +57,12 @@ fields <- setup_address_fields(
   estado = "nm_uf"
 )
 
-df <- geocodebr:::geocode_rafa(
-  addresses_table = input_df,
-  address_fields = fields,
-  progress = FALSE
-  )
-
-head(df)
+#df <- geocodebr:::geocode_rafa(
+#  addresses_table = input_df,
+#  address_fields = fields,
+#  progress = FALSE
+#  )
+#
+#head(df)
 \dontshow{\}) # examplesIf}
 }

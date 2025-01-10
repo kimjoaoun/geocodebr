@@ -3,8 +3,9 @@
 #' Geocodes Brazilian addresses based on CNEFE data. Addresses must be passed as
 #' a data frame in which each column describes one address field (street name,
 #' street number, neighborhood, etc). The input addresses are matched with CNEFE
-#' following 12 different case patterns. For more info, please see the Details
-#' section.
+#' following different precision levels For more info, please see the Details
+#' section. The output coordinates use the geodetic reference system
+#' "SIRGAS2000", CRS(4674).
 #'
 #' @param addresses_table A data frame. The addresses to be geocoded. Each
 #'   column must represent an address field.
@@ -21,44 +22,18 @@
 #' @template cache
 #'
 #' @return Returns the data frame passed in `addresses_table` with the latitude
-#'   (`lat`) and longitude (`lon`) of each matched address, as well as another
-#'   column (`match_type`) indicating the match level with which the address was
-#'   matched.
+#'   (`lat`) and longitude (`lon`) of each matched address, as well as two
+#'   columns (`precision` and `match_type`) indicating the precision level with
+#'   which the address was matched.
 #'
-#' @details
-#' The input addresses are deterministically matched with CNEFE following 12
-#' different case patterns. The type of match found for each address in the
-#' input data is indicated by the `match_type` column in the output. In every
-#' match type, the function always calculates the average latitude and longitude
-#' of all addresses in CNEFE that match the input address. In the strictest case,
-#' the function finds a perfect match for all of the fields of a given address.
-#' Think for example of a building with several apartments that match the same
-#' street address. In such case, the coordinates of the apartments will differ
-#' very slightly, and {geocodebr} take the average of those coordinates. On the
-#' other hand, in the loosest case, in which only the state and the city are
-#' matched, geocodebr takes the city-wide average coordinates, which tends to
-#' favor more densely populated areas. The columns considered in each of the 12
-#' different match types are described below:
-#'
-#' - Case 01: estado, município, logradouro, número, cep e bairro;
-#' - Case 02: estado, município, logradouro, número e cep;
-#' - Case 03: estado, município, logradouro, número e bairro;
-#' - Case 04: estado, município, logradouro e número;
-#' - Case 05: estado, município, logradouro, cep e bairro;
-#' - Case 06: estado, município, logradouro e cep;
-#' - Case 07: estado, município, logradouro e bairro;
-#' - Case 08: estado, município e logradouro;
-#' - Case 09: estado, município, cep e bairro;
-#' - Case 10: estado, município e cep;
-#' - Case 11: estado, município e bairro;
-#' - Case 12: estado, município.
+#' @template precision_section
 #'
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 #'
 #' data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
 #' input_df <- read.csv(data_path)
 #'
-#' fields <- setup_address_fields(
+#' fields <- geocodebr::setup_address_fields(
 #'   logradouro = "nm_logradouro",
 #'   numero = "Numero",
 #'   cep = "Cep",
@@ -67,16 +42,20 @@
 #'   estado = "nm_uf"
 #' )
 #'
-#' df <- geocode(input_df, address_fields = fields, progress = FALSE)
-#' df
+#' df <- geocodebr::geocode(
+#'   addresses_table = input_df,
+#'   address_fields = fields,
+#'   progress = FALSE
+#'   )
+#'
+#' head(df)
 #'
 #' @export
 geocode <- function(addresses_table,
                     address_fields = setup_address_fields(),
                     n_cores = 1,
                     progress = TRUE,
-                    cache = TRUE) {
-
+                    cache = TRUE){
   # check input
   assert_address_fields(address_fields, addresses_table)
   checkmate::assert_data_frame(addresses_table)
@@ -84,12 +63,14 @@ geocode <- function(addresses_table,
   checkmate::assert_logical(progress, any.missing = FALSE, len = 1)
   checkmate::assert_logical(cache, any.missing = FALSE, len = 1)
 
+  # normalize input data -------------------------------------------------------
+
   # standardizing the addresses table to increase the chances of finding a match
   # in the CNEFE data
 
   if (progress) message_standardizing_addresses()
 
-  standard_locations <- enderecobr::padronizar_enderecos(
+  input_padrao <- enderecobr::padronizar_enderecos(
     addresses_table,
     campos_do_endereco = enderecobr::correspondencia_campos(
       logradouro = address_fields[["logradouro"]],
@@ -102,317 +83,133 @@ geocode <- function(addresses_table,
     formato_estados = "sigla"
   )
 
+
+  # keep and rename colunms of input_padrao to use the
+  # same column names used in cnefe data set
+  data.table::setDT(input_padrao)
+  cols_to_keep <- names(input_padrao)[! names(input_padrao) %in% address_fields]
+  input_padrao <- input_padrao[, .SD, .SDcols = c(cols_to_keep)]
+  names(input_padrao) <- c(gsub("_padr", "", names(input_padrao)))
+
+  data.table::setnames(
+    x = input_padrao,
+    old = c('logradouro', 'bairro'),
+    new = c('logradouro_sem_numero', 'localidade'))
+
+  # create temp id
+  input_padrao[, tempidgeocodebr := 1:nrow(input_padrao) ]
+
   # downloading cnefe. we only need to download the states present in the
   # addresses table, which may save us some time.
 
-  present_states <- unique(standard_locations$estado_padr)
   cnefe_dir <- download_cnefe(
-    present_states,
     progress = progress,
     cache = cache
   )
 
+  ### convert "numero" to numeric
+  withCallingHandlers(
+    expr = input_padrao[, numero := as.numeric(numero)],
+    warning = function(cnd) cli::cli_warn("The input of the field 'number' has observations with non numeric characters. These observations were transformed to NA.")
+    )
+
   # creating a temporary db and register the input table data
+  con <- create_geocodebr_db(n_cores = n_cores)
 
-  tmpdb <- tempfile(fileext = ".duckdb")
-  con <- duckdb::dbConnect(duckdb::duckdb(), dbdir = tmpdb)
+  # Convert input data frame to DuckDB table
+  duckdb::dbWriteTable(con, "input_padrao_db", input_padrao,
+                       overwrite = TRUE, temporary = TRUE)
 
-  DBI::dbExecute(con, glue::glue("SET threads = {n_cores}"))
 
-  duckdb::dbWriteTable(
-    con,
-    name = "standard_locations",
-    value = standard_locations,
-    temporary = TRUE
-  )
+  # START MATCHING -----------------------------------------------
 
-  # register cnefe data to db, but only include states and municipalities
-  # present in the input table, reducing the search scope and consequently
-  # reducing processing time and memory usage
+  # determine geographical scope of the search
+  input_states <- unique(input_padrao$estado)
+  input_municipio <- unique(input_padrao$municipio)
 
-  unique_muns <- unique(standard_locations$municipio_padr)
+  input_municipio <- input_municipio[!is.na(input_municipio)]
+  if(is.null(input_municipio)){ input_municipio <- "*"}
 
-  filtered_cnefe <- arrow::open_dataset(cnefe_dir)
-  filtered_cnefe <- dplyr::filter(
-    filtered_cnefe,
-    estado %in% present_states & municipio %in% unique_muns
-  )
-
-  duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
-
-  # to find the coordinates of the addresses, we merge the input table with the
-  # cnefe data. the column names used in the input table are different than the
-  # ones used in cnefe, so we create a helper object to "translate" the column
-  # names between datasets
-
-  equivalent_colnames <- tibble::tribble(
-    ~standard_locations, ~cnefe,
-    "logradouro_padr",   "logradouro_sem_numero",
-    "numero_padr",       "numero",
-    "cep_padr",          "cep",
-    "bairro_padr",       "localidade",
-    "municipio_padr",    "municipio",
-    "estado_padr",       "estado"
-  )
-
-  lookup_vector <- equivalent_colnames$cnefe
-  names(lookup_vector) <- equivalent_colnames$standard_locations
-
-  # when merging the data, we have several different cases with different confidence
-  # levels. from best to worst, they are:
-  #
-  # - case 01: match estado, municipio, logradouro, numero, cep, localidade
-  # - case 02: match estado, municipio, logradouro, numero, cep
-  # - case 03: match estado, municipio, logradouro, numero, localidade
-  # - case 04: match estado, municipio, logradouro, numero
-  # - case 05: match estado, municipio, logradouro, cep, localidade
-  # - case 06: match estado, municipio, logradouro, cep
-  # - case 07: match estado, municipio, logradouro, localidade
-  # - case 08: match estado, municipio, logradouro
-  # - case 09: match estado, municipio, cep, localidade
-  # - case 10: match estado, municipio, cep
-  # - case 11: match estado, municipio, localidade
-  # - case 12: match estado, municipio
-
-  DBI::dbExecute(con, "ALTER TABLE standard_locations ADD COLUMN match_type VARCHAR DEFAULT NULL")
-  DBI::dbExecute(con, "ALTER TABLE standard_locations ADD COLUMN lon DOUBLE DEFAULT NULL")
-  DBI::dbExecute(con, "ALTER TABLE standard_locations ADD COLUMN lat DOUBLE DEFAULT NULL")
 
   if (progress) {
-    prog <- create_progress_bar(standard_locations)
+    prog <- create_progress_bar(input_padrao)
     n_rows_affected <- 0
 
     message_looking_for_matches()
   }
 
-  for (case in 1:12) {
-    relevant_cols <- get_relevant_cols(case)
-    formatted_case <- formatC(case, width = 2, flag = "0")
 
-    if (progress) update_progress_bar(n_rows_affected, formatted_case)
+  for (case in all_possible_match_types ) {
 
-    if (all(relevant_cols %in% names(standard_locations))) {
-      join_condition <- paste(
-        glue::glue("standard_locations.{relevant_cols} = aggregated_cnefe.{lookup_vector[relevant_cols]}"),
-        collapse = " AND "
-      )
+    relevant_cols <- get_relevant_cols_arrow(case)
 
-      cnefe_cols <- paste(lookup_vector[relevant_cols], collapse = ", ")
+    if (progress) update_progress_bar(n_rows_affected, case)
 
-      n_rows_affected <- DBI::dbExecute(
+
+    if (all(relevant_cols %in% names(input_padrao))) {
+
+      # select match function
+      match_fun <- ifelse(case %in% number_interpolation_types, match_weighted_cases_arrow, match_cases_arrow)
+
+      n_rows_affected <- match_fun(
         con,
-        glue::glue(
-          "UPDATE standard_locations ",
-          "SET lat = aggregated_cnefe.lat, lon = aggregated_cnefe.lon, match_type = 'case_{formatted_case}' ",
-          "FROM ",
-          "  (SELECT {cnefe_cols}, AVG(lon) AS lon, AVG(lat) AS lat FROM filtered_cnefe GROUP BY {cnefe_cols}) AS aggregated_cnefe ",
-          "WHERE match_type IS NULL AND {join_condition}"
-        )
+        x = 'input_padrao_db',
+        y = 'filtered_cnefe', # desnecessario
+        output_tb = paste0('output_', case),
+        key_cols = relevant_cols,
+        match_type = case,
+        input_states = input_states,
+        input_municipio = input_municipio
       )
     }
+
   }
 
   if (progress) finish_progress_bar(n_rows_affected)
 
-  cols_to_keep <- names(standard_locations)
-  cols_to_keep <- cols_to_keep[!grepl("_padr$", cols_to_keep)]
-  cols_to_keep <- c(cols_to_keep, "match_type", "lon", "lat")
-  cols_to_keep <- paste(cols_to_keep, collapse = ", ")
 
-  output <- dplyr::tbl(
+  # prepare output -----------------------------------------------
+  # THIS could BE IMPROVED / optimized
+
+  # list all table outputs
+  all_possible_tables <- glue::glue("output_{all_possible_match_types}")
+
+  # check which tables have been created
+  output_tables <- lapply(
+    X= all_possible_tables,
+    FUN = function(i){ ifelse( DBI::dbExistsTable(con, i), i, 'empty') }) |>
+    unlist()
+
+  all_output_tbs <- output_tables[!grepl('empty', output_tables)]
+
+  # save output to db
+  output_query <- paste("CREATE TEMPORARY TABLE output_db AS",
+                        paste0("SELECT ", paste0('*', " FROM ", all_output_tbs),
+                               collapse = " UNION ALL ")
+                        )
+
+  DBI::dbExecute(con, output_query)
+
+  # add precision column
+  add_precision_col(con, update_tb = 'output_db')
+
+  # output with all original columns
+  duckdb::dbWriteTable(con, "input_padrao_db", input_padrao,
+                       temporary = TRUE, overwrite=TRUE)
+
+  x_columns <- names(input_padrao)
+
+  output_deterministic <- merge_results(
     con,
-    dplyr::sql(glue::glue("SELECT {cols_to_keep} FROM standard_locations"))
-  )
-  output <- dplyr::collect(output)
-
-  duckdb::dbDisconnect(con, shutdown = TRUE)
-
-  return(output)
-}
-
-
-geocode2 <- function(addresses_table,
-                    address_fields = setup_address_fields(),
-                    n_cores = 1,
-                    progress = TRUE,
-                    cache = TRUE) {
-
-  # check input
-  assert_address_fields(address_fields, addresses_table)
-  checkmate::assert_data_frame(addresses_table)
-  checkmate::assert_number(n_cores, lower = 1, finite = TRUE)
-  checkmate::assert_logical(progress, any.missing = FALSE, len = 1)
-  checkmate::assert_logical(cache, any.missing = FALSE, len = 1)
-
-  # standardizing the addresses table to increase the chances of finding a match
-  # in the CNEFE data
-
-  if (progress) message_standardizing_addresses()
-
-  standard_locations <- enderecobr::padronizar_enderecos(
-    addresses_table,
-    campos_do_endereco = enderecobr::correspondencia_campos(
-      logradouro = address_fields[["logradouro"]],
-      numero = address_fields[["numero"]],
-      cep = address_fields[["cep"]],
-      bairro = address_fields[["bairro"]],
-      municipio = address_fields[["municipio"]],
-      estado = address_fields[["estado"]]
-    ),
-    formato_estados = "sigla"
+    x='input_padrao_db',
+    y='output_db',
+    key_column='tempidgeocodebr',
+    select_columns = x_columns
   )
 
-  # downloading cnefe. we only need to download the states present in the
-  # addresses table, which may save us some time.
+  # Disconnect from DuckDB when done
+  duckdb::dbDisconnect(con, shutdown=TRUE)
 
-  present_states <- unique(standard_locations$estado_padr)
-  cnefe_dir <- download_cnefe(
-    present_states,
-    progress = progress,
-    cache = cache
-  )
-
-  # creating a temporary db and register the input table data
-
-  tmpdb <- tempfile(fileext = ".duckdb")
-  con <- duckdb::dbConnect(duckdb::duckdb(), dbdir = tmpdb)
-
-  DBI::dbExecute(con, glue::glue("SET threads = {n_cores}"))
-
-  duckdb::dbWriteTable(
-    con,
-    name = "standard_locations",
-    value = standard_locations
-  )
-
-  # register cnefe data to db, but only include states and municipalities
-  # present in the input table, reducing the search scope and consequently
-  # reducing processing time and memory usage
-
-  unique_muns <- unique(standard_locations$municipio_padr)
-
-  filtered_cnefe <- arrow::open_dataset(cnefe_dir)
-  filtered_cnefe <- dplyr::filter(
-    filtered_cnefe,
-    estado %in% present_states & municipio %in% unique_muns
-  )
-  filtered_cnefe <- dplyr::compute(filtered_cnefe)
-
-  duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
-
-  # to find the coordinates of the addresses, we merge the input table with the
-  # cnefe data. the column names used in the input table are different than the
-  # ones used in cnefe, so we create a helper object to "translate" the column
-  # names between datasets
-
-  equivalent_colnames <- tibble::tribble(
-    ~standard_locations, ~cnefe,
-    "logradouro_padr",   "logradouro_sem_numero",
-    "numero_padr",       "numero",
-    "cep_padr",          "cep",
-    "bairro_padr",       "localidade",
-    "municipio_padr",    "municipio",
-    "estado_padr",       "estado"
-  )
-
-  lookup_vector <- equivalent_colnames$cnefe
-  names(lookup_vector) <- equivalent_colnames$standard_locations
-
-  # when merging the data, we have several different cases with different confidence
-  # levels. from best to worst, they are:
-  #
-  # - case 01: match estado, municipio, logradouro, numero, cep, localidade
-  # - case 02: match estado, municipio, logradouro, numero, cep
-  # - case 03: match estado, municipio, logradouro, numero, localidade
-  # - case 04: match estado, municipio, logradouro, numero
-  # - case 05: match estado, municipio, logradouro, cep, localidade
-  # - case 06: match estado, municipio, logradouro, cep
-  # - case 07: match estado, municipio, logradouro, localidade
-  # - case 08: match estado, municipio, logradouro
-  # - case 09: match estado, municipio, cep, localidade
-  # - case 10: match estado, municipio, cep
-  # - case 11: match estado, municipio, localidade
-  # - case 12: match estado, municipio
-
-  if (progress) {
-    prog <- create_progress_bar(standard_locations)
-    n_rows_affected <- 0
-
-    message_looking_for_matches()
-  }
-
-  DBI::dbExecute(con, "ALTER TABLE standard_locations ADD COLUMN match_type VARCHAR DEFAULT NULL")
-  DBI::dbExecute(con, "ALTER TABLE standard_locations ADD COLUMN lon DOUBLE DEFAULT NULL")
-  DBI::dbExecute(con, "ALTER TABLE standard_locations ADD COLUMN lat DOUBLE DEFAULT NULL")
-
-  for (case in 1:12) {
-    relevant_cols <- get_relevant_cols(case)
-    formatted_case <- formatC(case, width = 2, flag = "0")
-
-    if (progress) update_progress_bar(n_rows_affected, formatted_case)
-
-    if (all(relevant_cols %in% names(standard_locations))) {
-      join_condition <- paste(
-        glue::glue("standard_locations.{relevant_cols} = aggregated_cnefe.{lookup_vector[relevant_cols]}"),
-        collapse = " AND "
-      )
-
-      cnefe_cols <- paste(lookup_vector[relevant_cols], collapse = ", ")
-      input_cols <- paste(
-        c(paste0("standard_locations.", c(names(standard_locations), "match_type")), paste0("aggregated_cnefe.", c("lon", "lat"))), collapse = ", "
-      )
-
-      DBI::dbExecute(
-        con,
-        glue::glue(
-          "CREATE OR REPLACE TABLE standard_locations AS ",
-          "WITH aggregated_cnefe AS (SELECT {cnefe_cols}, AVG(lon) AS lon, AVG(lat) AS lat, FROM filtered_cnefe GROUP BY {cnefe_cols}) ",
-          "SELECT {input_cols} FROM standard_locations ",
-          "LEFT JOIN aggregated_cnefe ON {join_condition} ",
-          "WHERE standard_locations.match_type IS NULL "
-        )
-      )
-      n_rows_affected <- DBI::dbExecute(
-        con,
-        glue::glue(
-          "UPDATE standard_locations SET match_type = 'case_{formatted_case}' ",
-          "WHERE match_type IS NULL AND lon IS NOT NULL"
-        )
-      )
-      DBI::dbExecute(
-        con,
-        glue::glue(
-          "CREATE TABLE output_case_{formatted_case} AS ",
-          "SELECT * FROM standard_locations WHERE match_type IS NOT NULL "
-        )
-      )
-      DBI::dbExecute(
-        con,
-        "DELETE FROM standard_locations WHERE match_type IS NOT NULL "
-      )
-    }
-  }
-
-  if (progress) finish_progress_bar(n_rows_affected)
-
-  cols_to_keep <- names(standard_locations)
-  cols_to_keep <- cols_to_keep[!grepl("_padr$", cols_to_keep)]
-  cols_to_keep <- c(cols_to_keep, "match_type", "lon", "lat")
-  cols_to_keep <- paste(cols_to_keep, collapse = ", ")
-
-  output_tables <- glue::glue("output_case_{formatC(1:12, width = 2, flag = '0')}")
-  output_select_clause <- paste(
-    glue::glue("SELECT {cols_to_keep} FROM {output_tables}"),
-    collapse = " UNION ALL "
-  )
-
-  output <- dplyr::tbl(
-    con,
-    dplyr::sql(glue::glue(output_select_clause))
-  )
-  output <- dplyr::collect(output)
-
-  duckdb::dbDisconnect(con, shutdown = TRUE)
-
-  return(output)
+  # Return the result
+  return(output_deterministic)
 }

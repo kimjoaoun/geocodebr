@@ -117,7 +117,7 @@ rafa_arrow <- function(){ message('rafa_arrow')
     estado = 'uf'
   )
 
-  df_rafa_arrow <- geocodebr:::geocode_rafa_arrow(
+  df_rafa_arrow <- geocodebr::geocode(
     addresses_table = input_df,
     address_fields = fields,
     n_cores = ncores,
@@ -136,7 +136,7 @@ dani <- function(){ message('dani')
   )
 
 
-  df_dani <- geocodebr:::geocode(
+  df_dani <- geocodebr:::geocode_dani(
     addresses_table = input_df,
     address_fields = fields,
     n_cores = ncores,

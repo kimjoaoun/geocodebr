@@ -37,53 +37,132 @@ cache, reducing processing time in future calls. Defaults to \code{TRUE}. When
 }
 \value{
 Returns the data frame passed in \code{addresses_table} with the latitude
-(\code{lat}) and longitude (\code{lon}) of each matched address, as well as another
-column (\code{match_type}) indicating the match level with which the address was
-matched.
+(\code{lat}) and longitude (\code{lon}) of each matched address, as well as two
+columns (\code{precision} and \code{match_type}) indicating the precision level with
+which the address was matched.
 }
 \description{
 Geocodes Brazilian addresses based on CNEFE data. Addresses must be passed as
 a data frame in which each column describes one address field (street name,
 street number, neighborhood, etc). The input addresses are matched with CNEFE
-following 12 different case patterns. For more info, please see the Details
-section.
+following different precision levels For more info, please see the Details
+section. The output coordinates use the geodetic reference system
+"SIRGAS2000", CRS(4674).
 }
 \details{
-The input addresses are deterministically matched with CNEFE following 12
-different case patterns. The type of match found for each address in the
-input data is indicated by the \code{match_type} column in the output. In every
-match type, the function always calculates the average latitude and longitude
-of all addresses in CNEFE that match the input address. In the strictest case,
-the function finds a perfect match for all of the fields of a given address.
-Think for example of a building with several apartments that match the same
-street address. In such case, the coordinates of the apartments will differ
-very slightly, and {geocodebr} take the average of those coordinates. On the
-other hand, in the loosest case, in which only the state and the city are
-matched, geocodebr takes the city-wide average coordinates, which tends to
-favor more densely populated areas. The columns considered in each of the 12
-different match types are described below:
+Precision categories:
+}
+\section{Precision}{
+The results of {geocodebr} are classified into six broad \code{precision} categories:
 \itemize{
-\item Case 01: estado, município, logradouro, número, cep e bairro;
-\item Case 02: estado, município, logradouro, número e cep;
-\item Case 03: estado, município, logradouro, número e bairro;
-\item Case 04: estado, município, logradouro e número;
-\item Case 05: estado, município, logradouro, cep e bairro;
-\item Case 06: estado, município, logradouro e cep;
-\item Case 07: estado, município, logradouro e bairro;
-\item Case 08: estado, município e logradouro;
-\item Case 09: estado, município, cep e bairro;
-\item Case 10: estado, município e cep;
-\item Case 11: estado, município e bairro;
-\item Case 12: estado, município.
+\item "numero"
+\item "numero_interpolado"
+\item "rua"
+\item "cep"
+\item "bairro"
+\item "municipio"
+\item \code{NA} (not found)
+}
+
+Each precision level can be disaggregated into more refined match types.
+}
+
+\section{Match Type}{
+The column \code{match_type} provides more refined information on how exactly each
+input address was matched with CNEFE. In every category, {geocodebr} takes
+the average latitude and longitude of the addresses included in CNEFE that
+match the input address based on combinations of different fields. In the
+strictest case, for example, the function finds a deterministic match for all
+of the fields of a given address (estado, municipio, logradouro, numero, cep,
+localidade). Think for example of a building with several apartments that
+match the same street address and number. In such case, the coordinates of
+the apartments will differ very slightly, and {geocodebr} takes the average
+of those coordinates. In a less rigorous example, in which only the fields
+(estado, municipio, rua, bairro) are matched, {geocodebr} calculates the
+average coordinates of all the addresses in CNEFE along that street and which
+fall within the same neighborhood.
+
+The complete list of precision levels and match type categories are:
+\itemize{
+\item Precision: \strong{"numero"}
+\itemize{
+\item match_type:
+\itemize{
+\item en01: logradouro, numero, cep e bairro
+\item en02: logradouro, numero e cep
+\item en03: logradouro, numero e bairro
+\item en04: logradouro e numero
+\item pn01: logradouro, numero, cep e bairro
+\item pn02: logradouro, numero e cep
+\item pn03: logradouro, numero e bairro
+\item pn04: logradouro e numero
 }
 }
+\item Precision: \strong{"numero_interpolado"}
+\itemize{
+\item match_type:
+\itemize{
+\item ei01: logradouro, numero, cep e bairro
+\item ei02: logradouro, numero e cep
+\item ei03: logradouro, numero e bairro
+\item ei04: logradouro e numero
+\item pi01: logradouro, numero, cep e bairro
+\item pi02: logradouro, numero e cep
+\item pi03: logradouro, numero e bairro
+\item pi04: logradouro e numero
+}
+}
+\item Precision: \strong{"rua"} (when input number is missing 'S/N')
+\itemize{
+\item match_type:
+\itemize{
+\item er01: logradouro, cep e bairro
+\item er02: logradouro e cep
+\item er03: logradouro e bairro
+\item er04: logradouro
+\item pr01: logradouro, cep e bairro
+\item pr02: logradouro e cep
+\item pr03: logradouro e bairro
+\item pr04: logradouro
+}
+}
+\item Precision: \strong{"cep"}
+\itemize{
+\item match_type:
+\itemize{
+\item ec01 municipio, cep, localidade
+\item ec02 municipio, cep
+}
+}
+\item Precision: \strong{"bairro"}
+\itemize{
+\item match_type:
+\itemize{
+\item eb01 municipio, localidade
+}
+}
+\item Precision: \strong{"municipio"}
+\itemize{
+\item match_type:
+\itemize{
+\item em01 municipio
+}
+}
+}
+
+Note: Match types starting with 'p' use probabilistic matching of the
+logradouro field, while types starting with 'e' use deterministic matching
+only. Match types with probabilistic matching ARE NOT implemented in
+{geocodebr} yet.
+}
+
 \examples{
 \dontshow{if (identical(tolower(Sys.getenv("NOT_CRAN")), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 
 data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
 
-fields <- setup_address_fields(
+fields <- geocodebr::setup_address_fields(
   logradouro = "nm_logradouro",
   numero = "Numero",
   cep = "Cep",
@@ -92,7 +171,12 @@ fields <- setup_address_fields(
   estado = "nm_uf"
 )
 
-df <- geocode(input_df, address_fields = fields, progress = FALSE)
-df
+df <- geocodebr::geocode(
+  addresses_table = input_df,
+  address_fields = fields,
+  progress = FALSE
+  )
+
+head(df)
 \dontshow{\}) # examplesIf}
 }
