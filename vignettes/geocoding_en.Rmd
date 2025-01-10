@@ -26,8 +26,6 @@ Once you have a  table (`data.frame`) with addresses, geolocating the data with 
 
 1. The first step is to use the `setup_address_fields()` function to declare the names of the columns in your input `data.frame` that correspond to each field of the addresses.
 
-2. The second step is to use the `geocode()` function to find the geographic coordinates of input addresses.
-
 ```{r, eval=TRUE}
 library(geocodebr)
 
@@ -43,7 +41,11 @@ fields <- geocodebr::setup_address_fields(
   municipio = "nm_municipio",
   estado = "nm_uf"
   )
+```
 
+2. The second step is to use the `geocode()` function to find the geographic coordinates of input addresses.
+
+```{r, eval=TRUE}
 # 2nd step: geocode
 df <- geocodebr::geocode(
   addresses_table = input_df,
@@ -55,7 +57,9 @@ df <- geocodebr::geocode(
 head(df)
 ```
 
-The results of {geocodebr} are classified into six broad `precision` categories depending on how exactly each input address was matched with CNEFE data. The accuracy of the results are indicated in two columns of the output: `precision` and `match_type`. More information below.
+obs. Note that the first time the user runs this function, {geocodebr} will download a few files and store them locally. This way, the data only needs to be downloaded once. More info about data caching below. 
+
+The output coordinates use the official geodetic reference system used in Brazil: SIRGAS2000, CRS(4674). The results of {geocodebr} are classified into six broad `precision` categories depending on how exactly each input address was matched with CNEFE data. The accuracy of the results are indicated in two columns of the output: `precision` and `match_type`. More information below.
 
 
 # Precision categories:
@@ -126,3 +130,18 @@ The complete list of precision levels, their corresponding match type categories
     - em01: municipio
 
 ***Note:*** Match types starting with 'p' use probabilistic matching of the logradouro field, while types starting with 'e' use deterministic matching only. **Match types with probabilistic matching are not implemented in {geocodebr} yet**.
+
+
+
+
+# Data cache
+
+The first time the user runs the `geocode()` function, {geocodebr} will download a few reference files and store them locally. This way, the data only needs to be downloaded once. Mind you that these files require approximately 4GB of space in your local drive.
+
+The package includes the following functions to help users manage cached files:
+
+- `get_cache_dir()`: returns the path to where the cached data is stored. By default, files are cached in the package directory.
+- `set_cache_dir()`: set a custom directory to be used. This configuration is persistent across different R sessions.
+- `list_cached_data()`: list  all files currently cached
+- `clean_cache_dir()`: delete all files of the cache directory used by {geocodebr}
+

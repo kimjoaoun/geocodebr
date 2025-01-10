@@ -26,7 +26,6 @@ Uma vez que você tenha uma tabela (`data.frame`) com endereços, a geolocaliza�
 
 1. O primeiro passo é utilizar a função `setup_address_fields()` para declarar os nomes das colunas no seu `data.frame` que correspondem a cada campo dos endereços.
 
-2. O segundo passo é utilizar a função `geocode()` para encontrar as coordenadas geográficas dos endereços de entrada.
 
 ```{r, eval=TRUE}
 library(geocodebr)
@@ -43,7 +42,12 @@ fields <- geocodebr::setup_address_fields(
   municipio = "nm_municipio",
   estado = "nm_uf"
   )
+```
 
+2. O segundo passo é utilizar a função `geocode()` para encontrar as coordenadas geográficas dos endereços de entrada.
+
+
+```{r, eval=TRUE}
 # 2o passo: geolocalização
 df <- geocodebr::geocode(
   addresses_table = input_df,
@@ -55,7 +59,10 @@ df <- geocodebr::geocode(
 head(df)
 ```
 
-Os resultados do {geocodebr} são classificados em seis amplas categorias de precisão, dependendo de quão exatamente cada endereço de entrada foi correspondido com os dados do CNEFE. O grau de precisão é indicado em duas colunas da tabela de output: `precision` e `match_type`. Mais informações abaixo.
+obs. Note que na primeira vez que o usuário usa essa fnução, {geocodebr} irá baixar alguns arquivos de referência e armaneza-los localmente. Assim, esses dados só precisam ser baixados uma única vez. Mais informações sobr o cache dos dados abaixo.
+
+
+As coordendas espaciais do output usam sistema de referência ofical do Brasil: SIRGAS2000, CRS(4674). Os resultados do {geocodebr} são classificados em seis amplas categorias de precisão, dependendo de quão exatamente cada endereço de entrada foi correspondido com os dados do CNEFE. O grau de precisão é indicado em duas colunas da tabela de output: `precision` e `match_type`. Mais informações abaixo.
 
 
 # Categorias de Precisão: `precision`
@@ -125,3 +132,15 @@ A lista completa dos níveis de precisão (`precision`), suas categorias de tipo
     - em01: municipio
 
 ***Nota:*** As categorias de `match_type` que começam com 'p' utilizam correspondência probabilística do campo logradouro, enquanto os tipos que começam com 'e' utilizam apenas correspondência determinística. **As categorias de `match_type` que usam correspondência probabilística ainda não estão implementados no {geocodebr}**.
+
+
+# Cache de Dados
+
+Na primeira vez que o usuário executar a função `geocode()`, o {geocodebr} irá baixar alguns arquivos de referência e armazená-los localmente. Dessa forma, os dados precisam ser baixados apenas uma vez. Vale lembrar que esses arquivos requerem aproximadamente 4GB de espaço no seu disco local.
+
+O pacote inclui as seguintes funções para ajudar os usuários a gerenciar os arquivos em cache:
+
+- `get_cache_dir()`: retorna o caminho para onde os dados em cache estão armazenados. Por padrão, os arquivos são armazenados no diretório do pacote.
+- `set_cache_dir()`: define um diretório personalizado a ser usado. Essa configuração é persistente entre diferentes sessões do R.
+- `list_cached_data()`: lista todos os arquivos atualmente armazenados em cache.
+- `clean_cache_dir()`: exclui todos os arquivos do diretório de cache usado pelo {geocodebr}.
