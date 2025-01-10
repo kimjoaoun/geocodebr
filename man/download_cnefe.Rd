@@ -4,15 +4,9 @@
 \alias{download_cnefe}
 \title{Download the CNEFE data set}
 \usage{
-download_cnefe(state = "all", progress = TRUE, cache = TRUE)
+download_cnefe(progress = TRUE, cache = TRUE)
 }
 \arguments{
-\item{state}{A character vector. The states whose CNEFE data should be
-downloaded. Either \code{"all"} (the default), in which case the data for all
-states is downloaded, or a vector with the states abbreviations (e.g.
-\code{c("RJ", "DF")} to download the data for Rio de Janeiro and the Federal
-District).}
-
 \item{progress}{A logical. Whether to display a download progress bar.
 Defaults to \code{TRUE}.}
 
@@ -30,9 +24,9 @@ used with this package.
 }
 \examples{
 \dontshow{if (identical(tolower(Sys.getenv("NOT_CRAN")), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
-download_cnefe(state = "AC", progress = FALSE)
 
-download_cnefe(state = c("AC", "AL"), progress = FALSE)
+download_cnefe(progress = FALSE)
+
 \dontshow{\}) # examplesIf}
 }
 \seealso{

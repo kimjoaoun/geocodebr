@@ -4,11 +4,6 @@
 #' for Statistical Purposes, in portuguese) data set, purposefully built to be
 #' used with this package.
 #'
-#' @param state A character vector. The states whose CNEFE data should be
-#'   downloaded. Either `"all"` (the default), in which case the data for all
-#'   states is downloaded, or a vector with the states abbreviations (e.g.
-#'   `c("RJ", "DF")` to download the data for Rio de Janeiro and the Federal
-#'   District).
 #' @param progress A logical. Whether to display a download progress bar.
 #'   Defaults to `TRUE`.
 #' @template cache
@@ -18,19 +13,34 @@
 #' @family Support
 #'
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
-#' download_cnefe(state = "AC", progress = FALSE)
 #'
-#' download_cnefe(state = c("AC", "AL"), progress = FALSE)
+#' download_cnefe(progress = FALSE)
+#'
 #'
 #' @export
-download_cnefe <- function(state = "all", progress = TRUE, cache = TRUE) {
+download_cnefe <- function(progress = TRUE, cache = TRUE) {
+
   checkmate::assert_logical(progress, any.missing = FALSE, len = 1)
   checkmate::assert_logical(cache, any.missing = FALSE, len = 1)
-  state <- assert_and_assign_state(state)
 
-  data_url <- glue::glue(
+  all_files <- c(
+  "municipio_logradouro_numero_localidade.parquet",  # 4 largest files
+  "municipio.parquet",
+  "municipio_cep.parquet",
+  "municipio_cep_localidade.parquet",
+  "municipio_logradouro_numero_cep_localidade.parquet", # 4 largest files
+  "municipio_localidade.parquet",
+  "municipio_logradouro.parquet",
+  "municipio_logradouro_numero_cep.parquet", # 4 largest files
+  "municipio_logradouro_cep.parquet",
+  "municipio_logradouro_cep_localidade.parquet",
+  "municipio_logradouro_numero.parquet", # 4 largest files
+  "municipio_logradouro_localidade.parquet"
+  )
+
+  data_urls <- glue::glue(
     "https://github.com/ipeaGIT/padronizacao_cnefe/releases/",
-    "download/{data_release}/estado.{state}.zip"
+    "download/{data_release}/{all_files}"
   )
 
   if (!cache) {
@@ -43,43 +53,23 @@ download_cnefe <- function(state = "all", progress = TRUE, cache = TRUE) {
   # we only need to download data that hasn't been downloaded yet. note that if
   # cache=FALSE data_dir is always empty, so we download all required data
 
-  existing_data <- list.files(data_dir)
-  existing_states <- substr(existing_data, start = 8, stop = 9)
+  existing_files <- list.files(data_dir)
 
-  states_to_download <- setdiff(state, existing_states)
-  files_to_download <- data_url[state %in% states_to_download]
+  files_to_download <- setdiff(all_files, existing_files)
+  files_to_download <- data_urls[all_files %in% files_to_download]
 
-  zip_paths <- download_files(files_to_download, progress)
-
-  purrr::walk(
-    zip_paths,
-    function(zipfile) zip::unzip(zipfile, exdir = data_dir)
-  )
+  downloaded_files <- download_files(files_to_download, progress)
 
   return(invisible(data_dir))
 }
 
-assert_and_assign_state <- function(state) {
-  all_states <- c(
-    "RO", "AC", "AM", "RR", "PA", "AP", "TO", "MA", "PI", "CE", "RN", "PB",
-    "PE", "AL", "SE", "BA", "MG", "ES", "RJ", "SP", "PR", "SC", "RS", "MS",
-    "MT", "GO", "DF"
-  )
-
-  checkmate::assert_names(state, subset.of = c("all", all_states))
-
-  if ("all" %in% state) state <- all_states
-
-  return(state)
-}
 
 download_files <- function(files_to_download, progress) {
   # we always download the files to a temporary directory to prevent any
   # potential "garbage" in our cache dir (in case the download fails for some
   # reason or the unzipping process crashes mid-operation)
 
-  download_dir <- tempfile("zipped_standardized_cnefe")
-  fs::dir_create(download_dir)
+  download_dir <- geocodebr::get_cache_dir()
 
   requests <- lapply(files_to_download, httr2::request)
 
@@ -119,7 +109,7 @@ perform_requests_in_parallel <- function(requests, dest_files, progress) {
 error_cnefe_download_failed <- function() {
   geocodebr_error(
     c(
-      "Could not download CNEFE data for one or more states.",
+      "Could not download CNEFE data for one or more files",
       "i" = "Please try again later."
     ),
     call = rlang::caller_env(n = 2)

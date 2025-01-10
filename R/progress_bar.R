@@ -13,7 +13,7 @@ update_progress_bar <- function(n_rows_affected,
                                 .envir = parent.frame()) {
   cli::cli_progress_update(
     inc = n_rows_affected,
-    status = glue::glue("Looking for case {formatted_case} matches"),
+    status = glue::glue("Looking for match type {formatted_case}"),
     force = TRUE,
     .envir = .envir
   )

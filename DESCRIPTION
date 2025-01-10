@@ -37,8 +37,7 @@ Imports:
     purrr,
     rlang,
     tibble,
-    tools,
-    zip
+    tools
 Suggests:
     covr,
     DBI,

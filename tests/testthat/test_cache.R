@@ -103,8 +103,10 @@ test_that("behaves correctly", {
 
   expect_identical(list_cached_data(), character(0))
 
-  download_cnefe(c("AC", "AL"), progress = FALSE)
-  expect_true(all(grepl("estado=(AC|AL)", list_cached_data())))
+  download_cnefe( progress = FALSE)
+  expect_true(all(grepl(".parquet", list_cached_data())))
+
+  expect_true(sum(grepl(".parquet", list_cached_data()))==12)
 
   # expect a tree-like message when print_tree=TRUE
 
