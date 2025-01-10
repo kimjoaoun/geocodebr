@@ -98,6 +98,8 @@ geocode <- function(addresses_table,
 
   # create temp id
   input_padrao[, tempidgeocodebr := 1:nrow(input_padrao) ]
+  data.table::setDT(addresses_table)[, tempidgeocodebr := 1:nrow(input_padrao) ]
+
 
   # downloading cnefe. we only need to download the states present in the
   # addresses table, which may save us some time.
@@ -194,14 +196,14 @@ geocode <- function(addresses_table,
   add_precision_col(con, update_tb = 'output_db')
 
   # output with all original columns
-  duckdb::dbWriteTable(con, "input_padrao_db", input_padrao,
+  duckdb::dbWriteTable(con, "input_db", addresses_table,
                        temporary = TRUE, overwrite=TRUE)
 
-  x_columns <- names(input_padrao)
+  x_columns <- names(addresses_table)
 
   output_deterministic <- merge_results(
     con,
-    x='input_padrao_db',
+    x='input_db',
     y='output_db',
     key_column='tempidgeocodebr',
     select_columns = x_columns
