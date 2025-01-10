@@ -83,10 +83,14 @@ match_weighted_cases_arrow <- function(con,
                                        input_municipio){
 
   # read correspondind parquet file
-  table_name <- paste(c(key_cols), collapse = "_")
-  table_name <- gsub('estado_municipio_logradouro_sem', 'logradouro', table_name)
+  table_name <- paste(key_cols, collapse = "_")
+  table_name <- gsub('estado_municipio', 'municipio', table_name)
+  table_name <- gsub('logradouro_sem_numero', 'logradouro_numero', table_name)
+  y <- table_name
 
-  path_to_parquet <- paste0("C:/Users/r1701707/AppData/Local/R/cache/R/geocodebr/test_db/", table_name, '.parquet')
+  # build path to local file
+  path_to_parquet <- paste0(geocodebr::get_cache_dir(), "/", table_name, ".parquet")
+
   # filter cnefe to include only states and municipalities
   # present in the input table, reducing the search scope and consequently
   # reducing processing time and memory usage
