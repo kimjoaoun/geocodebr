@@ -129,12 +129,21 @@ add_precision_col <- function(con, update_tb = NULL){
 
 
 
-merge_results <- function(con, x, y, key_column, select_columns){
+merge_results <- function(con,
+                          x,
+                          y,
+                          key_column,
+                          select_columns,
+                          keep_matched_address){
 
   # x = 'output_db'
   # y = 'output_caso_01'
   # key_column = 'tempidgeocodebr'
   select_columns_y = c('lon', 'lat', 'match_type', 'precision', 'matched_address')
+
+  if (isFALSE(keep_matched_address)) {
+    select_columns_y <- select_columns_y[select_columns_y != 'matched_address']
+  }
 
   # drop temp id column
   select_columns <- select_columns[select_columns!='tempidgeocodebr']
@@ -148,19 +157,18 @@ merge_results <- function(con, x, y, key_column, select_columns){
     paste0(y, ".", select_columns_y, collapse = ", ")
     )
 
-  # Create the SQL query
-  query <- sprintf("
-    SELECT %s
-    FROM %s
-    LEFT JOIN %s
-    ON %s.%s = %s.%s",
-                   select_clause, # Selected columns
-                   x,             # Left table
-                   y,             # Right table
-                   x, key_column, # Left table and key column
-                   y, key_column  # Right table and key column
+  join_condition <- paste(
+    glue::glue("{x}.{key_column} = {y}.{key_column}"),
+    collapse = ' ON '
   )
 
+  # Create the SQL query
+  query <- glue::glue(
+    "SELECT {select_clause}
+      FROM {x}
+      LEFT JOIN {y}
+      ON {join_condition} "
+      )
 
   # Execute the query and fetch the merged data
   merged_data <- DBI::dbGetQuery(con, query)

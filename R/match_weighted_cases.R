@@ -79,8 +79,10 @@ match_weighted_cases_arrow <- function(con,
                                        output_tb,
                                        key_cols,
                                        match_type,
+                                       keep_matched_address,
                                        input_states,
                                        input_municipio){
+
 
   # read correspondind parquet file
   table_name <- paste(key_cols, collapse = "_")
@@ -118,7 +120,6 @@ match_weighted_cases_arrow <- function(con,
   #   join_condition <- gsub("= input_padrao_db.logradouro_sem_numero", "LIKE '%' || input_padrao_db.logradouro_sem_numero || '%'", join_condition)
   #   }
 
-
   # Construct the SQL match query
   query_match <- glue::glue(
     "CREATE OR REPLACE TEMPORARY VIEW temp_db AS
@@ -128,6 +129,11 @@ match_weighted_cases_arrow <- function(con,
       ON {join_condition}
       WHERE {x}.numero IS NOT NULL AND {y}.numero IS NOT NULL;"
   )
+
+  if (isFALSE(keep_matched_address)) {
+    query_match <- gsub(", filtered_cnefe.endereco_completo", "", query_match)
+  }
+
   DBI::dbExecute(con, query_match)
 
 
@@ -142,6 +148,18 @@ match_weighted_cases_arrow <- function(con,
     FROM temp_db
     GROUP BY tempidgeocodebr;"
   )
+
+  if (isFALSE(keep_matched_address)) {
+      query_aggregate <- glue::glue(
+        "CREATE TEMPORARY TABLE {output_tb} AS
+        SELECT tempidgeocodebr,
+        SUM((1/ABS(numero - numero_db) * lon)) / SUM(1/ABS(numero - numero_db)) AS lon,
+        SUM((1/ABS(numero - numero_db) * lat)) / SUM(1/ABS(numero - numero_db)) AS lat,
+        '{match_type}' AS match_type
+        FROM temp_db
+        GROUP BY tempidgeocodebr;"
+        )
+    }
 
   temp_n <- DBI::dbExecute(con, query_aggregate)
   duckdb::duckdb_unregister_arrow(con, "filtered_cnefe")

@@ -108,6 +108,7 @@ match_cases_arrow <- function(con,
                               output_tb,
                               key_cols,
                               match_type,
+                              keep_matched_address,
                               input_states,
                               input_municipio
                               ){
@@ -159,6 +160,10 @@ match_cases_arrow <- function(con,
 
   if (match_type %in% possible_match_types_no_number) {
     query_match <- gsub("input_padrao_db.numero IS NOT NULL AND", "", query_match)
+  }
+
+  if (isFALSE(keep_matched_address)) {
+    query_match <- gsub(", filtered_cnefe.endereco_completo as matched_address", "", query_match)
   }
 
   temp_n <- DBI::dbExecute(con, query_match)

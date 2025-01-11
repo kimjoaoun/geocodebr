@@ -58,6 +58,7 @@ input_df <- arrow::read_parquet(data_path)
 # ncores <- 7
 # progress = T
 # cache = TRUE
+# keep_matched_address = F
 # address_fields <- geocodebr::setup_address_fields(
 #   logradouro = 'logradouro',
 #   numero = 'numero',
@@ -86,60 +87,31 @@ ncores <- 7
 
 
 
+fields <- geocodebr::setup_address_fields(
+  logradouro = 'logradouro',
+  numero = 'numero',
+  cep = 'cep',
+  bairro = 'bairro',
+  municipio = 'municipio',
+  estado = 'uf'
+)
 
-rafa <- function(){ message('rafa')
-  fields <- geocodebr::setup_address_fields(
-    logradouro = 'logradouro',
-    numero = 'numero',
-    cep = 'cep',
-    bairro = 'bairro',
-    municipio = 'municipio',
-    estado = 'uf'
-  )
-
-  df_rafa2 <- geocodebr::geocode(
+rafaF <- function(){ message('rafa F')
+  df_rafaF <- geocodebr::geocode(
     addresses_table = input_df,
     address_fields = fields,
     n_cores = ncores,
+    keep_matched_address = F,
     progress = T
   )
 }
 
-
-
-rafa_arrow <- function(){ message('rafa_arrow')
-  fields <- geocodebr::setup_address_fields(
-    logradouro = 'logradouro',
-    numero = 'numero',
-    cep = 'cep',
-    bairro = 'bairro',
-    municipio = 'municipio',
-    estado = 'uf'
-  )
-
-  df_rafa_arrow <- geocodebr::geocode(
+rafaT <- function(){ message('rafa T')
+  df_rafaT <- geocodebr::geocode(
     addresses_table = input_df,
     address_fields = fields,
     n_cores = ncores,
-    progress = T
-  )
-}
-
-dani <- function(){ message('dani')
-  fields <- geocodebr::setup_address_fields(
-    logradouro = 'logradouro',
-    numero = 'numero',
-    cep = 'cep',
-    bairro = 'bairro',
-    municipio = 'municipio',
-    estado = 'uf'
-  )
-
-
-  df_dani <- geocodebr:::geocode_dani(
-    addresses_table = input_df,
-    address_fields = fields,
-    n_cores = ncores,
+    keep_matched_address = T,
     progress = T
   )
 }
@@ -148,13 +120,16 @@ dani <- function(){ message('dani')
 
 
 mb <- microbenchmark::microbenchmark(
-  dani = dani(),
-  rafa = rafa(),
-  rafa_arrow = rafa_arrow(),
-  times  = 10
+  rafa_drop = rafaF(),
+  rafa_keep = rafaT(),
+  times  = 5
 )
 mb
 
+library(profvis)
+profvis({
+  rafaT()
+})
 
 
 
@@ -372,3 +347,7 @@ data.table::setnames(
 
 
 table(df$match_type.d, df$match_type.p)
+
+
+
+
