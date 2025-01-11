@@ -11,6 +11,7 @@ match_weighted_cases_arrow(
   output_tb,
   key_cols,
   match_type,
+  keep_matched_address,
   input_states,
   input_municipio
 )

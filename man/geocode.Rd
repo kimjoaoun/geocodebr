@@ -9,6 +9,7 @@ geocode(
   address_fields = setup_address_fields(),
   n_cores = 1,
   progress = TRUE,
+  keep_matched_address = FALSE,
   cache = TRUE
 )
 }
@@ -30,6 +31,9 @@ execution. Defaults to 1.}
 
 \item{progress}{A logical. Whether to display progress bars when downloading
 CNEFE data and when geocoding the addresses. Defaults to \code{TRUE}.}
+
+\item{keep_matched_address}{Logical. Whethe the output should include a
+column indicating the matched address of reference. Defaults to \code{FALSE}.}
 
 \item{cache}{A logical. Whether CNEFE data should be saved to/read from
 cache, reducing processing time in future calls. Defaults to \code{TRUE}. When
