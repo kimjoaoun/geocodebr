@@ -18,11 +18,11 @@ match_weighted_cases <- function(con, x, y, output_tb, key_cols, match_type){
     collapse = ' AND '
   )
 
-
-#   # Build the dynamic select and group statement
-#   cols_select <- c('tempidgeocodebr', key_cols, 'numero')
-#   cols_select <- paste( glue::glue("{x}.{cols_select}"), collapse = ', ')
-#   cols_group <- paste(c('tempidgeocodebr', key_cols, 'numero'), collapse = ", ")
+  # # TO DO: match probabilistico
+  # # isso eh um teste provisorio
+  # if( match_type %in% probabilistic_logradouro_match_types) {
+  #   join_condition <- gsub("= input_padrao_db.logradouro_sem_numero", "LIKE '%' || input_padrao_db.logradouro_sem_numero || '%'", join_condition)
+  # }
 
   # Construct the SQL match query
   query_match <- glue::glue(
@@ -112,11 +112,17 @@ match_weighted_cases_arrow <- function(con,
     collapse = ' AND '
   )
 
+  # # TO DO: match probabilistico
+  # # isso eh um teste provisorio
+  # if( match_type %in% probabilistic_logradouro_match_types) {
+  #   join_condition <- gsub("= input_padrao_db.logradouro_sem_numero", "LIKE '%' || input_padrao_db.logradouro_sem_numero || '%'", join_condition)
+  #   }
+
 
   # Construct the SQL match query
   query_match <- glue::glue(
     "CREATE OR REPLACE TEMPORARY VIEW temp_db AS
-      SELECT {x}.tempidgeocodebr, {x}.numero, {y}.numero as numero_db, {y}.lat, {y}.lon
+      SELECT {x}.tempidgeocodebr, {x}.numero, {y}.numero as numero_db, {y}.lat, {y}.lon, {y}.endereco_completo
       FROM {x}
       LEFT JOIN {y}
       ON {join_condition}
@@ -131,7 +137,8 @@ match_weighted_cases_arrow <- function(con,
     SELECT tempidgeocodebr,
     SUM((1/ABS(numero - numero_db) * lon)) / SUM(1/ABS(numero - numero_db)) AS lon,
     SUM((1/ABS(numero - numero_db) * lat)) / SUM(1/ABS(numero - numero_db)) AS lat,
-    '{match_type}' as match_type
+    '{match_type}' AS match_type,
+     REGEXP_REPLACE(FIRST(endereco_completo), ', \\d+ -', CONCAT(', ', FIRST(numero), ' (aprox) -')) AS matched_address
     FROM temp_db
     GROUP BY tempidgeocodebr;"
   )

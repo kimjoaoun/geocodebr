@@ -70,6 +70,12 @@ geocode <- function(addresses_table,
 
   if (progress) message_standardizing_addresses()
 
+
+   # TEMP. necessario para garantir que numero de input 0 vire 'S/N'
+  data.table::setDT(addresses_table)
+  addresses_table[, address_fields['numero'] := as.character( get(address_fields['numero']) )]
+
+
   input_padrao <- enderecobr::padronizar_enderecos(
     addresses_table,
     campos_do_endereco = enderecobr::correspondencia_campos(
@@ -100,20 +106,21 @@ geocode <- function(addresses_table,
   input_padrao[, tempidgeocodebr := 1:nrow(input_padrao) ]
   data.table::setDT(addresses_table)[, tempidgeocodebr := 1:nrow(input_padrao) ]
 
+  ### convert "numero" to numeric
+  input_padrao[numero == "S/N", numero := NA_integer_]
+  input_padrao[, numero := as.integer(numero)]
+  # withCallingHandlers(
+  #   expr = input_padrao[, numero := as.numeric(numero)],
+  #   warning = function(cnd) cli::cli_warn("The input of the field 'number' has observations with non numeric characters. These observations were transformed to NA.")
+  #   )
 
   # downloading cnefe. we only need to download the states present in the
   # addresses table, which may save us some time.
-
   cnefe_dir <- download_cnefe(
     progress = progress,
     cache = cache
   )
 
-  ### convert "numero" to numeric
-  withCallingHandlers(
-    expr = input_padrao[, numero := as.numeric(numero)],
-    warning = function(cnd) cli::cli_warn("The input of the field 'number' has observations with non numeric characters. These observations were transformed to NA.")
-    )
 
   # creating a temporary db and register the input table data
   con <- create_geocodebr_db(n_cores = n_cores)
@@ -156,7 +163,7 @@ geocode <- function(addresses_table,
       n_rows_affected <- match_fun(
         con,
         x = 'input_padrao_db',
-        y = 'filtered_cnefe', # desnecessario
+        y = 'filtered_cnefe', # keep this for now
         output_tb = paste0('output_', case),
         key_cols = relevant_cols,
         match_type = case,

@@ -141,14 +141,16 @@ match_cases_arrow <- function(con,
     collapse = ' AND '
   )
 
-  # pulo do gato aqui para match probabilistico 6666666666666
-  # join_condition <- gsub("= input_padrao_db.logradouro_sem_numero", "LIKE '%' || input_padrao_db.logradouro_sem_numero || '%'", join_condition)
-
+  # # TO DO: match probabilistico
+  # # isso eh um teste provisorio
+  # if( match_type %in% probabilistic_logradouro_match_types) {
+  #   join_condition <- gsub("= input_padrao_db.logradouro_sem_numero", "LIKE '%' || input_padrao_db.logradouro_sem_numero || '%'", join_condition)
+  #   }
 
   # query for left join
   query_match <- glue::glue(
     "CREATE TEMPORARY TABLE {output_tb} AS
-      SELECT {x}.tempidgeocodebr, filtered_cnefe.lon, filtered_cnefe.lat, '{match_type}' as match_type
+      SELECT {x}.tempidgeocodebr, filtered_cnefe.lon, filtered_cnefe.lat, '{match_type}' as match_type, filtered_cnefe.endereco_completo as matched_address
       FROM {x}
       LEFT JOIN filtered_cnefe
       ON {join_condition}

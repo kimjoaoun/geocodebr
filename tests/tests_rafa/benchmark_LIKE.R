@@ -97,7 +97,7 @@ rafa <- function(){ message('rafa')
     estado = 'uf'
   )
 
-  df_rafa <- geocodebr:::geocode_rafa(
+  df_rafa2 <- geocodebr::geocode(
     addresses_table = input_df,
     address_fields = fields,
     n_cores = ncores,
@@ -348,7 +348,7 @@ rafa_loop <- function(){
     estado = 'nm_uf'
   )
 
-  df_rafa_loop <- geocodebr:::geocode_rafa(
+  df_rafa_loop <- geocodebr::geocode(
     addresses_table = input_df,
     address_fields = fields,
     n_cores = 7,
@@ -356,3 +356,19 @@ rafa_loop <- function(){
     cache=T
   )
 }
+
+
+
+
+
+df <- left_join(select(df_rafa, c('id', 'match_type', 'precision')),
+                select(df_rafa2, c('id', 'match_type', 'precision')), by='id')
+
+data.table::setDT(df)
+data.table::setnames(
+  df,
+  old = c('match_type.x', 'match_type.y', 'precision.x', 'precision.y'),
+  new = c('match_type.d', 'match_type.p', 'precision.d', 'precision.p') )
+
+
+table(df$match_type.d, df$match_type.p)

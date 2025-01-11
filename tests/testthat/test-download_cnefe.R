@@ -30,7 +30,7 @@ test_that("cache usage is controlled by the cache argument", {
   )
 })
 
-test_that("errors if could not download the data for one or more states", {
+test_that("errors if could not download one or more files", {
   local_mocked_bindings(
     perform_requests_in_parallel = function(...) {
       httr2::req_perform_parallel(
