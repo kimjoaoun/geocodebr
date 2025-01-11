@@ -1,7 +1,7 @@
 Type: Package
 Package: geocodebr
 Title: Geocode Brazilian Addresses with CNEFE
-Version: 0.0.0.9000
+Version: 0.0.0.9001
 Authors@R: c(
     person("Daniel", "Herszenhut", , "dhersz@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-8066-1105")),

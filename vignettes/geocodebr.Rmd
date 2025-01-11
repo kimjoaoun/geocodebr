@@ -20,17 +20,17 @@ knitr::opts_chunk$set(
 ```
 
 Geocoding refers to the act of finding a point in space, usually represented by
-a pair of coordinates, given a street address. The **geocodebr** packages allows
+a pair of coordinates, given a location address. The **{geocodebr}** package allows
 one to efficiently geocode Brazilian addresses using the National Registry of
 Addresses for Statistical Purposes (english for *Cadastro Nacional de Endereços
-para Fins Estatísticos*, CNEFE)[^1], a data set collected and
+para Fins Estatísticos*, CNEFE), a data set collected and
 [published](https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html)
 by the Brazilian official statistics and geography office, IBGE, containing the
 addresses of more than 100 million households and establishments in Brazil.
 
 ## Basic usage
 
-Before using *geocodebr*, please make sure you have it installed in your
+Before using *{geocodebr}*, please make sure you have it installed in your
 computer. You can download either the most stable version from CRAN...
 
 ```{r, eval = FALSE}
@@ -50,7 +50,7 @@ Then attach it to the current R session:
 library(geocodebr)
 ```
 
-The main entry point to the package's functionalities is `geocode()`, which
+The main function of package is `geocode()`, which
 takes a data frame of addresses as input and outputs the same data frame with
 the latitude and longitude of each matched address, as well as two columns
 indicating the precision level of the matches. To demonstrate its usage, the
@@ -59,17 +59,17 @@ below, we use a small data set that contains addresses with commonly seen
 issues, such as missing information and mistyped fields.
 
 **Note:** Running the function for the first time may take a while, since
-*geocodebr* needs to download the CNEFE data, which sums up to about 5.5 GB.
-Alternatively, you can use `download_cnefe()` to download the data before
-geocoding (`geocode()` does that behind the scenes).
+*{geocodebr}* needs to download the CNEFE data, which sums up to about 5.5 GB.
+This data is stored locally, so it is downloaded only once. More info about data 
+caching below.
 
 ```{r}
-input_addresses <- read.csv(
+df <- read.csv(
   system.file("extdata/small_sample.csv", package = "geocodebr")
 )
 
 result <- geocodebr::geocode(
-  input_addresses,
+  addresses_table = df,
   address_fields = geocodebr::setup_address_fields(
     logradouro = "nm_logradouro",
     numero = "Numero",
@@ -83,8 +83,6 @@ result <- geocodebr::geocode(
 
 head(result)
 ```
-
-obs. Note that the first time the user runs this function, {geocodebr} will download a few files and store them locally. This way, the data only needs to be downloaded once. More info about data caching below. 
 
 The output coordinates use the official geodetic reference system used in Brazil: SIRGAS2000, CRS(4674). The results of {geocodebr} are classified into six broad `precision` categories depending on how exactly each input address was matched with CNEFE data. The accuracy of the results are indicated in two columns of the output: `precision` and `match_type`. More information below.
 
