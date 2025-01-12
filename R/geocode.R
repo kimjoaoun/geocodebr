@@ -118,8 +118,11 @@ geocode <- function(addresses_table,
   #   warning = function(cnd) cli::cli_warn("The input of the field 'number' has observations with non numeric characters. These observations were transformed to NA.")
   #   )
 
-  # downloading cnefe. we only need to download the states present in the
-  # addresses table, which may save us some time.
+  # # sort input data
+  # input_padrao <- input_padrao[order(estado, municipio, logradouro_sem_numero, numero, cep, localidade)]
+
+
+  # downloading cnefe
   cnefe_dir <- download_cnefe(
     progress = progress,
     cache = cache
@@ -162,7 +165,7 @@ geocode <- function(addresses_table,
     if (all(relevant_cols %in% names(input_padrao))) {
 
       # select match function
-      match_fun <- ifelse(case %in% number_interpolation_types, match_weighted_cases_arrow, match_cases_arrow)
+      match_fun <- ifelse(case %in% number_interpolation_types, match_weighted_cases, match_cases)
 
       n_rows_affected <- match_fun(
         con,

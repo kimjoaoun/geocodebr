@@ -73,19 +73,6 @@ input_df <- arrow::read_parquet(data_path)
 ncores <- 7
 
 
-# round(table(df_duck_rafa$match_type)/nrow(df_duck_rafa)*100 ,2)
-#     1     2     3     4     44      9    10    11    12
-# 24.41  9.78  8.80  6.17  13.32  21.46 12.89  2.53  0.65
-#
-# round(table(df_duck_rafa1$match_type)/nrow(df_duck_rafa1)*100 ,2)
-#     1     2     3     4     5     6     7     8     9    10    11    12
-# 24.41  9.78  8.80  6.17  6.18  3.03  1.98  2.13 21.46 12.89  2.53  0.65
-
-# estranho, deveria ter caso 08 que nao entra em 44 pq nao tem numero no input
-# checar se isso ocore
-
-
-
 
 fields <- geocodebr::setup_address_fields(
   logradouro = 'logradouro',
@@ -121,8 +108,8 @@ rafaT <- function(){ message('rafa T')
 
 mb <- microbenchmark::microbenchmark(
   rafa_drop = rafaF(),
-  rafa_keep = rafaT(),
-  times  = 5
+ rafa_keep = rafaT(),
+  times  = 4
 )
 mb
 

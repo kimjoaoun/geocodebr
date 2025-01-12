@@ -5,67 +5,6 @@
 #' @param y String. Name of a table written in con
 #' @param output_tb Name of the new table to be written in con
 #' @param key_cols Vector. Vector with the names of columns to perform left join
-#' @param match_type Integer. An integer
-#'
-#' @return Writes the result of the left join as a new table in con
-#'
-#' @keywords internal
-match_weighted_cases <- function(con, x, y, output_tb, key_cols, match_type){
-
-  # Create the JOIN condition by concatenating the key columns
-  join_condition <- paste(
-    glue::glue("{y}.{key_cols} = {x}.{key_cols}"),
-    collapse = ' AND '
-  )
-
-  # # TO DO: match probabilistico
-  # # isso eh um teste provisorio
-  # if( match_type %in% probabilistic_logradouro_match_types) {
-  #   join_condition <- gsub("= input_padrao_db.logradouro_sem_numero", "LIKE '%' || input_padrao_db.logradouro_sem_numero || '%'", join_condition)
-  # }
-
-  # Construct the SQL match query
-  query_match <- glue::glue(
-    "CREATE OR REPLACE TEMPORARY VIEW temp_db AS
-      SELECT {x}.tempidgeocodebr, {x}.numero, {y}.numero as numero_db, {y}.lat, {y}.lon
-      FROM {x}
-      LEFT JOIN {y}
-      ON {join_condition}
-      WHERE {x}.numero IS NOT NULL AND {y}.numero IS NOT NULL;"
-  )
-  DBI::dbExecute(con, query_match)
-
-
-  # summarize
-  query_aggregate <- glue::glue(
-    "CREATE TEMPORARY TABLE {output_tb} AS
-    SELECT tempidgeocodebr,
-    SUM((1/ABS(numero - numero_db) * lon)) / SUM(1/ABS(numero - numero_db)) AS lon,
-    SUM((1/ABS(numero - numero_db) * lat)) / SUM(1/ABS(numero - numero_db)) AS lat,
-    {match_type} as match_type
-    FROM temp_db
-    GROUP BY tempidgeocodebr;"
-    )
-  temp_n <- DBI::dbExecute(con, query_aggregate)
-
-  # UPDATE input_padrao_db: Remove observations found in previous step
-  update_input_db(
-    con,
-    update_tb = x,
-    reference_tb = output_tb
-  )
-
-  return(temp_n)
-}
-
-
-#' Match aggregated cases with left_join
-#'
-#' @param con A db connection
-#' @param x String. Name of a table written in con
-#' @param y String. Name of a table written in con
-#' @param output_tb Name of the new table to be written in con
-#' @param key_cols Vector. Vector with the names of columns to perform left join
 #' @param match_type Character.
 #' @param input_states Vector. Passed from above
 #' @param input_municipio Vector. Passed from above
@@ -73,15 +12,15 @@ match_weighted_cases <- function(con, x, y, output_tb, key_cols, match_type){
 #' @return Writes the result of the left join as a new table in con
 #'
 #' @keywords internal
-match_weighted_cases_arrow <- function(con,
-                                       x,
-                                       y,
-                                       output_tb,
-                                       key_cols,
-                                       match_type,
-                                       keep_matched_address,
-                                       input_states,
-                                       input_municipio){
+match_weighted_cases <- function(con,
+                                 x,
+                                 y,
+                                 output_tb,
+                                 key_cols,
+                                 match_type,
+                                 keep_matched_address,
+                                 input_states,
+                                 input_municipio){
 
 
   # read correspondind parquet file
