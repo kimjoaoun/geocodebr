@@ -158,14 +158,10 @@ profvis({
 
 
 bm <- bench::mark(
-  dani = dani(),
-  rafa_loop = rafa_loop(),
-  rafa_verb = rafa_verb(),
-  rafa_loc = rafa_loc(),
-#  dani_L = dani_like(),
-#  rafa_like = rafa_like(),
+  rafa_drop = rafaF(),
+  rafa_keep = rafaT(),
   check = F,
-  iterations  = 10
+  iterations  = 5
 )
 bm
 
