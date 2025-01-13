@@ -62,7 +62,9 @@ fields <- geocodebr::setup_address_fields(
   estado = 'uf'
 )
 
-dani <- function(){ message('dani')
+
+
+rafa <- function(){ message('rafa')
   rais <- geocodebr::geocode(
     addresses_table = rais,
     address_fields = fields,
@@ -72,28 +74,9 @@ dani <- function(){ message('dani')
 }
 
 
-rafa <- function(){ message('rafa')
-  rais <- geocodebr:::geocode_rafa(
-    addresses_table = rais,
-    address_fields = fields,
-    n_cores = 20, # 7
-    progress = T
-  )
-}
-
-rafa_arrow <- function(){ message('rafa_arrow')
-  rais <- geocodebr:::geocode_rafa_arrow(
-    addresses_table = rais,
-    address_fields = fields,
-    n_cores = 20, # 7
-    progress = T
-  )
-}
 
 mb <- microbenchmark::microbenchmark(
-  dani = dani(),
   rafa = rafa(),
-  rafa_arrow = rafa_arrow(),
   times  = 5
 )
 
@@ -105,6 +88,10 @@ mb
 #       rafa 542.9040 542.9040 542.9040 542.9040 542.9040 542.9040     1
 # rafa_arrow 260.3829 260.3829 260.3829 260.3829 260.3829 260.3829     1
 
+com matched address e todas categorias
+Unit: seconds
+expr      min      lq    mean   median       uq      max neval
+rafa 468.2382 835.071 1275.96 1286.295 1699.844 2090.351     5
 
 
 
@@ -238,7 +225,7 @@ dani <- function(){ message('dani')
 
 
 rafa <- function(){ message('rafa')
-  rais <- geocodebr:::geocode_rafa(
+  rais <- geocodebr::geocode(
     addresses_table = cad,
     address_fields = fields_cad,
     n_cores = 20, # 7
@@ -256,9 +243,7 @@ rafa_arrow <- function(){ message('rafa_arrow')
 }
 
 mb_cad <- microbenchmark::microbenchmark(
-  dani = dani(),
   rafa = rafa(),
-  rafa_arrow = rafa_arrow(),
   times  = 5
 )
 
