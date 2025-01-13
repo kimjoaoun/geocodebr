@@ -93,6 +93,27 @@ rafaF <- function(){ message('rafa F')
   )
 }
 
+rafaF_db <- function(){ message('rafa F')
+  df_rafaF <- geocodebr:::geocode_db(
+    addresses_table = input_df,
+    address_fields = fields,
+    n_cores = ncores,
+    keep_matched_address = F,
+    progress = T
+  )
+}
+
+
+rafaT_db <- function(){ message('rafa T')
+  df_rafaT <- geocodebr:::geocode_db(
+    addresses_table = input_df,
+    address_fields = fields,
+    n_cores = ncores,
+    keep_matched_address = T,
+    progress = T
+  )
+}
+
 rafaT <- function(){ message('rafa T')
   df_rafaT <- geocodebr::geocode(
     addresses_table = input_df,
@@ -108,8 +129,10 @@ rafaT <- function(){ message('rafa T')
 
 mb <- microbenchmark::microbenchmark(
   rafa_drop = rafaF(),
- rafa_keep = rafaT(),
-  times  = 4
+  rafa_keep = rafaT(),
+  rafa_drop_db = rafaF_db(),
+  rafa_keep_db = rafaT_db(),
+  times  = 10
 )
 mb
 
@@ -129,14 +152,6 @@ profvis({
 #    rafa_db_many_tab 3.888666  4.368634  6.519762  6.546503  7.850455  9.715533    10
 # rafa_arrow_many_tab 5.413124  5.452995  5.837255  5.945242  6.020612  6.348533    10
 
-# second run
-# Unit: seconds
-#                expr      min        lq      mean    median        uq       max neval
-#                dani 14.78138 15.823292 15.884216 15.938587 16.095994 16.554124    10
-#                rafa 12.56624 12.963294 13.282075 13.240145 13.794640 13.979016    10
-#        rafa_db_1tab 23.64002 24.674406 25.698825 26.092317 26.524272 26.785120    10
-#    rafa_db_many_tab 10.68212 11.360587 11.476701 11.565440 11.858326 11.991334    10
-# rafa_arrow_many_tab  6.40248  6.507919  6.640216  6.635447  6.699444  7.006282    10
 
 # 3rd round
 # Unit: seconds
@@ -147,19 +162,12 @@ profvis({
 #    rafa_db_many_tab 12.844879 13.127918 13.369812 13.414421 13.534294 13.92704    10
 # rafa_arrow_many_tab  6.538901  6.779183  7.038967  7.041431  7.310856  7.62508    10
 
-# 4th round
-# Unit: seconds
-#                expr      min        lq      mean    median        uq       max neval
-#                dani 15.519423 17.139488 17.654553 17.615109 18.181859 19.560416   100
-#                rafa 13.801301 14.694592 15.139558 15.097101 15.545994 17.266722   100
-#        rafa_db_1tab 26.722454 30.388957 31.262250 31.386270 32.028582 33.840385   100
-#    rafa_db_many_tab 12.556474 13.995775 14.364552 14.311128 14.736766 15.684131   100
-# rafa_arrow_many_tab  6.721275  7.141642  7.376419  7.345936  7.575968  8.398091   100
-
 
 bm <- bench::mark(
   rafa_drop = rafaF(),
   rafa_keep = rafaT(),
+  rafa_drop_db = rafaF_db(),
+  rafa_keep_db = rafaT_db(),
   check = F,
   iterations  = 5
 )

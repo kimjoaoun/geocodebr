@@ -52,12 +52,13 @@
 #'
 #' head(df)
 #'
-geocode2 <- function(addresses_table,
+geocode_db <- function(addresses_table,
                     address_fields = setup_address_fields(),
                     n_cores = 1,
                     progress = TRUE,
                     keep_matched_address = FALSE,
-                    cache = TRUE){
+                    cache = TRUE
+                    ){
   # check input
   assert_address_fields(address_fields, addresses_table)
   checkmate::assert_data_frame(addresses_table)
@@ -139,7 +140,7 @@ geocode2 <- function(addresses_table,
   # empty output table that will be populated -----------------------------------------------
 
   query_create_empty_output_db <- glue::glue(
-    "CREATE TABLE output_db (
+    "CREATE OR REPLACE TABLE output_db (
     tempidgeocodebr INTEGER,
     lon NUMERIC,
     lat NUMERIC,
@@ -181,7 +182,7 @@ geocode2 <- function(addresses_table,
     if (all(relevant_cols %in% names(input_padrao))) {
 
       # select match function
-      match_fun <- ifelse(case %in% number_interpolation_types, match_weighted_cases, match_cases)
+      match_fun <- ifelse(case %in% number_interpolation_types, match_weighted_cases2, match_cases2)
 
       n_rows_affected <- match_fun(
         con,
