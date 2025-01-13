@@ -19,6 +19,8 @@
 #'   parameters.
 #' @template n_cores
 #' @template progress
+#' @param keep_matched_address Logical. Whethe the output should include a
+#'       column indicating the matched address of reference. Defaults to `FALSE`.
 #' @template cache
 #'
 #' @return Returns the data frame passed in `addresses_table` with the latitude
@@ -55,6 +57,7 @@ geocode <- function(addresses_table,
                     address_fields = setup_address_fields(),
                     n_cores = 1,
                     progress = TRUE,
+                    keep_matched_address = FALSE,
                     cache = TRUE){
   # check input
   assert_address_fields(address_fields, addresses_table)
@@ -62,6 +65,7 @@ geocode <- function(addresses_table,
   checkmate::assert_number(n_cores, lower = 1, finite = TRUE)
   checkmate::assert_logical(progress, any.missing = FALSE, len = 1)
   checkmate::assert_logical(cache, any.missing = FALSE, len = 1)
+  checkmate::assert_logical(keep_matched_address, any.missing = FALSE, len = 1)
 
   # normalize input data -------------------------------------------------------
 
@@ -71,7 +75,7 @@ geocode <- function(addresses_table,
   if (progress) message_standardizing_addresses()
 
 
-   # TEMP. necessario para garantir que numero de input 0 vire 'S/N'
+  # TEMP. necessario para garantir que numero de input 0 vire 'S/N'
   data.table::setDT(addresses_table)
   addresses_table[, address_fields['numero'] := as.character( get(address_fields['numero']) )]
 
@@ -114,8 +118,11 @@ geocode <- function(addresses_table,
   #   warning = function(cnd) cli::cli_warn("The input of the field 'number' has observations with non numeric characters. These observations were transformed to NA.")
   #   )
 
-  # downloading cnefe. we only need to download the states present in the
-  # addresses table, which may save us some time.
+  # # sort input data
+  # input_padrao <- input_padrao[order(estado, municipio, logradouro_sem_numero, numero, cep, localidade)]
+
+
+  # downloading cnefe
   cnefe_dir <- download_cnefe(
     progress = progress,
     cache = cache
@@ -158,7 +165,7 @@ geocode <- function(addresses_table,
     if (all(relevant_cols %in% names(input_padrao))) {
 
       # select match function
-      match_fun <- ifelse(case %in% number_interpolation_types, match_weighted_cases_arrow, match_cases_arrow)
+      match_fun <- ifelse(case %in% number_interpolation_types, match_weighted_cases, match_cases)
 
       n_rows_affected <- match_fun(
         con,
@@ -167,6 +174,7 @@ geocode <- function(addresses_table,
         output_tb = paste0('output_', case),
         key_cols = relevant_cols,
         match_type = case,
+        keep_matched_address = keep_matched_address,
         input_states = input_states,
         input_municipio = input_municipio
       )
@@ -213,11 +221,12 @@ geocode <- function(addresses_table,
     x='input_db',
     y='output_db',
     key_column='tempidgeocodebr',
-    select_columns = x_columns
+    select_columns = x_columns,
+    keep_matched_address = keep_matched_address
   )
 
   # Disconnect from DuckDB when done
-  duckdb::dbDisconnect(con, shutdown=TRUE)
+  duckdb::dbDisconnect(con)
 
   # Return the result
   return(output_deterministic)

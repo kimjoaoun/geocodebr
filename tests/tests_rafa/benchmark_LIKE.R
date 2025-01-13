@@ -58,6 +58,7 @@ input_df <- arrow::read_parquet(data_path)
 # ncores <- 7
 # progress = T
 # cache = TRUE
+# keep_matched_address = F
 # address_fields <- geocodebr::setup_address_fields(
 #   logradouro = 'logradouro',
 #   numero = 'numero',
@@ -72,74 +73,53 @@ input_df <- arrow::read_parquet(data_path)
 ncores <- 7
 
 
-# round(table(df_duck_rafa$match_type)/nrow(df_duck_rafa)*100 ,2)
-#     1     2     3     4     44      9    10    11    12
-# 24.41  9.78  8.80  6.17  13.32  21.46 12.89  2.53  0.65
-#
-# round(table(df_duck_rafa1$match_type)/nrow(df_duck_rafa1)*100 ,2)
-#     1     2     3     4     5     6     7     8     9    10    11    12
-# 24.41  9.78  8.80  6.17  6.18  3.03  1.98  2.13 21.46 12.89  2.53  0.65
 
-# estranho, deveria ter caso 08 que nao entra em 44 pq nao tem numero no input
-# checar se isso ocore
+fields <- geocodebr::setup_address_fields(
+  logradouro = 'logradouro',
+  numero = 'numero',
+  cep = 'cep',
+  bairro = 'bairro',
+  municipio = 'municipio',
+  estado = 'uf'
+)
 
-
-
-
-
-rafa <- function(){ message('rafa')
-  fields <- geocodebr::setup_address_fields(
-    logradouro = 'logradouro',
-    numero = 'numero',
-    cep = 'cep',
-    bairro = 'bairro',
-    municipio = 'municipio',
-    estado = 'uf'
-  )
-
-  df_rafa2 <- geocodebr::geocode(
+rafaF <- function(){ message('rafa F')
+  df_rafaF <- geocodebr::geocode(
     addresses_table = input_df,
     address_fields = fields,
     n_cores = ncores,
+    keep_matched_address = F,
+    progress = T
+  )
+}
+
+rafaF_db <- function(){ message('rafa F')
+  df_rafaF <- geocodebr:::geocode_db(
+    addresses_table = input_df,
+    address_fields = fields,
+    n_cores = ncores,
+    keep_matched_address = F,
     progress = T
   )
 }
 
 
-
-rafa_arrow <- function(){ message('rafa_arrow')
-  fields <- geocodebr::setup_address_fields(
-    logradouro = 'logradouro',
-    numero = 'numero',
-    cep = 'cep',
-    bairro = 'bairro',
-    municipio = 'municipio',
-    estado = 'uf'
-  )
-
-  df_rafa_arrow <- geocodebr::geocode(
+rafaT_db <- function(){ message('rafa T')
+  df_rafaT <- geocodebr:::geocode_db(
     addresses_table = input_df,
     address_fields = fields,
     n_cores = ncores,
+    keep_matched_address = T,
     progress = T
   )
 }
 
-dani <- function(){ message('dani')
-  fields <- geocodebr::setup_address_fields(
-    logradouro = 'logradouro',
-    numero = 'numero',
-    cep = 'cep',
-    bairro = 'bairro',
-    municipio = 'municipio',
-    estado = 'uf'
-  )
-
-
-  df_dani <- geocodebr:::geocode_dani(
+rafaT <- function(){ message('rafa T')
+  df_rafaT <- geocodebr::geocode(
     addresses_table = input_df,
     address_fields = fields,
     n_cores = ncores,
+    keep_matched_address = T,
     progress = T
   )
 }
@@ -148,13 +128,18 @@ dani <- function(){ message('dani')
 
 
 mb <- microbenchmark::microbenchmark(
-  dani = dani(),
-  rafa = rafa(),
-  rafa_arrow = rafa_arrow(),
+  rafa_drop = rafaF(),
+  rafa_keep = rafaT(),
+  rafa_drop_db = rafaF_db(),
+  rafa_keep_db = rafaT_db(),
   times  = 10
 )
 mb
 
+library(profvis)
+profvis({
+  rafaT()
+})
 
 
 
@@ -167,14 +152,6 @@ mb
 #    rafa_db_many_tab 3.888666  4.368634  6.519762  6.546503  7.850455  9.715533    10
 # rafa_arrow_many_tab 5.413124  5.452995  5.837255  5.945242  6.020612  6.348533    10
 
-# second run
-# Unit: seconds
-#                expr      min        lq      mean    median        uq       max neval
-#                dani 14.78138 15.823292 15.884216 15.938587 16.095994 16.554124    10
-#                rafa 12.56624 12.963294 13.282075 13.240145 13.794640 13.979016    10
-#        rafa_db_1tab 23.64002 24.674406 25.698825 26.092317 26.524272 26.785120    10
-#    rafa_db_many_tab 10.68212 11.360587 11.476701 11.565440 11.858326 11.991334    10
-# rafa_arrow_many_tab  6.40248  6.507919  6.640216  6.635447  6.699444  7.006282    10
 
 # 3rd round
 # Unit: seconds
@@ -185,25 +162,14 @@ mb
 #    rafa_db_many_tab 12.844879 13.127918 13.369812 13.414421 13.534294 13.92704    10
 # rafa_arrow_many_tab  6.538901  6.779183  7.038967  7.041431  7.310856  7.62508    10
 
-# 4th round
-# Unit: seconds
-#                expr      min        lq      mean    median        uq       max neval
-#                dani 15.519423 17.139488 17.654553 17.615109 18.181859 19.560416   100
-#                rafa 13.801301 14.694592 15.139558 15.097101 15.545994 17.266722   100
-#        rafa_db_1tab 26.722454 30.388957 31.262250 31.386270 32.028582 33.840385   100
-#    rafa_db_many_tab 12.556474 13.995775 14.364552 14.311128 14.736766 15.684131   100
-# rafa_arrow_many_tab  6.721275  7.141642  7.376419  7.345936  7.575968  8.398091   100
-
 
 bm <- bench::mark(
-  dani = dani(),
-  rafa_loop = rafa_loop(),
-  rafa_verb = rafa_verb(),
-  rafa_loc = rafa_loc(),
-#  dani_L = dani_like(),
-#  rafa_like = rafa_like(),
+  rafa_drop = rafaF(),
+  rafa_keep = rafaT(),
+  rafa_drop_db = rafaF_db(),
+  rafa_keep_db = rafaT_db(),
   check = F,
-  iterations  = 10
+  iterations  = 5
 )
 bm
 
@@ -372,3 +338,7 @@ data.table::setnames(
 
 
 table(df$match_type.d, df$match_type.p)
+
+
+
+

@@ -6,111 +6,22 @@
 #' @param output_tb Name of the new table to be written in con
 #' @param key_cols Vector. Vector with the names of columns to perform left join
 #' @param match_type Integer. An integer
-#'
-#' @return Writes the result of the left join as a new table in con
-#'
-#' @keywords internal
-match_cases <- function(con, x, y, output_tb, key_cols, match_type){
-
-  # table table - 7.993404
-  # view table--- 7.047993
-  # table view -- 8.874689
-  # view view --- 7.780372
-
-  # Build the dynamic select and group statement
-  cols_select <- paste0(paste(key_cols, collapse = ", "),",")
-  cols_group <- paste(key_cols, collapse = ", ")
-
-  # pre-aggregate cnefe
-  query_aggregate <- glue::glue(
-    "CREATE OR REPLACE TEMPORARY VIEW pre_aggregated_cnefe AS
-        SELECT {cols_select} AVG(lon) AS lon, AVG(lat) AS lat
-        FROM {y}
-        WHERE {y}.numero IS NOT NULL
-        GROUP BY {cols_group};"
-      )
-
-  if (match_type %in% 5:12) {
-    query_aggregate <- gsub("WHERE filtered_cnefe.numero IS NOT NULL", "", query_aggregate)
-  }
-
-  DBI::dbExecute(con, query_aggregate)
-
-
-
-  # Create the JOIN condition by concatenating the key columns
-  join_condition <- paste(
-    glue::glue("pre_aggregated_cnefe.{key_cols} = {x}.{key_cols}"),
-    collapse = ' AND '
-  )
-
-  # LIKE pulo do gato aqui 6666666666666
-  # join_condition <- gsub("= input_padrao_db.logradouro_sem_numero", "LIKE '%' || input_padrao_db.logradouro_sem_numero || '%'", join_condition)
-
-
-  # query for left join
-  query_match <- glue::glue(
-    "CREATE TEMPORARY TABLE {output_tb} AS
-      SELECT {x}.tempidgeocodebr, pre_aggregated_cnefe.lon, pre_aggregated_cnefe.lat, {match_type} as match_type
-      FROM {x}
-      LEFT JOIN pre_aggregated_cnefe
-      ON {join_condition}
-      WHERE {x}.numero IS NOT NULL AND pre_aggregated_cnefe.lon IS NOT NULL;"
-    )
-
-  if (match_type %in% 5:12) {
-    query_match <- gsub("input_padrao_db.numero IS NOT NULL AND", "", query_match)
-    }
-
-  temp_n <- DBI::dbExecute(con, query_match)
-
-
-  # # add match_type column to output
-  # add_precision_col(
-  #   con,
-  #   update_tb = output_tb,
-  #   match_type = match_type
-  # )
-
-  # UPDATE input_padrao_db: Remove observations found in previous step
-  update_input_db(
-    con,
-    update_tb = x,
-    reference_tb = output_tb
-  )
-
-  return(temp_n)
-}
-
-
-
-
-
-
-
-#' Match aggregated cases with left_join
-#'
-#' @param con A db connection
-#' @param x String. Name of a table written in con
-#' @param y String. Name of a table written in con
-#' @param output_tb Name of the new table to be written in con
-#' @param key_cols Vector. Vector with the names of columns to perform left join
-#' @param match_type Integer. An integer
 #' @param input_states Vector. Passed from above
 #' @param input_municipio Vector. Passed from above
 #'
 #' @return Writes the result of the left join as a new table in con
 #'
 #' @keywords internal
-match_cases_arrow <- function(con,
-                              x,
-                              y,
-                              output_tb,
-                              key_cols,
-                              match_type,
-                              input_states,
-                              input_municipio
-                              ){
+match_cases <- function(con,
+                        x,
+                        y,
+                        output_tb,
+                        key_cols,
+                        match_type,
+                        keep_matched_address,
+                        input_states,
+                        input_municipio
+                        ){
 
   # read correspondind parquet file
   table_name <- paste(key_cols, collapse = "_")
@@ -130,6 +41,7 @@ match_cases_arrow <- function(con,
     dplyr::filter(estado %in% input_states) |>
     dplyr::filter(municipio %in% input_municipio) |>
     dplyr::compute()
+
 
   # register filtered_cnefe to db
   duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
@@ -159,6 +71,10 @@ match_cases_arrow <- function(con,
 
   if (match_type %in% possible_match_types_no_number) {
     query_match <- gsub("input_padrao_db.numero IS NOT NULL AND", "", query_match)
+  }
+
+  if (isFALSE(keep_matched_address)) {
+    query_match <- gsub(", filtered_cnefe.endereco_completo as matched_address", "", query_match)
   }
 
   temp_n <- DBI::dbExecute(con, query_match)
