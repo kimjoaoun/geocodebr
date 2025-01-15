@@ -10,32 +10,27 @@
 #'
 #' @return Invisibly returns the path to the directory where the data was saved.
 #'
-#' @family Support
-#'
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
-#'
 #' download_cnefe(progress = FALSE)
-#'
 #'
 #' @export
 download_cnefe <- function(progress = TRUE, cache = TRUE) {
-
   checkmate::assert_logical(progress, any.missing = FALSE, len = 1)
   checkmate::assert_logical(cache, any.missing = FALSE, len = 1)
 
   all_files <- c(
-  "municipio_logradouro_numero_localidade.parquet",  # 4 largest files
-  "municipio.parquet",
-  "municipio_cep.parquet",
-  "municipio_cep_localidade.parquet",
-  "municipio_logradouro_numero_cep_localidade.parquet", # 4 largest files
-  "municipio_localidade.parquet",
-  "municipio_logradouro.parquet",
-  "municipio_logradouro_numero_cep.parquet", # 4 largest files
-  "municipio_logradouro_cep.parquet",
-  "municipio_logradouro_cep_localidade.parquet",
-  "municipio_logradouro_numero.parquet", # 4 largest files
-  "municipio_logradouro_localidade.parquet"
+    "municipio_logradouro_numero_localidade.parquet",  # 4 largest files
+    "municipio.parquet",
+    "municipio_cep.parquet",
+    "municipio_cep_localidade.parquet",
+    "municipio_logradouro_numero_cep_localidade.parquet", # 4 largest files
+    "municipio_localidade.parquet",
+    "municipio_logradouro.parquet",
+    "municipio_logradouro_numero_cep.parquet", # 4 largest files
+    "municipio_logradouro_cep.parquet",
+    "municipio_logradouro_cep_localidade.parquet",
+    "municipio_logradouro_numero.parquet", # 4 largest files
+    "municipio_logradouro_localidade.parquet"
   )
 
   data_urls <- glue::glue(
@@ -58,22 +53,25 @@ download_cnefe <- function(progress = TRUE, cache = TRUE) {
   files_to_download <- setdiff(all_files, existing_files)
   files_to_download <- data_urls[all_files %in% files_to_download]
 
-  downloaded_files <- download_files(files_to_download, progress)
+  if (length(files_to_download) == 0) return(invisible(data_dir))
 
-  return(invisible(data_dir))
+  downloaded_files <- download_files(data_dir, files_to_download, progress)
+
+  # the download_dir object below should be identical to data_dir, but we return
+  # its value, instead of data_dir, just to make sure the that data is
+  # downloaded to the correct dir and that nothing went wrong between setting
+  # data_dir and downloading the data
+
+  download_dir <- unique(fs::path_dir(downloaded_files))
+
+  return(invisible(download_dir))
 }
 
 
-download_files <- function(files_to_download, progress) {
-  # we always download the files to a temporary directory to prevent any
-  # potential "garbage" in our cache dir (in case the download fails for some
-  # reason or the unzipping process crashes mid-operation)
-
-  download_dir <- geocodebr::get_cache_dir()
-
+download_files <- function(data_dir, files_to_download, progress) {
   requests <- lapply(files_to_download, httr2::request)
 
-  dest_files <- fs::path(download_dir, basename(files_to_download))
+  dest_files <- fs::path(data_dir, basename(files_to_download))
 
   responses <- perform_requests_in_parallel(requests, dest_files, progress)
 
@@ -109,7 +107,7 @@ perform_requests_in_parallel <- function(requests, dest_files, progress) {
 error_cnefe_download_failed <- function() {
   geocodebr_error(
     c(
-      "Could not download CNEFE data for one or more files",
+      "Could not download one or more CNEFE data files.",
       "i" = "Please try again later."
     ),
     call = rlang::caller_env(n = 2)

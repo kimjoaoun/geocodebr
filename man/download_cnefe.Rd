@@ -24,13 +24,6 @@ used with this package.
 }
 \examples{
 \dontshow{if (identical(tolower(Sys.getenv("NOT_CRAN")), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
-
 download_cnefe(progress = FALSE)
-
 \dontshow{\}) # examplesIf}
 }
-\seealso{
-Other Support: 
-\code{\link{create_geocodebr_db}()}
-}
-\concept{Support}

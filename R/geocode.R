@@ -156,19 +156,22 @@ geocode <- function(addresses_table,
   if(is.null(input_municipio)){ input_municipio <- "*"}
 
 
+  n_rows <- nrow(input_padrao)
+  matched_rows <- 0
+
   if (progress) {
     prog <- create_progress_bar(input_padrao)
-    n_rows_affected <- 0
 
     message_looking_for_matches()
   }
 
+  n_rows <- nrow(input_padrao)
+  matched_rows <- 0
 
   for (case in all_possible_match_types ) {
-
     relevant_cols <- get_relevant_cols_arrow(case)
 
-    if (progress) update_progress_bar(n_rows_affected, case)
+    if (progress) update_progress_bar(matched_rows, case)
 
 
     if (all(relevant_cols %in% names(input_padrao))) {
@@ -187,11 +190,16 @@ geocode <- function(addresses_table,
         input_states = input_states,
         input_municipio = input_municipio
       )
+
+      matched_rows <- matched_rows + n_rows_affected
+
+      # leave the loop early if we find all addresses before covering all cases
+      if (matched_rows == n_rows) break
     }
 
   }
 
-  if (progress) finish_progress_bar(n_rows_affected)
+  if (progress) finish_progress_bar(matched_rows)
 
 
   # prepare output -----------------------------------------------

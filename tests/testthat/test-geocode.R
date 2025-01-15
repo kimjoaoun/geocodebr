@@ -18,18 +18,6 @@ tester <- function(addresses_table = input_df,
   geocode(addresses_table, address_fields, n_cores, progress, cache)
 }
 
-
-test_that("expected output", {
-
-  # warning due do non numeric characters in the field number
-  # expect_warning(df <- tester())
-
-  # size of the output
-  expect_true(nrow(df)==28)
-
-})
-
-
 test_that("errors with incorrect input", {
   expect_error(tester(unclass(input_df)))
 

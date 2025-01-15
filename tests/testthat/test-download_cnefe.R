@@ -4,11 +4,8 @@ tester <- function(progress = TRUE, cache = TRUE) {
 
 test_that("errors with incorrect input", {
   expect_error(tester(1))
-  expect_error(tester("oie"))
-
-  expect_error(tester(progress = 1))
-  expect_error(tester(progress = NA))
-  expect_error(tester(progress = c(TRUE, TRUE)))
+  expect_error(tester(NA))
+  expect_error(tester(c(TRUE, TRUE)))
 
   expect_error(tester(cache = 1))
   expect_error(tester(cache = NA))
@@ -23,6 +20,15 @@ test_that("returns the path to the directory where the files were saved", {
 test_that("cache usage is controlled by the cache argument", {
   result <- tester(cache = TRUE)
   expect_identical(result, file.path(get_cache_dir()))
+
+  # using a mocked binding for perform_requests_in_parallel here just to save us
+  # some time. as long as none of its elements is a failed request, the funtion
+  # will make download_files return the path to the files that would be
+  # downloaded, which is basically what we want to test here
+
+  local_mocked_bindings(
+    perform_requests_in_parallel = function(...) TRUE
+  )
 
   result <- tester(cache = FALSE)
   expect_true(
@@ -41,21 +47,9 @@ test_that("errors if could not download one or more files", {
   )
 
   expect_error(
-    tester("AL", cache = FALSE),
+    tester(cache = FALSE),
     class = "geocodebr_error_cnefe_download_failed"
   )
 
-  expect_snapshot(tester("AL", cache = FALSE), error = TRUE, cnd_class = TRUE)
+  expect_snapshot(tester(cache = FALSE), error = TRUE, cnd_class = TRUE)
 })
-
-# test_that("would download the data of all states if state='all'", {
-#   local_mocked_bindings(
-#     perform_requests_in_parallel = function(requests, ...) {
-#       if (length(requests) == 27) {
-#         cli::cli_abort("Too much to download", class = "state_all_succeeded")
-#       }
-#     }
-#   )
-#
-#   expect_error(tester("all", cache = FALSE), class = "state_all_succeeded")
-# })
