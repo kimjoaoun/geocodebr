@@ -1,57 +1,3 @@
-#' Geocode Brazilian addresses
-#'
-#' Geocodes Brazilian addresses based on CNEFE data. Addresses must be passed as
-#' a data frame in which each column describes one address field (street name,
-#' street number, neighborhood, etc). The input addresses are matched with CNEFE
-#' following different precision levels For more info, please see the Details
-#' section. The output coordinates use the geodetic reference system
-#' "SIRGAS2000", CRS(4674).
-#'
-#' @param addresses_table A data frame. The addresses to be geocoded. Each
-#'   column must represent an address field.
-#' @param address_fields A character vector. The correspondence between each
-#'   address field and the name of the column that describes it in the
-#'   `addresses_table`. The [setup_address_fields()] function helps creating
-#'   this vector and performs some checks on the input. Address fields
-#'   passed as `NULL` are ignored and the function must receive at least one
-#'   non-null field. If manually creating the vector, please note that the
-#'   vector names should be the same names used in the [setup_address_fields()]
-#'   parameters.
-#' @template n_cores
-#' @template progress
-#' @param keep_matched_address Logical. Whethe the output should include a
-#'       column indicating the matched address of reference. Defaults to `FALSE`.
-#' @template cache
-#'
-#' @return Returns the data frame passed in `addresses_table` with the latitude
-#'   (`lat`) and longitude (`lon`) of each matched address, as well as two
-#'   columns (`precision` and `match_type`) indicating the precision level with
-#'   which the address was matched.
-#'
-#' @template precision_section
-#'
-#' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
-#'
-#' data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
-#' input_df <- read.csv(data_path)
-#'
-#' fields <- geocodebr::setup_address_fields(
-#'   logradouro = "nm_logradouro",
-#'   numero = "Numero",
-#'   cep = "Cep",
-#'   bairro = "Bairro",
-#'   municipio = "nm_municipio",
-#'   estado = "nm_uf"
-#' )
-#'
-#' df <- geocodebr::geocode(
-#'   addresses_table = input_df,
-#'   address_fields = fields,
-#'   progress = FALSE
-#'   )
-#'
-#' head(df)
-#'
 geocode_db <- function(addresses_table,
                     address_fields = setup_address_fields(),
                     n_cores = 1,
@@ -90,7 +36,8 @@ geocode_db <- function(addresses_table,
       municipio = address_fields[["municipio"]],
       estado = address_fields[["estado"]]
     ),
-    formato_estados = "sigla"
+    formato_estados = "sigla",
+    formato_numeros = 'integer'
   )
 
 
@@ -250,20 +197,6 @@ geocode_db <- function(addresses_table,
 }
 
 
-#' Match aggregated cases with left_join
-#'
-#' @param con A db connection
-#' @param x String. Name of a table written in con
-#' @param y String. Name of a table written in con
-#' @param output_tb Name of the new table to be written in con
-#' @param key_cols Vector. Vector with the names of columns to perform left join
-#' @param match_type Integer. An integer
-#' @param input_states Vector. Passed from above
-#' @param input_municipio Vector. Passed from above
-#'
-#' @return Writes the result of the left join as a new table in con
-#'
-#' @keywords internal
 match_cases2 <- function(con,
                         x,
                         y,
@@ -348,20 +281,6 @@ match_cases2 <- function(con,
 
 
 
-#' Match aggregated cases with left_join
-#'
-#' @param con A db connection
-#' @param x String. Name of a table written in con
-#' @param y String. Name of a table written in con
-#' @param output_tb Name of the new table to be written in con
-#' @param key_cols Vector. Vector with the names of columns to perform left join
-#' @param match_type Character.
-#' @param input_states Vector. Passed from above
-#' @param input_municipio Vector. Passed from above
-#'
-#' @return Writes the result of the left join as a new table in con
-#'
-#' @keywords internal
 match_weighted_cases2 <- function(con,
                                  x,
                                  y,

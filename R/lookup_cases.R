@@ -1,18 +1,4 @@
 
-#' Match aggregated cases with left_join
-#'
-#' @param con A db connection
-#' @param x String. Name of a table written in con
-#' @param y String. Name of a table written in con
-#' @param output_tb Name of the new table to be written in con
-#' @param key_cols Vector. Vector with the names of columns to perform left join
-#' @param match_type Integer. An integer
-#' @param input_states Vector. Passed from above
-#' @param input_municipio Vector. Passed from above
-#'
-#' @return Writes the result of the left join as a new table in con
-#'
-#' @keywords internal
 lookup_cases <- function(con,
                          relevant_cols,
                          case,
@@ -78,20 +64,6 @@ lookup_cases <- function(con,
 
 
 
-#' Match aggregated cases with left_join
-#'
-#' @param con A db connection
-#' @param x String. Name of a table written in con
-#' @param y String. Name of a table written in con
-#' @param output_tb Name of the new table to be written in con
-#' @param key_cols Vector. Vector with the names of columns to perform left join
-#' @param match_type Integer. An integer
-#' @param input_states Vector. Passed from above
-#' @param input_municipio Vector. Passed from above
-#'
-#' @return Writes the result of the left join as a new table in con
-#'
-#' @keywords internal
 lookup_weighted_cases <- function(con,
                          relevant_cols,
                          case,

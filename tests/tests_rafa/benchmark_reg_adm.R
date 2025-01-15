@@ -2,6 +2,7 @@ devtools::load_all('.')
 library(ipeadatalake)
 library(dplyr)
 library(data.table)
+library(enderecobr)
 # library(mapview)
 # library(sfheaders)
 # library(sf)
@@ -278,14 +279,14 @@ cad <- cad |>
   dplyr::collect()
 
 
-setDT(cad)
-
-cad[, logradouro := enderecobr::padronizar_logradouros(logradouro) ]
-cad[, numero := enderecobr::padronizar_numeros(numero,formato = 'integer') ]
-cad[, cep := enderecobr::padronizar_ceps(cep) ]
-cad[, bairro := enderecobr::padronizar_bairros(bairro) ]
-cad[, code_muni := enderecobr::padronizar_municipios(code_muni) ]
-cad[, abbrev_state := enderecobr::padronizar_estados(abbrev_state, formato = 'sigla') ]
+# setDT(cad)
+#
+# cad[, logradouro := enderecobr::padronizar_logradouros(logradouro) ]
+# cad[, numero := enderecobr::padronizar_numeros(numero,formato = 'integer') ]
+# cad[, cep := enderecobr::padronizar_ceps(cep) ]
+# cad[, bairro := enderecobr::padronizar_bairros(bairro) ]
+# cad[, code_muni := enderecobr::padronizar_municipios(code_muni) ]
+# cad[, abbrev_state := enderecobr::padronizar_estados(abbrev_state, formato = 'sigla') ]
 
 
 fields_cad <- geocodebr::setup_address_fields(
@@ -360,6 +361,7 @@ sum(a$N[which(a$V1 %like% '01|02|03|04|05|06|07|08')])
 
 
 rafaF <- function(){ message('rafa F')
+  message(Sys.time())
   rais <- geocodebr::geocode(
     addresses_table = cad,
     address_fields = fields_cad,
@@ -367,10 +369,12 @@ rafaF <- function(){ message('rafa F')
     keep_matched_address = F,
     progress = T
   )
+  message(Sys.time())
 }
 
 
-rafaF_db <- function(){ message('rafa F')
+rafaF_db <- function(){ message('rafa db F')
+  message(Sys.time())
   df_rafaF <- geocodebr:::geocode_db(
     addresses_table = cad,
     address_fields = fields_cad,
@@ -378,10 +382,12 @@ rafaF_db <- function(){ message('rafa F')
     keep_matched_address = F,
     progress = T
   )
+  message(Sys.time())
 }
 
 
-rafaT_db <- function(){ message('rafa T')
+rafaT_db <- function(){ message('rafa db T')
+  message(Sys.time())
   df_rafaT <- geocodebr:::geocode_db(
     addresses_table = cad,
     address_fields = fields_cad,
@@ -389,9 +395,11 @@ rafaT_db <- function(){ message('rafa T')
     keep_matched_address = T,
     progress = T
   )
+  message(Sys.time())
 }
 
 rafaT <- function(){ message('rafa T')
+  message(Sys.time())
   df_rafaT <- geocodebr::geocode(
     addresses_table = cad,
     address_fields = fields_cad,
@@ -399,15 +407,18 @@ rafaT <- function(){ message('rafa T')
     keep_matched_address = T,
     progress = T
   )
+  message(Sys.time())
 }
 
 dani_arrow <- function(){ message('dani')
+  message(Sys.time())
   df_dani <- geocodebr:::geocode_dani_arrow(
     addresses_table = cad,
     address_fields = fields_cad,
     n_cores = 10,
     progress = T
   )
+  message(Sys.time())
 }
 
 
@@ -418,7 +429,7 @@ mb <- microbenchmark::microbenchmark(
   rafa_keep_db = rafaT_db(),
   dani_arrow = dani_arrow(),
   t = function(x){ return(2+2)},
-  times  = 7
+  times  = 5
 )
 mb
 
@@ -448,7 +459,7 @@ bm <- bench::mark(
   dani_arrow = dani_arrow(),
   t = function(x){ return(2+2)},
   check = F,
-  iterations  = 7
+  iterations  = 5
 )
 bm
 
@@ -466,3 +477,61 @@ bm
 #' take-aways:
 #' manter ou dropar matched_address faz boa diferenca de tempo, mas nao de memoria
 #'
+
+n_rounds <- 3
+
+# 517.55
+bm_dani_arrow <- bench::mark(
+  df_dani_arrow = dani_arrow(),
+  check = F,
+  iterations  = n_rounds
+)
+bm_dani_arrow
+
+
+bm_rafa_drop <- bench::mark(
+  rafa_drop = rafaF(),
+  check = F,
+  iterations  = n_rounds
+)
+bm_rafa_drop
+
+
+
+bm_rafa_keep_db <- bench::mark(
+  rafa_keep_db = rafaT_db(),
+  check = F,
+  iterations  = n_rounds
+)
+bm_rafa_keep_db
+
+#     expression        min   median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory                   time           gc
+#     <bch:expr>   <bch:tm> <bch:tm>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>                   <list>         <list>
+#   1 rafa_keep_db    16.3m      22m  0.000765     8.8GB  0.00688     3    27      1.09h <NULL> <Rprofmem [124,587 × 3]> <bench_tm [3]> <tibble [3 × 3]>
+
+# bm_rafa_keep 28 min
+bm_rafa_keep <- bench::mark(
+  rafa_keep = rafaT(),
+  check = F,
+  iterations  = n_rounds
+)
+bm_rafa_keep
+
+
+
+
+
+time_dani1 <- system.time( df_dani_arrow <- dani_arrow() ) # 22.85667
+time_dani2 <- system.time( df_dani_arrow <- dani_arrow() ) # 30.45833
+time_dani3 <- system.time( df_dani_arrow <- dani_arrow() ) # 40.58983
+time_dani4 <- system.time( df_dani_arrow <- dani_arrow() ) #
+time_dani5 <- system.time( df_dani_arrow <- dani_arrow() ) #
+
+time_rafa_keep1 <- system.time( rafa_keep <- rafaT() ) # 33.182
+time_rafa_keep2 <- system.time( rafa_keep <- rafaT() ) # 31.47183
+time_rafa_keep3 <- system.time( rafa_keep <- rafaT() ) # 34.2515
+
+time_rafa_keep_db1 <- system.time( rafa_keep_db <- rafaT_db() )
+time_rafa_keep_db2 <- system.time( rafa_keep_db <- rafaT_db() )
+time_rafa_keep_db3 <- system.time( rafa_keep_db <- rafaT_db() )
+

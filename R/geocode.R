@@ -90,8 +90,8 @@ geocode <- function(addresses_table,
       municipio = address_fields[["municipio"]],
       estado = address_fields[["estado"]]
     ),
-    formato_estados = "sigla"
-#    , formato_numeros = 'integer'
+    formato_estados = "sigla",
+    formato_numeros = 'integer'
   )
 
 
