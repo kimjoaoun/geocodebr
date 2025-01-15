@@ -20,9 +20,5 @@ A duckdb connection.
 \description{
 Builds a duckdb connection with the CNEFE data set in the cache direcotry.
 }
-\seealso{
-Other Support: 
-\code{\link{download_cnefe}()}
-}
 \concept{Support}
 \keyword{internal}
