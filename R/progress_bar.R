@@ -8,11 +8,11 @@ create_progress_bar <- function(standard_locations, .envir = parent.frame()) {
   )
 }
 
-update_progress_bar <- function(n_rows_affected,
+update_progress_bar <- function(matched_rows,
                                 formatted_case,
                                 .envir = parent.frame()) {
   cli::cli_progress_update(
-    inc = n_rows_affected,
+    set = matched_rows,
     status = glue::glue("Looking for match type {formatted_case}"),
     force = TRUE,
     .envir = .envir
@@ -21,7 +21,7 @@ update_progress_bar <- function(n_rows_affected,
 
 finish_progress_bar <- function(n_rows_affected, .envir = parent.frame()) {
   cli::cli_progress_update(
-    inc = n_rows_affected,
+    set = matched_rows,
     status = "Done!",
     force = TRUE,
     .envir = .envir
