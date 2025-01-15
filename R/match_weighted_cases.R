@@ -53,16 +53,11 @@ match_weighted_cases <- function(con,
     collapse = ' AND '
   )
 
-  # # TO DO: match probabilistico
-  # # isso eh um teste provisorio
-  # if( match_type %in% probabilistic_logradouro_match_types) {
-  #   join_condition <- gsub("= input_padrao_db.logradouro_sem_numero", "LIKE '%' || input_padrao_db.logradouro_sem_numero || '%'", join_condition)
-  #   }
 
   # Construct the SQL match query
   query_match <- glue::glue(
     "CREATE OR REPLACE TEMPORARY VIEW temp_db AS
-      SELECT {x}.tempidgeocodebr, {x}.numero, {y}.numero as numero_db, {y}.lat, {y}.lon, {y}.endereco_completo
+      SELECT {x}.tempidgeocodebr, {x}.numero, {y}.numero AS numero_db, {y}.lat, {y}.lon, {y}.endereco_completo
       FROM {x}
       LEFT JOIN {y}
       ON {join_condition}
@@ -101,6 +96,7 @@ match_weighted_cases <- function(con,
     }
 
   temp_n <- DBI::dbExecute(con, query_aggregate)
+
   duckdb::duckdb_unregister_arrow(con, "filtered_cnefe")
 
 

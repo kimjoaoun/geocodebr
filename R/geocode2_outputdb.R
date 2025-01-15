@@ -314,7 +314,7 @@ match_cases2 <- function(con,
   # query for left join
   query_match <- glue::glue(
     "INSERT INTO output_db (tempidgeocodebr, lon, lat, match_type, matched_address)
-      SELECT {x}.tempidgeocodebr, filtered_cnefe.lon, filtered_cnefe.lat, '{match_type}' as match_type, filtered_cnefe.endereco_completo as matched_address
+      SELECT {x}.tempidgeocodebr, filtered_cnefe.lon, filtered_cnefe.lat, '{match_type}' AS match_type, filtered_cnefe.endereco_completo AS matched_address
       FROM {x}
       LEFT JOIN filtered_cnefe
       ON {join_condition}
@@ -330,7 +330,7 @@ match_cases2 <- function(con,
   }
 
   if (isFALSE(keep_matched_address)) {
-    query_match <- gsub(", filtered_cnefe.endereco_completo as matched_address", "", query_match)
+    query_match <- gsub(", filtered_cnefe.endereco_completo AS matched_address", "", query_match)
   }
 
   temp_n <- DBI::dbExecute(con, query_match)

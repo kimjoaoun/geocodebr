@@ -81,7 +81,7 @@ geocode <- function(addresses_table,
 
 
   input_padrao <- enderecobr::padronizar_enderecos(
-    addresses_table,
+    enderecos = addresses_table,
     campos_do_endereco = enderecobr::correspondencia_campos(
       logradouro = address_fields[["logradouro"]],
       numero = address_fields[["numero"]],
@@ -91,20 +91,29 @@ geocode <- function(addresses_table,
       estado = address_fields[["estado"]]
     ),
     formato_estados = "sigla"
+#    , formato_numeros = 'integer'
   )
 
 
   # keep and rename colunms of input_padrao to use the
   # same column names used in cnefe data set
   data.table::setDT(input_padrao)
-  cols_to_keep <- names(input_padrao)[! names(input_padrao) %in% address_fields]
-  input_padrao <- input_padrao[, .SD, .SDcols = c(cols_to_keep)]
-  names(input_padrao) <- c(gsub("_padr", "", names(input_padrao)))
+  cols_padr <- grep("_padr", names(input_padrao), value = TRUE)
+  input_padrao <- input_padrao[, .SD, .SDcols = cols_padr]
+  names(input_padrao) <- gsub("_padr", "", cols_padr)
 
-  data.table::setnames(
-    x = input_padrao,
-    old = c('logradouro', 'bairro'),
-    new = c('logradouro_sem_numero', 'localidade'))
+  if ('logradouro' %in% names(input_padrao)) {
+      data.table::setnames(
+        x = input_padrao, old = 'logradouro', new = 'logradouro_sem_numero'
+        )
+    }
+
+  if ('bairro' %in% names(input_padrao)) {
+    data.table::setnames(
+      x = input_padrao, old = 'bairro', new = 'localidade'
+    )
+  }
+
 
   # create temp id
   input_padrao[, tempidgeocodebr := 1:nrow(input_padrao) ]

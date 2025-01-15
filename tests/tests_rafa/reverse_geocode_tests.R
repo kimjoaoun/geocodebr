@@ -1,6 +1,9 @@
 devtools::load_all('.')
 library(dplyr)
 
+#' incluir parametro
+#' @output_level = c('address', 'locality', 'municipality', 'state')
+
 
 # input -------------------------------------------------------
 

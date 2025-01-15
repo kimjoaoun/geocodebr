@@ -74,16 +74,13 @@ cache_message <- function(local_file = parent.frame()$local_file,
 #' @keywords internal
 update_input_db <- function(con, update_tb = 'input_padrao_db', reference_tb){
 
-  # 6666666666 possible improvment
-  # the filter could be done in the query join
-  # without the need to update the table, which requires more io operations
-
   # update_tb = 'input_padrao_db'
   # reference_tb = 'output_caso_1'
 
-  query_remove_matched <- sprintf("
-    DELETE FROM %s
-    WHERE tempidgeocodebr IN (SELECT tempidgeocodebr FROM %s)", update_tb, reference_tb)
+  query_remove_matched <- glue::glue("
+    DELETE FROM {update_tb}
+    WHERE tempidgeocodebr IN (SELECT tempidgeocodebr FROM {reference_tb});")
+
   DBI::dbExecute(con, query_remove_matched)
 }
 
@@ -352,6 +349,40 @@ get_relevant_cols <- function(case) {
   } else if (case == 11) {
     c("estado_padr", "municipio_padr", "bairro_padr")
   } else if (case == 12) {
+    c("estado_padr", "municipio_padr")
+  }
+
+  return(relevant_cols)
+}
+
+
+
+
+
+get_relevant_cols_dani_arrow <- function(case) {
+  relevant_cols <- if (case %in% c('en01', 'pn01') ) {
+    c("estado_padr", "municipio_padr", "logradouro_padr", "numero_padr", "cep_padr", "bairro_padr")
+  } else if (case %in% c('en02', 'pn02')) {
+    c("estado_padr", "municipio_padr", "logradouro_padr", "numero_padr", "cep_padr")
+  } else if (case %in% c('en03', 'pn03')) {
+    c("estado_padr", "municipio_padr", "logradouro_padr", "numero_padr", "bairro_padr")
+  } else if (case %in% c('en04', 'pn04')) {
+    c("estado_padr", "municipio_padr", "logradouro_padr", "numero_padr")
+  } else if (case %in% c('er01', 'pr01', 'ei01', 'pi01')) {
+    c("estado_padr", "municipio_padr", "logradouro_padr", "cep_padr", "bairro_padr")
+  } else if (case %in% c('er02', 'pr02', 'ei02', 'pi02')) {
+    c("estado_padr", "municipio_padr", "logradouro_padr", "cep_padr")
+  } else if (case %in% c('er03', 'pr03', 'ei03', 'pi03')) {
+    c("estado_padr", "municipio_padr", "logradouro_padr", "bairro_padr")
+  } else if (case %in% c('er04', 'pr04', 'ei04', 'pi04')) {
+    c("estado_padr", "municipio_padr", "logradouro_padr")
+  } else if (case == 'ec01') {
+    c("estado_padr", "municipio_padr", "cep_padr", "bairro_padr")
+  } else if (case == 'ec02') {
+    c("estado_padr", "municipio_padr", "cep_padr")
+  } else if (case == 'eb01') {
+    c("estado_padr", "municipio_padr", "bairro_padr")
+  } else if (case == 'em01') {
     c("estado_padr", "municipio_padr")
   }
 

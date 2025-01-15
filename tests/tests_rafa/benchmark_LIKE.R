@@ -1,5 +1,9 @@
 #' TO DO
 #'
+#' a) estrateia de montar output: com empty db ou tabelas separadas por case_match ?
+#' b) manter columna matched_address
+#' c) dani arrow
+#'
 #' instalar extensoes do duckdb
 #' - spatial - acho q nao vale a pena por agora
 #'
@@ -12,10 +16,9 @@
 #' adicionar dados de enderecos Meta /overture
 #'   # NEXT STEPS
 #'   - (ok) interpolar numeros na mesma rua
-#'   - join probabilistico com fts_main_documents.match_bm25
+#'   - (next) join probabilistico com fts_main_documents.match_bm25
+#'   - (next) calcular nivel de erro na agregacao do cnefe
 #'   - optimize disk and parallel operations in duckdb
-#'   - exceptional cases (no info on municipio input)
-#'   - calcular nivel de erro
 #'   - casos de rodovias
 #'   - interpolar numeros separando impares e pares
 #'   - CASES NOT FOUND ? AND THEIR EFFECT ON THE PROGRESS BAR
@@ -124,15 +127,24 @@ rafaT <- function(){ message('rafa T')
   )
 }
 
+dani_arrow <- function(){ message('dani')
+  df_dani <- geocodebr:::geocode_dani_arrow(
+    addresses_table = input_df,
+    address_fields = fields,
+    n_cores = ncores,
+    progress = T
+  )
+}
 
 
 
 mb <- microbenchmark::microbenchmark(
   rafa_drop = rafaF(),
-  rafa_keep = rafaT(),
   rafa_drop_db = rafaF_db(),
+  rafa_keep = rafaT(),
   rafa_keep_db = rafaT_db(),
-  times  = 10
+  dani_arrow = dani_arrow(),
+  times  = 3
 )
 mb
 
@@ -296,7 +308,14 @@ data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
 
 
-
+# fields <- geocodebr::setup_address_fields(
+#   logradouro = 'nm_logradouro',
+#   numero = 'Numero',
+#   cep = 'Cep',
+#   bairro = 'Bairro',
+#   municipio = 'nm_municipio',
+#   estado = 'nm_uf'
+# )
 # addresses_table = input_df
 # address_fields = fields
 # n_cores = 7
@@ -323,7 +342,7 @@ rafa_loop <- function(){
   )
 }
 
-
+table(df_rafa_loop$precision) / nrow(df_rafa_loop)*100
 
 
 
