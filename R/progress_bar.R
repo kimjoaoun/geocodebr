@@ -19,7 +19,7 @@ update_progress_bar <- function(matched_rows,
   )
 }
 
-finish_progress_bar <- function(n_rows_affected, .envir = parent.frame()) {
+finish_progress_bar <- function(matched_rows, .envir = parent.frame()) {
   cli::cli_progress_update(
     set = matched_rows,
     status = "Done!",

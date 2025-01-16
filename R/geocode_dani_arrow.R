@@ -16,11 +16,6 @@ geocode_dani_arrow <- function(addresses_table,
 
   if (progress) message_standardizing_addresses()
 
-  # TEMP. necessario para garantir que numero de input 0 vire 'S/N'
-  data.table::setDT(addresses_table)
-  addresses_table[, address_fields['numero'] := as.character( get(address_fields['numero']) )]
-
-
   standard_locations <- enderecobr::padronizar_enderecos(
     enderecos = addresses_table,
     campos_do_endereco = enderecobr::correspondencia_campos(
@@ -37,10 +32,6 @@ geocode_dani_arrow <- function(addresses_table,
 
   # create temp id
   standard_locations[, tempidgeocodebr := 1:nrow(standard_locations) ]
-
-  ### convert "numero" to numeric
-  standard_locations[numero_padr == "S/N", numero_padr := NA_integer_]
-  standard_locations[, numero_padr := as.integer(numero_padr)]
 
 
   # downloading cnefe. we only need to download the states present in the
@@ -96,19 +87,25 @@ geocode_dani_arrow <- function(addresses_table,
   input_states <- unique(standard_locations$estado_padr)
   input_municipio <- unique(standard_locations$municipio_padr)
 
+  input_municipio <- input_municipio[!is.na(input_municipio)]
+  if(is.null(input_municipio)){ input_municipio <- "*"}
 
+
+  # start progress bar
   if (progress) {
-    prog <- create_progress_bar(standard_locations)
-    n_rows_affected <- 0
+    prog <- create_progress_bar(input_padrao)
 
     message_looking_for_matches()
   }
 
-  for (case in all_possible_match_types) {
+  n_rows <- nrow(input_padrao)
+  matched_rows <- 0
 
+  # start matching
+  for (case in all_possible_match_types) {
     relevant_cols <- get_relevant_cols_dani_arrow(case)
 
-    if (progress) update_progress_bar(n_rows_affected, case)
+    if (progress) update_progress_bar(matched_rows, case)
 
     if (all(relevant_cols %in% names(standard_locations))) {
 
@@ -123,10 +120,15 @@ geocode_dani_arrow <- function(addresses_table,
         input_states = input_states,
         input_municipio = input_municipio
       )
+
+      matched_rows <- matched_rows + n_rows_affected
+
+      # leave the loop early if we find all addresses before covering all cases
+      if (matched_rows == n_rows) break
     }
   }
 
-  if (progress) finish_progress_bar(n_rows_affected)
+  if (progress) finish_progress_bar(matched_rows)
 
   # add precision column
   add_precision_col(con, update_tb = 'standard_locations')

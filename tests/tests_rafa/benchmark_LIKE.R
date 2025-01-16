@@ -143,8 +143,8 @@ mb <- microbenchmark::microbenchmark(
   rafa_drop_db = rafaF_db(),
   rafa_keep = rafaT(),
   rafa_keep_db = rafaT_db(),
-  dani_arrow = dani_arrow(),
-  times  = 3
+  dani_df = dani_arrow(),
+  times  = 1
 )
 mb
 
@@ -180,14 +180,15 @@ bm <- bench::mark(
   rafa_keep = rafaT(),
   rafa_drop_db = rafaF_db(),
   rafa_keep_db = rafaT_db(),
+ # dani_df = dani_arrow(),
   check = F,
-  iterations  = 5
+  iterations  = 1
 )
 bm
 
 # 20 K
-# expression     min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory
-# <bch:expr> <bch:t> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>
+#     expression     min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory
+#     <bch:expr> <bch:t> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>
 #   1 dani          1.1m  1.18m    0.0142   20.39MB  0.00427    10     3      11.7m <NULL> <Rprofmem>
 #   2 rafa_loop    58.3s  1.02m    0.0163    2.03GB  0.0488     10    30      10.2m <NULL> <Rprofmem>
 #   3 rafa_verb    58.2s  1.01m    0.0166    2.03GB  0.0498     10    30      10.1m <NULL> <Rprofmem>

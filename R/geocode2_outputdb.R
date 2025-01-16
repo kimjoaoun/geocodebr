@@ -20,12 +20,6 @@ geocode_db <- function(addresses_table,
 
   if (progress) message_standardizing_addresses()
 
-
-  # TEMP. necessario para garantir que numero de input 0 vire 'S/N'
-  data.table::setDT(addresses_table)
-  addresses_table[, address_fields['numero'] := as.character( get(address_fields['numero']) )]
-
-
   input_padrao <- enderecobr::padronizar_enderecos(
     addresses_table,
     campos_do_endereco = enderecobr::correspondencia_campos(
@@ -56,14 +50,6 @@ geocode_db <- function(addresses_table,
   # create temp id
   input_padrao[, tempidgeocodebr := 1:nrow(input_padrao) ]
   data.table::setDT(addresses_table)[, tempidgeocodebr := 1:nrow(input_padrao) ]
-
-  ### convert "numero" to numeric
-  input_padrao[numero == "S/N", numero := NA_integer_]
-  input_padrao[, numero := as.integer(numero)]
-  # withCallingHandlers(
-  #   expr = input_padrao[, numero := as.numeric(numero)],
-  #   warning = function(cnd) cli::cli_warn("The input of the field 'number' has observations with non numeric characters. These observations were transformed to NA.")
-  #   )
 
   # # sort input data
   # input_padrao <- input_padrao[order(estado, municipio, logradouro_sem_numero, numero, cep, localidade)]
@@ -110,20 +96,21 @@ geocode_db <- function(addresses_table,
   input_municipio <- input_municipio[!is.na(input_municipio)]
   if(is.null(input_municipio)){ input_municipio <- "*"}
 
-
+  # start progress bar
   if (progress) {
     prog <- create_progress_bar(input_padrao)
-    n_rows_affected <- 0
 
     message_looking_for_matches()
   }
 
+  n_rows <- nrow(input_padrao)
+  matched_rows <- 0
 
+  # start matching
   for (case in all_possible_match_types ) {
-
     relevant_cols <- get_relevant_cols_arrow(case)
 
-    if (progress) update_progress_bar(n_rows_affected, case)
+    if (progress) update_progress_bar(matched_rows, case)
 
 
     if (all(relevant_cols %in% names(input_padrao))) {
@@ -142,11 +129,16 @@ geocode_db <- function(addresses_table,
         input_states = input_states,
         input_municipio = input_municipio
       )
+
+      matched_rows <- matched_rows + n_rows_affected
+
+      # leave the loop early if we find all addresses before covering all cases
+      if (matched_rows == n_rows) break
     }
 
   }
 
-  if (progress) finish_progress_bar(n_rows_affected)
+  if (progress) finish_progress_bar(matched_rows)
 
 
   # prepare output -----------------------------------------------
