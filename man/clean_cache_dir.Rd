@@ -13,6 +13,7 @@ Invisibly returns the cache directory path.
 Deletes the files saved in the cache directory.
 }
 \examples{
+\dontshow{if (identical(TRUE, FALSE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 clean_cache_dir()
-
+\dontshow{\}) # examplesIf}
 }

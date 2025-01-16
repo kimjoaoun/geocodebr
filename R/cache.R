@@ -106,7 +106,7 @@ list_cached_data <- function(print_tree = FALSE) {
 #'
 #' @return Invisibly returns the cache directory path.
 #'
-#' @examples
+#' @examplesIf identical(TRUE, FALSE)
 #' clean_cache_dir()
 #'
 #' @export
