@@ -102,25 +102,28 @@ list_cached_data <- function(print_tree = FALSE) {
 
 #' Clean the cache directory used in geocodebr
 #'
-#' Removes all files stored locally in the cache directory.
+#' Deletes the files saved in the cache directory.
 #'
-#' @return A message.
+#' @return Invisibly returns the cache directory path.
 #'
 #' @examples
 #' clean_cache_dir()
 #'
 #' @export
 clean_cache_dir <- function() {
-  if (fs::file_exists(cache_config_file)) {
-    cache_dir <- readLines(cache_config_file)
-    cache_dir <- fs::path_norm(cache_dir)
-  } else {
-    cache_dir <- default_cache_dir
-  }
-
-  cache_dir <- as.character(cache_dir)
+  cache_dir <- get_cache_dir()
 
   unlink(cache_dir, recursive = TRUE)
 
-  message(paste0("Cached files from {geocodebr} have been deleted from ", cache_dir))
+  message_removed_cache_dir(cache_dir)
+
+  return(invisible(cache_dir))
+}
+
+message_removed_cache_dir <- function(cache_dir) {
+  geocodebr_message(
+    c(
+      "v" = "Deleted cache directory previously located at {.path {cache_dir}}."
+    )
+  )
 }

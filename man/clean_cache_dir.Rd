@@ -7,10 +7,10 @@
 clean_cache_dir()
 }
 \value{
-A message.
+Invisibly returns the cache directory path.
 }
 \description{
-Removes all files stored locally in the cache directory.
+Deletes the files saved in the cache directory.
 }
 \examples{
 clean_cache_dir()

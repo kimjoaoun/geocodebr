@@ -21,3 +21,10 @@
       +-- hello.parquet
       \-- oie.parquet
 
+# clean_cache_dir behaves correctly
+
+    Code
+      res <- clean_cache_dir()
+    Message <geocodebr_message_removed_cache_dir>
+      v Deleted cache directory previously located at '<path_to_cache_dir>'.
+

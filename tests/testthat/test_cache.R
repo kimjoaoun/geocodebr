@@ -121,3 +121,38 @@ test_that("behaves correctly", {
     transform = function(x) sub(get_cache_dir(), "<path_to_cache_dir>", x)
   )
 })
+
+# clean_cache_dir ---------------------------------------------------------
+
+test_that("clean_cache_dir behaves correctly", {
+  # if the cache config file exists, we save its current content just to make
+  # sure our tests don't disturb any workflows we have. if it doesn't, we delete
+  # the file we created during the test
+
+  if (fs::file_exists(cache_config_file)) {
+    config_file_content <- readLines(cache_config_file)
+    on.exit(writeLines(config_file_content, cache_config_file), add = TRUE)
+  } else {
+    on.exit(fs::file_delete(cache_config_file), add = TRUE)
+  }
+
+  # we set the cache dir to a temporary directory to not mess with any cached
+  # data we may already have
+
+  tmpdir <- tempfile()
+  fs::dir_create(tmpdir)
+
+  suppressMessages(set_cache_dir(tmpdir))
+
+  file.create(fs::path(tmpdir, "oie.parquet"))
+  expect_identical(basename(list_cached_data()), "oie.parquet")
+
+  expect_snapshot(
+    res <- clean_cache_dir(),
+    cnd_class = TRUE,
+    transform = function(x) sub(get_cache_dir(), "<path_to_cache_dir>", x)
+  )
+
+  expect_identical(res, as.character(fs::path_norm(tmpdir)))
+  expect_false(dir.exists(res))
+})
