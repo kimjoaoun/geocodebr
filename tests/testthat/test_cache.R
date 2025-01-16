@@ -103,15 +103,21 @@ test_that("behaves correctly", {
 
   expect_identical(list_cached_data(), character(0))
 
-  download_cnefe( progress = FALSE)
-  expect_true(all(grepl(".parquet", list_cached_data())))
+  # previously, we used download_cnefe(progress = FALSE) here to download cnefe
+  # data before listing the content. however, this takes a long time, and
+  # afterall we only need to make sure that the function lists whatever files we
+  # have in the directory. so we create empty temp files to test if the function
+  # is working
 
-  expect_true(sum(grepl(".parquet", list_cached_data()))==12)
+  file.create(fs::path(tmpdir, c("oie.parquet", "hello.parquet")))
 
-  # expect a tree-like message when print_tree=TRUE
+  cnefe_files <- list_cached_data()
+  expect_identical(basename(cnefe_files), c("hello.parquet", "oie.parquet"))
+
+  # expect a tree-like message and invisible value when print_tree=TRUE
 
   expect_snapshot(
-    res <- list_cached_data(print_tree = TRUE),
+    list_cached_data(print_tree = TRUE),
     transform = function(x) sub(get_cache_dir(), "<path_to_cache_dir>", x)
   )
 })

@@ -91,7 +91,10 @@ list_cached_data <- function(print_tree = FALSE) {
 
   cached_data <- list.files(cache_dir, recursive = TRUE, full.names = TRUE)
 
-  if (print_tree) fs::dir_tree(cache_dir)
+  if (print_tree) {
+    fs::dir_tree(cache_dir)
+    return(invisible(cached_data))
+  }
 
   return(cached_data)
 }
