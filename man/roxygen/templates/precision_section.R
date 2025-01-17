@@ -1,7 +1,7 @@
 #' @details Precision categories:
 #'
 #' # Precision
-#'  The results of {geocodebr} are classified into six broad `precision` categories:
+#'  The geocode results are classified into six broad `precision` categories:
 #' - "numero"
 #' - "numero_interpolado"
 #' - "rua"
@@ -14,16 +14,16 @@
 #'
 #' # Match Type
 #' The column `match_type` provides more refined information on how exactly each
-#' input address was matched with CNEFE. In every category, {geocodebr} takes
+#' input address was matched with CNEFE. In every category, the function takes
 #' the average latitude and longitude of the addresses included in CNEFE that
 #' match the input address based on combinations of different fields. In the
 #' strictest case, for example, the function finds a deterministic match for all
 #' of the fields of a given address (estado, municipio, logradouro, numero, cep,
 #' localidade). Think for example of a building with several apartments that
 #' match the same street address and number. In such case, the coordinates of
-#' the apartments will differ very slightly, and {geocodebr} takes the average
+#' the apartments will differ very slightly, and the function takes the average
 #' of those coordinates. In a less rigorous example, in which only the fields
-#' (estado, municipio, rua, bairro) are matched, {geocodebr} calculates the
+#' (estado, municipio, rua, bairro) are matched, the function calculates the
 #' average coordinates of all the addresses in CNEFE along that street and which
 #' fall within the same neighborhood.
 #'
@@ -77,5 +77,4 @@
 #'
 #' Note: Match types starting with 'p' use probabilistic matching of the
 #' logradouro field, while types starting with 'e' use deterministic matching
-#' only. Match types with probabilistic matching ARE NOT implemented in
-#' {geocodebr} yet.
+#' only. Match types with probabilistic matching ARE NOT implemented yet.

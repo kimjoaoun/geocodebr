@@ -103,15 +103,56 @@ test_that("behaves correctly", {
 
   expect_identical(list_cached_data(), character(0))
 
-  download_cnefe( progress = FALSE)
-  expect_true(all(grepl(".parquet", list_cached_data())))
+  # previously, we used download_cnefe(progress = FALSE) here to download cnefe
+  # data before listing the content. however, this takes a long time, and
+  # afterall we only need to make sure that the function lists whatever files we
+  # have in the directory. so we create empty temp files to test if the function
+  # is working
 
-  expect_true(sum(grepl(".parquet", list_cached_data()))==12)
+  file.create(fs::path(tmpdir, c("oie.parquet", "hello.parquet")))
 
-  # expect a tree-like message when print_tree=TRUE
+  cnefe_files <- list_cached_data()
+  expect_identical(basename(cnefe_files), c("hello.parquet", "oie.parquet"))
+
+  # expect a tree-like message and invisible value when print_tree=TRUE
 
   expect_snapshot(
-    res <- list_cached_data(print_tree = TRUE),
+    list_cached_data(print_tree = TRUE),
     transform = function(x) sub(get_cache_dir(), "<path_to_cache_dir>", x)
   )
+})
+
+# clean_cache_dir ---------------------------------------------------------
+
+test_that("clean_cache_dir behaves correctly", {
+  # if the cache config file exists, we save its current content just to make
+  # sure our tests don't disturb any workflows we have. if it doesn't, we delete
+  # the file we created during the test
+
+  if (fs::file_exists(cache_config_file)) {
+    config_file_content <- readLines(cache_config_file)
+    on.exit(writeLines(config_file_content, cache_config_file), add = TRUE)
+  } else {
+    on.exit(fs::file_delete(cache_config_file), add = TRUE)
+  }
+
+  # we set the cache dir to a temporary directory to not mess with any cached
+  # data we may already have
+
+  tmpdir <- tempfile()
+  fs::dir_create(tmpdir)
+
+  suppressMessages(set_cache_dir(tmpdir))
+
+  file.create(fs::path(tmpdir, "oie.parquet"))
+  expect_identical(basename(list_cached_data()), "oie.parquet")
+
+  expect_snapshot(
+    res <- clean_cache_dir(),
+    cnd_class = TRUE,
+    transform = function(x) sub(get_cache_dir(), "<path_to_cache_dir>", x)
+  )
+
+  expect_identical(res, as.character(fs::path_norm(tmpdir)))
+  expect_false(dir.exists(res))
 })

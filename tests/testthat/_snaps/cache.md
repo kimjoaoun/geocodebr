@@ -15,11 +15,16 @@
 # behaves correctly
 
     Code
-      res <- list_cached_data(print_tree = TRUE)
+      list_cached_data(print_tree = TRUE)
     Output
       <path_to_cache_dir>
-      +-- estado=AC
-      |   \-- part-0.parquet
-      \-- estado=AL
-          \-- part-0.parquet
+      +-- hello.parquet
+      \-- oie.parquet
+
+# clean_cache_dir behaves correctly
+
+    Code
+      res <- clean_cache_dir()
+    Message <geocodebr_message_removed_cache_dir>
+      v Deleted cache directory previously located at '<path_to_cache_dir>'.
 
