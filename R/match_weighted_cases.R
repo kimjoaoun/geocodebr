@@ -4,7 +4,7 @@ match_weighted_cases <- function(con,
                                  output_tb,
                                  key_cols,
                                  match_type,
-                                 keep_matched_address,
+                                 full_results,
                                  input_states,
                                  input_municipio){
 
@@ -50,7 +50,7 @@ match_weighted_cases <- function(con,
       WHERE {x}.numero IS NOT NULL AND {y}.numero IS NOT NULL;"
   )
 
-  if (isFALSE(keep_matched_address)) {
+  if (isFALSE(full_results)) {
     query_match <- gsub(", filtered_cnefe.endereco_completo", "", query_match)
   }
 
@@ -69,7 +69,7 @@ match_weighted_cases <- function(con,
     GROUP BY tempidgeocodebr;"
   )
 
-  if (isFALSE(keep_matched_address)) {
+  if (isFALSE(full_results)) {
       query_aggregate <- glue::glue(
         "CREATE TEMPORARY TABLE {output_tb} AS
         SELECT tempidgeocodebr,

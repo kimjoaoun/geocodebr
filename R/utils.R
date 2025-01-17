@@ -33,8 +33,6 @@ arrow_open_dataset <- function(filename){
 cache_message <- function(local_file = parent.frame()$local_file,
                           cache = parent.frame()$cache){
 
-#  local_file <- 'C:\\Users\\user\\AppData\\Local/R/cache/R/geocodebr_v0.1/2010_deaths.parquet'
-
   # name of local file
   file_name <- basename(local_file[1])
   dir_name <- dirname(local_file[1])
@@ -131,14 +129,14 @@ merge_results <- function(con,
                           y,
                           key_column,
                           select_columns,
-                          keep_matched_address){
+                          full_results){
 
   # x = 'output_db'
   # y = 'output_caso_01'
   # key_column = 'tempidgeocodebr'
-  select_columns_y = c('lon', 'lat', 'match_type', 'precision', 'matched_address')
+  select_columns_y = c('lat', 'lon', 'match_type', 'precision', 'matched_address')
 
-  if (isFALSE(keep_matched_address)) {
+  if (isFALSE(full_results)) {
     select_columns_y <- select_columns_y[select_columns_y != 'matched_address']
   }
 
@@ -146,7 +144,6 @@ merge_results <- function(con,
   select_columns <- select_columns[select_columns!='tempidgeocodebr']
 
   # Create the SELECT clause dynamically
-  # select_x <- paste0(x, '.', c('lon', 'lat', 'match_type '), collapse = ', ')
   select_x <- paste0(x, '.', c(select_columns), collapse = ', ')
 
   select_clause <- paste0(

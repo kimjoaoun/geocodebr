@@ -4,7 +4,7 @@ match_cases <- function(con,
                         output_tb,
                         key_cols,
                         match_type,
-                        keep_matched_address,
+                        full_results,
                         input_states,
                         input_municipio
                         ){
@@ -53,7 +53,7 @@ match_cases <- function(con,
     query_match <- gsub("input_padrao_db.numero IS NOT NULL AND", "", query_match)
   }
 
-  if (isFALSE(keep_matched_address)) {
+  if (isFALSE(full_results)) {
     query_match <- gsub(", filtered_cnefe.endereco_completo AS matched_address", "", query_match)
   }
 

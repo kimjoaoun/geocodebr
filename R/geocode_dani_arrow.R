@@ -2,6 +2,7 @@ geocode_dani_arrow <- function(addresses_table,
                          address_fields = setup_address_fields(),
                          n_cores = 1,
                          progress = TRUE,
+                         full_results = FALSE,
                          cache = TRUE) {
 
   # check input
@@ -10,6 +11,7 @@ geocode_dani_arrow <- function(addresses_table,
   checkmate::assert_number(n_cores, lower = 1, finite = TRUE)
   checkmate::assert_logical(progress, any.missing = FALSE, len = 1)
   checkmate::assert_logical(cache, any.missing = FALSE, len = 1)
+  checkmate::assert_logical(full_results, any.missing = FALSE, len = 1)
 
   # standardizing the addresses table to increase the chances of finding a match
   # in the CNEFE data
@@ -60,7 +62,10 @@ geocode_dani_arrow <- function(addresses_table,
   DBI::dbExecute(con, "ALTER TABLE standard_locations ADD COLUMN lat DOUBLE DEFAULT NULL")
   DBI::dbExecute(con, "ALTER TABLE standard_locations ADD COLUMN lon DOUBLE DEFAULT NULL")
   DBI::dbExecute(con, "ALTER TABLE standard_locations ADD COLUMN match_type VARCHAR DEFAULT NULL")
-  DBI::dbExecute(con, "ALTER TABLE standard_locations ADD COLUMN matched_address VARCHAR DEFAULT NULL")
+
+  if( isTRUE(full_results)){
+    DBI::dbExecute(con, "ALTER TABLE standard_locations ADD COLUMN matched_address VARCHAR DEFAULT NULL")
+  }
 
   # to find the coordinates of the addresses, we merge the input table with the
   # cnefe data. the column names used in the input table are different than the
@@ -93,12 +98,12 @@ geocode_dani_arrow <- function(addresses_table,
 
   # start progress bar
   if (progress) {
-    prog <- create_progress_bar(input_padrao)
+    prog <- create_progress_bar(standard_locations)
 
     message_looking_for_matches()
   }
 
-  n_rows <- nrow(input_padrao)
+  n_rows <- nrow(standard_locations)
   matched_rows <- 0
 
   # start matching
@@ -116,6 +121,7 @@ geocode_dani_arrow <- function(addresses_table,
         con,
         relevant_cols = relevant_cols,
         case = case,
+        full_results = full_results,
         lookup_vector = lookup_vector,
         input_states = input_states,
         input_municipio = input_municipio
@@ -133,11 +139,13 @@ geocode_dani_arrow <- function(addresses_table,
   # add precision column
   add_precision_col(con, update_tb = 'standard_locations')
 
-
+  # select cols to keep in the output
   cols_to_keep <- names(standard_locations)
   cols_to_keep <- cols_to_keep[!grepl("_padr$", cols_to_keep)]
   cols_to_keep <- cols_to_keep[cols_to_keep != "tempidgeocodebr"]
-  cols_to_keep <- c(cols_to_keep, "precision", "match_type",  "lat", "lon", "matched_address")
+  cols_to_keep <- c(cols_to_keep, "precision", "match_type",  "lat", "lon")
+    if(isTRUE(full_results)){ cols_to_keep <- c(cols_to_keep, "matched_address") }
+
   cols_to_keep <- paste(cols_to_keep, collapse = ", ")
 
   query_output <- glue::glue(

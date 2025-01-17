@@ -73,7 +73,7 @@ rafa <- function(){ message('rafa')
     addresses_table = rais,
     address_fields = fields,
     n_cores = 7,
-    keep_matched_address =  T,
+    full_results =  T,
     progress = T
   )
 }
@@ -106,7 +106,7 @@ rafaF <- function(){ message('rafa F')
     addresses_table = rais,
     address_fields = fields,
     n_cores = 20, # 7
-    keep_matched_address = F,
+    full_results = F,
     progress = T
   )
 }
@@ -119,7 +119,7 @@ rafaF_db <- function(){ message('rafa F')
     addresses_table = rais,
     address_fields = fields,
     n_cores = 20, # 7
-    keep_matched_address = F,
+    full_results = F,
     progress = T
   )
 }
@@ -130,7 +130,7 @@ rafaT_db <- function(){ message('rafa T')
     addresses_table = rais,
     address_fields = fields,
     n_cores = 20, # 7
-    keep_matched_address = T,
+    full_results = T,
     progress = T
   )
 }
@@ -140,7 +140,7 @@ rafaT <- function(){ message('rafa T')
     addresses_table = rais,
     address_fields = fields,
     n_cores = 20, # 7
-    keep_matched_address = T,
+    full_results = T,
     progress = T
   )
 }
@@ -239,8 +239,9 @@ subset(t , logradouro_no_numbers %like% "DESEMBARGADOR SOUTO MAIOR")
 
 
 # cad unico --------------------------------------------------------------------
+sample_size <- 1000000
 
-cad <- ipeadatalake::ler_cadunico(
+cad_con <- ipeadatalake::ler_cadunico(
   data = 202312,
   tipo = 'familia',
   as_data_frame = F,
@@ -256,7 +257,7 @@ cad <- ipeadatalake::ler_cadunico(
 # a <- tail(cad, n = 100) |> collect()
 
 # compose address fields
-cad <- cad |>
+cad <- cad_con |>
   mutate(no_tip_logradouro_fam = ifelse(is.na(no_tip_logradouro_fam), '', no_tip_logradouro_fam),
          no_tit_logradouro_fam = ifelse(is.na(no_tit_logradouro_fam), '', no_tit_logradouro_fam),
          no_logradouro_fam = ifelse(is.na(no_logradouro_fam), '', no_logradouro_fam)
@@ -275,7 +276,7 @@ cad <- cad |>
          cep,
          bairro) |>
   dplyr::compute() |>
-  dplyr::slice_sample(n = 10000000) |> # sample 20K
+  dplyr::slice_sample(n = sample_size) |> # sample 20K
   dplyr::collect()
 
 
@@ -366,7 +367,7 @@ rafaF <- function(){ message('rafa F')
     addresses_table = cad,
     address_fields = fields_cad,
     n_cores = 10, # 7
-    keep_matched_address = F,
+    full_results = F,
     progress = T
   )
   message(Sys.time())
@@ -379,7 +380,7 @@ rafaF_db <- function(){ message('rafa db F')
     addresses_table = cad,
     address_fields = fields_cad,
     n_cores = 10, # 7
-    keep_matched_address = F,
+    full_results = F,
     progress = T
   )
   message(Sys.time())
@@ -392,7 +393,7 @@ rafaT_db <- function(){ message('rafa db T')
     addresses_table = cad,
     address_fields = fields_cad,
     n_cores = 10, # 7
-    keep_matched_address = T,
+    full_results = T,
     progress = T
   )
   message(Sys.time())
@@ -404,7 +405,7 @@ rafaT <- function(){ message('rafa T')
     addresses_table = cad,
     address_fields = fields_cad,
     n_cores = 10, # 7
-    keep_matched_address = T,
+    full_results = T,
     progress = T
   )
   message(Sys.time())
@@ -423,12 +424,11 @@ dani_arrow <- function(){ message('dani')
 
 
 mb <- microbenchmark::microbenchmark(
-  rafa_drop = rafaF(),
+  # rafa_drop = rafaF(),
   # rafa_drop_db = rafaF_db(),
   rafa_keep = rafaT(),
   rafa_keep_db = rafaT_db(),
   dani_arrow = dani_arrow(),
-  t = function(x){ return(2+2)},
   times  = 5
 )
 mb
@@ -442,6 +442,13 @@ mb
 # rafa_keep_db 179.03518 199.3445 198.3949 203.8696 204.8223 204.9028     5
 #   dani_arrow  92.18470 171.5269 187.1974 208.0572 230.0147 234.2035     5
 
+# 2 milhoes
+# Unit: seconds
+#         expr      min       lq     mean   median       uq      max neval
+#    rafa_keep 114.4084 191.8142 199.0075 219.0545 222.9719 230.0172     7
+# rafa_keep_db 201.9937 214.5410 215.6669 215.3243 218.1688 226.9311     7
+#   dani_arrow 139.4406 185.4723 201.8943 220.1483 227.4886 227.7493     7
+
 # 5 milhoes
 #
 # Unit: seconds
@@ -452,12 +459,11 @@ mb
 
 
 bm <- bench::mark(
+  dani_arrow = dani_arrow(),
   rafa_drop = rafaF(),
- # rafa_drop_db = rafaF_db(),
+  rafa_drop_db = rafaF_db(),
   rafa_keep = rafaT(),
   rafa_keep_db = rafaT_db(),
-  dani_arrow = dani_arrow(),
-  t = function(x){ return(2+2)},
   check = F,
   iterations  = 5
 )
@@ -471,6 +477,16 @@ bm
 #   3 rafa_keep       3.32m    3.37m   0.00493    1.59GB   0.0237     5    24      16.9m <NULL> <Rprofmem>
 #   4 rafa_keep_db    3.47m    3.64m   0.00459    1.62GB   0.0221     5    24      18.1m <NULL> <Rprofmem>
 #   5 dani_arrow      3.56m    3.63m   0.00456    1.46GB   0.0210     5    23      18.3m <NULL> <Rprofmem>
+
+
+# A tibble: 5 × 13
+#     expression      min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory     time
+#     <bch:expr>   <bch:> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>     <list>
+#   1 rafa_drop        NA     NA  NA          1.72GB  NA          2     4         NA <NULL> <Rprofmem> <bench_tm>
+#   2 rafa_drop_db   1.9m  1.96m   0.00856    1.63GB   0.0531     5    31      9.73m <NULL> <Rprofmem> <bench_tm>
+#   3 rafa_keep      2.6m  2.83m   0.00595    1.63GB   0.0393     5    33        14m <NULL> <Rprofmem> <bench_tm>
+#   4 rafa_keep_db  3.01m  3.08m   0.00543    1.64GB   0.0293     5    27     15.35m <NULL> <Rprofmem> <bench_tm>
+#   5 dani_arrow    3.45m  3.64m   0.00458    1.41GB   0.0220     5    24     18.18m <NULL> <Rprofmem> <bench_tm>
 
 
 
@@ -526,12 +542,68 @@ time_dani2 <- system.time( df_dani_arrow <- dani_arrow() ) # 30.45833
 time_dani3 <- system.time( df_dani_arrow <- dani_arrow() ) # 40.58983
 time_dani4 <- system.time( df_dani_arrow <- dani_arrow() ) #
 time_dani5 <- system.time( df_dani_arrow <- dani_arrow() ) #
-
 time_rafa_keep1 <- system.time( rafa_keep <- rafaT() ) # 33.182
 time_rafa_keep2 <- system.time( rafa_keep <- rafaT() ) # 31.47183
 time_rafa_keep3 <- system.time( rafa_keep <- rafaT() ) # 34.2515
-
+time_rafa_keep4 <- system.time( rafa_keep <- rafaT() ) # 34.2515
+time_rafa_keep5 <- system.time( rafa_keep <- rafaT() ) # 34.2515
 time_rafa_keep_db1 <- system.time( rafa_keep_db <- rafaT_db() )
 time_rafa_keep_db2 <- system.time( rafa_keep_db <- rafaT_db() )
 time_rafa_keep_db3 <- system.time( rafa_keep_db <- rafaT_db() )
+time_rafa_keep_db4 <- system.time( rafa_keep_db <- rafaT_db() )
+time_rafa_keep_db5 <- system.time( rafa_keep_db <- rafaT_db() )
 
+
+time_dani1
+time_dani2
+time_dani3
+time_dani4
+time_dani5
+time_rafa_keep1
+time_rafa_keep2
+time_rafa_keep3
+time_rafa_keep4
+time_rafa_keep5
+time_rafa_keep_db1
+time_rafa_keep_db2
+time_rafa_keep_db3
+time_rafa_keep_db4
+time_rafa_keep_db5
+
+bm <- bench::mark(
+  rafa_drop = rafaF(),
+  rafa_drop_db = rafaF_db(),
+  rafa_keep = rafaT(),
+  rafa_keep_db = rafaT_db(),
+  dani_arrow = dani_arrow(),
+  check = F,
+  iterations  = 5
+)
+bm
+
+
+
+
+# time_dani1
+   user  system elapsed
+ 626.68   86.05  426.64
+1115.14   89.67  912.00
+1695.93   92.47 1355.42
+2280.67   93.33 1900.61
+2255.89   82.97 1770.97
+
+# time_rafa_keep1
+   user  system elapsed
+2060.17   79.46 1657.95
+2122.66   78.86 1623.79
+2094.00   78.81 1692.17
+2131.64   79.25 1703.75
+2088.01   81.00 1741.21
+
+# time_rafa_keep_db1
+   user  system elapsed
+2285.82   76.58 1862.69
+2142.54   74.02 1831.28
+2250.08   76.30 1844.20
+2379.26   73.30 1917.16
+2591.64   80.29 2226.95

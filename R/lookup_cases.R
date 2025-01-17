@@ -2,11 +2,12 @@
 lookup_cases <- function(con,
                          relevant_cols,
                          case,
+                         full_results,
                          lookup_vector,
                          input_states,
                          input_municipio){
 
-  # read correspondind parquet file
+  # read corresponding parquet file
   key_cols <- gsub('_padr', '', relevant_cols)
   table_name <- paste(key_cols, collapse = "_")
   table_name <- gsub('bairro', 'localidade', table_name)
@@ -25,18 +26,13 @@ lookup_cases <- function(con,
     dplyr::filter(municipio %in% input_municipio) |>
     dplyr::compute()
 
-
   # register filtered_cnefe to db
   duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
-
 
   join_condition <- paste(
     glue::glue("standard_locations.{relevant_cols} = filtered_cnefe.{lookup_vector[relevant_cols]}"),
     collapse = " AND "
   )
-
-#  cnefe_cols <- paste(lookup_vector[relevant_cols], collapse = ", ")
-
 
   query_lookup <- glue::glue(
       "UPDATE standard_locations ",
@@ -48,6 +44,10 @@ lookup_cases <- function(con,
       "filtered_cnefe ",
       "WHERE standard_locations.numero_padr IS NOT NULL AND standard_locations.match_type IS NULL AND {join_condition}"
     )
+
+    if (isFALSE(full_results)) {
+      query_lookup <- gsub("matched_address = filtered_cnefe.endereco_completo", "", query_lookup)
+    }
 
     if (case %in% possible_match_types_no_number) {
       query_lookup <- gsub("standard_locations.numero_padr IS NOT NULL AND ", "", query_lookup)
@@ -61,18 +61,16 @@ lookup_cases <- function(con,
 }
 
 
-
-
-
 lookup_weighted_cases <- function(con,
                          relevant_cols,
                          case,
+                         full_results,
                          lookup_vector,
                          input_states,
                          input_municipio){
 
 
-  # read correspondind parquet file
+  # read corresponding parquet file
   key_cols <- gsub('_padr', '', relevant_cols)
   table_name <- paste(key_cols, collapse = "_")
   table_name <- gsub('bairro', 'localidade', table_name)
@@ -114,6 +112,10 @@ lookup_weighted_cases <- function(con,
       WHERE standard_locations.numero_padr IS NOT NULL AND standard_locations.match_type IS NULL AND filtered_cnefe.numero IS NOT NULL;"
   )
 
+  if (isFALSE(full_results)) {
+    query_match <- gsub(", filtered_cnefe.endereco_completo", "", query_match)
+  }
+
   DBI::dbExecute(con, query_match)
 
 
@@ -127,8 +129,6 @@ lookup_weighted_cases <- function(con,
     FROM temp_join
     GROUP BY tempidgeocodebr;"
   )
-  temp_n <- DBI::dbExecute(con, query_aggregate)
-
 
   # update output
   query_lookup <- glue::glue(
@@ -142,7 +142,22 @@ lookup_weighted_cases <- function(con,
     "WHERE standard_locations.match_type IS NULL AND standard_locations.tempidgeocodebr = tempdb.tempidgeocodebr"
   )
 
+  if (isFALSE(full_results)) {
 
+      query_aggregate <- glue::glue(
+        "CREATE OR REPLACE TEMPORARY TABLE tempdb AS
+          SELECT tempidgeocodebr,
+          SUM((1/ABS(numero_padr - numero_db) * lat)) / SUM(1/ABS(numero_padr - numero_db)) AS lat,
+          SUM((1/ABS(numero_padr - numero_db) * lon)) / SUM(1/ABS(numero_padr - numero_db)) AS lon
+          FROM temp_join
+          GROUP BY tempidgeocodebr;"
+        )
+
+      query_lookup <- gsub("matched_address = tempdb.matched_address", "", query_lookup)
+    }
+
+
+  temp_n <- DBI::dbExecute(con, query_aggregate)
   n_rows_affected <- DBI::dbExecute(con, query_lookup)
 
   duckdb::duckdb_unregister_arrow(con, "filtered_cnefe")

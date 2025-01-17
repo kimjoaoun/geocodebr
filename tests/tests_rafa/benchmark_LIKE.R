@@ -61,7 +61,7 @@ input_df <- arrow::read_parquet(data_path)
 # ncores <- 7
 # progress = T
 # cache = TRUE
-# keep_matched_address = F
+# full_results = F
 # address_fields <- geocodebr::setup_address_fields(
 #   logradouro = 'logradouro',
 #   numero = 'numero',
@@ -91,28 +91,28 @@ rafaF <- function(){ message('rafa F')
     addresses_table = input_df,
     address_fields = fields,
     n_cores = ncores,
-    keep_matched_address = F,
+    full_results = F,
     progress = T
   )
 }
 
-rafaF_db <- function(){ message('rafa F')
+rafaF_db <- function(){ message('rafa_db F')
   df_rafaF <- geocodebr:::geocode_db(
     addresses_table = input_df,
     address_fields = fields,
     n_cores = ncores,
-    keep_matched_address = F,
+    full_results = F,
     progress = T
   )
 }
 
 
-rafaT_db <- function(){ message('rafa T')
+rafaT_db <- function(){ message('rafa_db T')
   df_rafaT <- geocodebr:::geocode_db(
     addresses_table = input_df,
     address_fields = fields,
     n_cores = ncores,
-    keep_matched_address = T,
+    full_results = T,
     progress = T
   )
 }
@@ -122,7 +122,7 @@ rafaT <- function(){ message('rafa T')
     addresses_table = input_df,
     address_fields = fields,
     n_cores = ncores,
-    keep_matched_address = T,
+    full_results = T,
     progress = T
   )
 }
@@ -144,7 +144,7 @@ mb <- microbenchmark::microbenchmark(
   rafa_keep = rafaT(),
   rafa_keep_db = rafaT_db(),
   dani_df = dani_arrow(),
-  times  = 1
+  times  = 5
 )
 mb
 
@@ -157,59 +157,38 @@ profvis({
 
 # 20K FRESH
 # Unit: seconds
-#                expr      min        lq      mean    median        uq       max neval
-#                dani 9.512572 10.533384 12.133840 12.476621 13.874084 14.055381    10
-#                rafa 7.492592  9.478630 10.139055 10.651887 11.185148 11.704214    10
-#        rafa_db_1tab 6.010795 12.823882 15.698666 16.877027 19.802574 20.927360    10
-#    rafa_db_many_tab 3.888666  4.368634  6.519762  6.546503  7.850455  9.715533    10
-# rafa_arrow_many_tab 5.413124  5.452995  5.837255  5.945242  6.020612  6.348533    10
+#         expr      min       lq     mean   median       uq      max neval
+#    rafa_drop 10.10379 10.25397 10.35726 10.39609 10.41682 10.61564     5
+# rafa_drop_db 10.33163 10.41716 10.53599 10.57100 10.67138 10.68880     5
+#    rafa_keep 11.12560 11.17642 11.40483 11.30231 11.56706 11.85277     5
+# rafa_keep_db 10.99093 11.18329 11.26758 11.18585 11.40816 11.56966     5
+#      dani_df 10.99375 11.04987 11.47305 11.16092 11.43530 12.72541     5
 
 
-# 3rd round
-# Unit: seconds
-#                expr      min        lq      mean    median        uq       max neval
-#                dani 16.434306 16.690377 17.227660 16.973456 17.543389 19.05615    10
-#                rafa 13.694437 14.106194 14.293463 14.261572 14.399382 15.20275    10
-#        rafa_db_1tab 28.205305 29.230116 29.643057 29.660076 30.093959 30.46253    10
-#    rafa_db_many_tab 12.844879 13.127918 13.369812 13.414421 13.534294 13.92704    10
-# rafa_arrow_many_tab  6.538901  6.779183  7.038967  7.041431  7.310856  7.62508    10
+
 
 
 bm <- bench::mark(
   rafa_drop = rafaF(),
-  rafa_keep = rafaT(),
   rafa_drop_db = rafaF_db(),
+  rafa_keep = rafaT(),
   rafa_keep_db = rafaT_db(),
- # dani_df = dani_arrow(),
+  dani_df = dani_arrow(),
   check = F,
-  iterations  = 1
+  iterations  = 5
 )
 bm
 
 # 20 K
-#     expression     min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory
-#     <bch:expr> <bch:t> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>
-#   1 dani          1.1m  1.18m    0.0142   20.39MB  0.00427    10     3      11.7m <NULL> <Rprofmem>
-#   2 rafa_loop    58.3s  1.02m    0.0163    2.03GB  0.0488     10    30      10.2m <NULL> <Rprofmem>
-#   3 rafa_verb    58.2s  1.01m    0.0166    2.03GB  0.0498     10    30      10.1m <NULL> <Rprofmem>
-#   4 rafa_loc     59.8s  1.08m    0.0156   21.54MB  0.00468    10     3      10.7m <NULL> <Rprofmem>
-
-# 20 K
-#     expression      min   median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory
-#   1 dani          12.6s    13.4s    0.0743    21.9MB   0.0743     5     5      1.12m <NULL> <Rprofmem>
-#   2 rafa          9.35s    10.3s    0.0988      19MB   0.0988     5     5     50.58s <NULL> <Rprofmem>
-#   3 dani_L        22.6s    23.3s    0.0421    17.7MB   0.0421     5     5      1.98m <NULL> <Rprofmem>
-#   4 rafa_like    18.33s      19s    0.0525    19.8MB   0.0525     5     5      1.59m <NULL> <Rprofmem>
+#     expression      min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory     time
+#     <bch:expr>   <bch:> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>     <list>
+#   1 rafa_drop     10.4s  10.5s    0.0952      53MB    0.171     5     9      52.5s <NULL> <Rprofmem> <bench_tm>
+#   2 rafa_drop_db  10.6s  10.7s    0.0935    27.5MB    0.168     5     9     53.46s <NULL> <Rprofmem> <bench_tm>
+#   3 rafa_keep     11.5s  11.7s    0.0859    27.7MB    0.155     5     9     58.23s <NULL> <Rprofmem> <bench_tm>
+#   4 rafa_keep_db  11.3s  11.6s    0.0867    27.6MB    0.139     5     8     57.69s <NULL> <Rprofmem> <bench_tm>
+#   5 dani_df       11.5s  11.9s    0.0823    24.9MB    0.148     5     9      1.01m <NULL> <Rprofmem> <bench_tm>
 
 
-# 7 cores
-# Unit: seconds
-#      expr      min       lq     mean   median       uq      max neval
-#      dani 60.13803 67.18672 71.85839 71.06636 75.78047 87.97580    10
-# rafa_loop 53.15116 55.45122 62.12378 64.13520 65.58647 70.08501    10
-# rafa_verb 51.77365 55.72707 59.13042 59.53570 61.87424 69.87290    10
-
-# rafa_loop com 312 casos per sec com 20K casos
 
 
 
@@ -339,9 +318,19 @@ rafa_loop <- function(){
     address_fields = fields,
     n_cores = 7,
     progress = T,
-    cache=T
+    cache=T,
+    full_results = T
   )
 }
+
+df_dani <- geocodebr:::geocode_dani_arrow(
+  addresses_table = input_df,
+  address_fields = fields,
+  n_cores = 7,
+  progress = T,
+  cache=T,
+  full_results = F
+)
 
 table(df_rafa_loop$precision) / nrow(df_rafa_loop)*100
 

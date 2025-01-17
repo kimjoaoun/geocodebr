@@ -7,13 +7,13 @@ set.seed(42)
 
 sample_size <- 10000
 
-data_path <- system.file("extdata/sample_1.csv", package = "geocodebr")
+data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
 
 # select and reorder columns
 input_df <- input_df |>
   select(
-    id = ID,
+    id = id,
     logradouro = nm_logradouro,
     numero = Numero,
     bairro = Bairro,
