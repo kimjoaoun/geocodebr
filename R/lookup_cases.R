@@ -34,24 +34,39 @@ lookup_cases <- function(con,
     collapse = " AND "
   )
 
+  cols_not_null <-  paste(
+    glue::glue("standard_locations.{relevant_cols} IS NOT NULL"),
+    collapse = ' AND '
+  )
+
   query_lookup <- glue::glue(
       "UPDATE standard_locations ",
       "SET lat = filtered_cnefe.lat,
            lon = filtered_cnefe.lon,
            match_type = '{case}',
-           matched_address = filtered_cnefe.endereco_completo",
-      " FROM ",
+           matched_address = filtered_cnefe.endereco_completo ",
+      "FROM ",
       "filtered_cnefe ",
-      "WHERE standard_locations.numero_padr IS NOT NULL AND standard_locations.match_type IS NULL AND {join_condition}"
+      " WHERE {cols_not_null} AND ",
+            "standard_locations.match_type IS NULL AND {join_condition}"
     )
 
-    if (isFALSE(full_results)) {
-      query_lookup <- gsub("matched_address = filtered_cnefe.endereco_completo", "", query_lookup)
+
+    # cases with no number
+    if (case %in% possible_match_types_no_number) {
+        query_lookup <- gsub("standard_locations.numero_padr IS NOT NULL AND ", "", query_lookup)
     }
 
-    if (case %in% possible_match_types_no_number) {
-      query_lookup <- gsub("standard_locations.numero_padr IS NOT NULL AND ", "", query_lookup)
-    }
+  # cases with no logradouro
+  if (case %in% possible_match_types_no_logradouro) {
+    query_lookup <- gsub("standard_locations.logradouro_padr IS NOT NULL AND ", "", query_lookup)
+  }
+
+    # whether to keep all columns in the result
+    if (isFALSE(full_results)) {
+        query_lookup <- gsub("matched_address = filtered_cnefe.endereco_completo", "", query_lookup)
+      }
+
 
     n_rows_affected <- DBI::dbExecute(con, query_lookup)
 
@@ -100,6 +115,11 @@ lookup_weighted_cases <- function(con,
     collapse = " AND "
   )
 
+  cols_not_null <-  paste(
+    glue::glue("standard_locations.{relevant_cols} IS NOT NULL"),
+    collapse = ' AND '
+  )
+
   # Construct the SQL match query
   query_match <- glue::glue(
     "CREATE OR REPLACE TEMPORARY TABLE temp_join AS
@@ -109,9 +129,13 @@ lookup_weighted_cases <- function(con,
       FROM standard_locations
       LEFT JOIN filtered_cnefe
       ON {join_condition}
-      WHERE standard_locations.numero_padr IS NOT NULL AND standard_locations.match_type IS NULL AND filtered_cnefe.numero IS NOT NULL;"
+      WHERE {cols_not_null} AND ",
+      "standard_locations.match_type IS NULL AND ",
+      "filtered_cnefe.numero IS NOT NULL;"
   )
 
+
+  # whether to keep all columns in the result
   if (isFALSE(full_results)) {
     query_match <- gsub(", filtered_cnefe.endereco_completo", "", query_match)
   }
@@ -142,6 +166,7 @@ lookup_weighted_cases <- function(con,
     "WHERE standard_locations.match_type IS NULL AND standard_locations.tempidgeocodebr = tempdb.tempidgeocodebr"
   )
 
+  # whether to keep all columns in the result
   if (isFALSE(full_results)) {
 
       query_aggregate <- glue::glue(

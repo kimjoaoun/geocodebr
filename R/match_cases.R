@@ -4,9 +4,7 @@ match_cases <- function(con,
                         output_tb,
                         key_cols,
                         match_type,
-                        full_results,
-                        input_states,
-                        input_municipio
+                        full_results
                         ){
 
   # read correspondind parquet file
@@ -18,16 +16,17 @@ match_cases <- function(con,
   # build path to local file
   path_to_parquet <- paste0(geocodebr::get_cache_dir(), "/", table_name, ".parquet")
 
-  # filter cnefe to include only states and municipalities
-  # present in the input table, reducing the search scope and consequently
-  # reducing processing time and memory usage
+  # determine geographical scope of the search
+  input_states <- DBI::dbGetQuery(con, "SELECT DISTINCT estado FROM input_padrao_db;")$estado
+  input_municipio <- DBI::dbGetQuery(con, "SELECT DISTINCT municipio FROM input_padrao_db;")$municipio
 
   # Load CNEFE data and write to DuckDB
+  # filter cnefe to include only states and municipalities
+  # present in the input table, reducing the search scope
   filtered_cnefe <- arrow::open_dataset( path_to_parquet ) |>
     dplyr::filter(estado %in% input_states) |>
     dplyr::filter(municipio %in% input_municipio) |>
     dplyr::compute()
-
 
   # register filtered_cnefe to db
   duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
@@ -39,20 +38,23 @@ match_cases <- function(con,
     collapse = ' AND '
   )
 
-  # query for left join
-  query_match <- glue::glue(
-    "CREATE TEMPORARY TABLE {output_tb} AS
-      SELECT {x}.tempidgeocodebr, filtered_cnefe.lon, filtered_cnefe.lat, '{match_type}' AS match_type, filtered_cnefe.endereco_completo AS matched_address
-      FROM {x}
-      LEFT JOIN filtered_cnefe
-      ON {join_condition}
-      WHERE {x}.numero IS NOT NULL AND filtered_cnefe.lon IS NOT NULL;"
+  cols_not_null <-  paste(
+    glue::glue("filtered_cnefe.{key_cols} IS NOT NULL"),
+    collapse = ' AND '
   )
 
-  if (match_type %in% possible_match_types_no_number) {
-    query_match <- gsub("input_padrao_db.numero IS NOT NULL AND", "", query_match)
-  }
+  # query for left join
+  query_match <- glue::glue(
+    "CREATE TEMPORARY TABLE {output_tb} AS",
+      " SELECT {x}.tempidgeocodebr, filtered_cnefe.lon, filtered_cnefe.lat, ",
+              "'{match_type}' AS match_type, filtered_cnefe.endereco_completo AS matched_address",
+      " FROM {x}",
+      " LEFT JOIN filtered_cnefe",
+      " ON {join_condition}",
+      " WHERE {cols_not_null} AND filtered_cnefe.lon IS NOT NULL;"
+    )
 
+  # whether to keep all columns in the result
   if (isFALSE(full_results)) {
     query_match <- gsub(", filtered_cnefe.endereco_completo AS matched_address", "", query_match)
   }
