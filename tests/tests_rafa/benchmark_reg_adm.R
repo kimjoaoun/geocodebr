@@ -241,7 +241,7 @@ subset(t , logradouro_no_numbers %like% "DESEMBARGADOR SOUTO MAIOR")
 
 
 # cad unico --------------------------------------------------------------------
-sample_size <- 5000000
+sample_size <- 20000000
 
 cad_con <- ipeadatalake::ler_cadunico(
   data = 202312,
@@ -645,18 +645,18 @@ bm
 
 
 
-# 5 milhoes  66666666666
 gc()
 
 bm <- bench::mark(
-  # rafa_keep = rafaT(),
-  # dani_keep = daniT(),
-   rafa_keep_db = rafaT_db(),
+  #rafa_keep = rafaT(),
+  dani_keep = daniT(),
+  # rafa_keep_db = rafaT_db(),
   check = F,
   iterations  = 5
 )
 bm
 
+# 5 milhoes  66666666666
 #   expression     min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory     time
 #   <bch:expr> <bch:t> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>     <list>
 # 1 rafa_keep    4.95m  7.41m   0.00233    4.37GB   0.0168     5    36      35.8m <NULL> <Rprofmem> <bench_tm>

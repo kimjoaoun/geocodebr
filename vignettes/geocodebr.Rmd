@@ -20,13 +20,10 @@ knitr::opts_chunk$set(
 ```
 
 Geocoding refers to the act of finding a point in space, usually represented by
-a pair of coordinates, given a location address. The **{geocodebr}** package allows
-one to efficiently geocode Brazilian addresses using the National Registry of
-Addresses for Statistical Purposes (english for *Cadastro Nacional de Endereços
-para Fins Estatísticos*, CNEFE), a data set collected and
-[published](https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html)
-by the Brazilian official statistics and geography office, IBGE, containing the
-addresses of more than 100 million households and establishments in Brazil.
+a pair of coordinates, given a location address. The **{geocodebr}** package allows one to efficiently geocode Brazilian addresses using the National 
+Registry of Addresses for Statistical Purposes (english for *Cadastro Nacional 
+de Endereços para Fins Estatísticos*, CNEFE), a data set collected and
+[published](https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html) by the Brazilian official statistics and geography office, IBGE, containing the addresses of more than 100 million households and establishments in Brazil.
 
 ## Basic usage
 

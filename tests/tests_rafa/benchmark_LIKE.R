@@ -283,8 +283,9 @@ d <- cnf |>
 
 # open input data
 data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
-input_df <- data.table::fread(data_path, encoding = 'Latin-1')
+input_df <- read.csv(data_path, encoding = 'Latin-1')
 
+input_df <- input_df[c(3,4,27)]
 
 # fields <- geocodebr::setup_address_fields(
 #   logradouro = 'nm_logradouro',

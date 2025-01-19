@@ -19,6 +19,24 @@ tester <- function(addresses_table = input_df,
   geocode(addresses_table, address_fields, n_cores, progress, full_results, cache)
 }
 
+test_that("expected output", {
+
+  testthat::succeed( std_output <- tester() )
+
+  # find expected match cases
+  match_types_found <- unique(std_output$match_type)
+  testthat::expect_true(length(match_types_found) == 16)
+
+  # ful results
+  testthat::succeed( full_output <- tester(full_results = TRUE) )
+  testthat::expect_true('matched_address' %in% names(full_output))
+
+})
+
+
+
+
+
 test_that("errors with incorrect input", {
   expect_error(tester(unclass(input_df)))
 

@@ -4,12 +4,13 @@
 \alias{create_geocodebr_db}
 \title{Build duckdb connection with CNEFE data set}
 \usage{
-create_geocodebr_db(db_path = tempdir(), n_cores = NULL)
+create_geocodebr_db(db_path = "tempdir", n_cores = NULL)
 }
 \arguments{
-\item{db_path}{A character vector pointing to an existing directory where a
-a persistent '.duckdb' file is created. Defaults to a temporary
-directory \code{tempdir()}.}
+\item{db_path}{Character. If Defaults \code{db_path = "tempdir"} (the default),
+the duckdb connection is created on temporary directory. If
+\code{db_path = "memory"}, the duckdb connection is created on the RAM
+memory.}
 
 \item{n_cores}{A number. The number of cores to be used in parallel
 execution. Defaults to 1.}

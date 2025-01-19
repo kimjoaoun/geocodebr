@@ -41,7 +41,7 @@ match_weighted_cases <- function(con,
   )
 
   cols_not_null <-  paste(
-    glue::glue("filtered_cnefe.{key_cols} IS NOT NULL"),
+    glue::glue("{x}.{key_cols} IS NOT NULL"),
     collapse = ' AND '
   )
 
@@ -49,11 +49,12 @@ match_weighted_cases <- function(con,
   # Construct the SQL match query
   query_match <- glue::glue(
     "CREATE OR REPLACE TEMPORARY VIEW temp_db AS",
-      " SELECT {x}.tempidgeocodebr, {x}.numero, {y}.numero AS numero_db, {y}.lat, {y}.lon, {y}.endereco_completo",
+      " SELECT {x}.tempidgeocodebr, {x}.numero, {y}.numero AS numero_db,
+               {y}.lat, {y}.lon, {y}.endereco_completo",
       " FROM {x}",
       " LEFT JOIN {y}",
       " ON {join_condition}",
-      " WHERE {cols_not_null} AND {y}.numero IS NOT NULL;"
+      " WHERE {cols_not_null} AND {x}.numero IS NOT NULL AND {y}.numero IS NOT NULL;"
   )
 
   # whether to keep all columns in the result
