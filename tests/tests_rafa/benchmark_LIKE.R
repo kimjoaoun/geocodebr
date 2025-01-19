@@ -55,6 +55,7 @@ library(dplyr)
 data_path <- system.file("extdata/large_sample.parquet", package = "geocodebr")
 input_df <- arrow::read_parquet(data_path)
 
+# input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df)
 
 # addresses_table = input_df
 # n_cores = 7
@@ -96,26 +97,14 @@ rafaF <- function(){ message('rafa F')
   )
 }
 
-rafaF_db <- function(){ message('rafa_db F')
-  df_rafaF <- geocodebr:::geocode_db(
-    addresses_table = input_df,
-    address_fields = fields,
-    n_cores = ncores,
-    full_results = F,
-    progress = T
-  )
-}
+bench::mark( t = rafaF(), iterations = 3, check = F)
+#     expression     min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory     time
+#     <bch:expr> <bch:t> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>     <list>
+#   1 t            11.6s  12.2s    0.0821     145MB    0.329     3    12      36.5s <df>   <Rprofmem> <bench_tm>
+#   1 t            11.3s  11.5s    0.0854     126MB    0.313     3    11      35.1s <df>   <Rprofmem> <bench_tm>
+#***1 t            11.3s  11.7s    0.0861     126MB    0.258     3     9      34.8s <df>   <Rprofmem> <bench_tm>
+#***1 t            11.5s  11.7s    0.0843     126MB    0.309     3    11      35.6s <df>   <Rprofmem> <bench_tm>
 
-
-rafaT_db <- function(){ message('rafa_db T')
-  df_rafaT <- geocodebr:::geocode_db(
-    addresses_table = input_df,
-    address_fields = fields,
-    n_cores = ncores,
-    full_results = T,
-    progress = T
-  )
-}
 
 rafaT <- function(){ message('rafa T')
   df_rafaT <- geocodebr::geocode(
@@ -127,24 +116,33 @@ rafaT <- function(){ message('rafa T')
   )
 }
 
-dani_arrow <- function(){ message('dani')
+dani_arrowT <- function(){ message('dani T')
   df_dani <- geocodebr:::geocode_dani_arrow(
     addresses_table = input_df,
     address_fields = fields,
     n_cores = ncores,
+    full_results = T,
+    progress = T
+  )
+}
+
+dani_arrowF <- function(){ message('dani F')
+  df_dani <- geocodebr:::geocode_dani_arrow(
+    addresses_table = input_df,
+    address_fields = fields,
+    n_cores = ncores,
+    full_results = F,
     progress = T
   )
 }
 
 
-
 mb <- microbenchmark::microbenchmark(
   rafa_drop = rafaF(),
-  rafa_drop_db = rafaF_db(),
+  dani_drop = dani_arrowF(),
   rafa_keep = rafaT(),
-  rafa_keep_db = rafaT_db(),
-  dani_df = dani_arrow(),
-  times  = 5
+  dani_keep = dani_arrowT(),
+  times  = 1
 )
 mb
 

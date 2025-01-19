@@ -286,6 +286,11 @@ possible_match_types_no_number <- c(
   "ec01", "ec02", "eb01", "em01"
 )
 
+possible_match_types_no_logradouro <- c(
+  "ec01", "ec02", "eb01", "em01"
+)
+
+
 probabilistic_logradouro_match_types <- c(
   "pn01", "pn02", "pn03", "pn04",  # we're not working with probabilistic matching yet
   "pi01", "pi02", "pi03", "pi04",  # we're not working with probabilistic matching yet

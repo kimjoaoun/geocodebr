@@ -107,14 +107,12 @@ geocode <- function(addresses_table,
     )
   }
 
-
   # create temp id
   input_padrao[, tempidgeocodebr := 1:nrow(input_padrao) ]
   data.table::setDT(addresses_table)[, tempidgeocodebr := 1:nrow(input_padrao) ]
 
   # # sort input data
   # input_padrao <- input_padrao[order(estado, municipio, logradouro_sem_numero, numero, cep, localidade)]
-
 
   # downloading cnefe
   cnefe_dir <- download_cnefe(
@@ -132,17 +130,9 @@ geocode <- function(addresses_table,
 
   # START MATCHING -----------------------------------------------
 
-  # determine geographical scope of the search
-  input_states <- unique(input_padrao$estado)
-  input_municipio <- unique(input_padrao$municipio)
-
-  input_municipio <- input_municipio[!is.na(input_municipio)]
-  if(is.null(input_municipio)){ input_municipio <- "*"}
-
   # start progress bar
   if (progress) {
     prog <- create_progress_bar(input_padrao)
-
     message_looking_for_matches()
   }
 
@@ -169,9 +159,7 @@ geocode <- function(addresses_table,
         output_tb = paste0('output_', case),
         key_cols = relevant_cols,
         match_type = case,
-        full_results = full_results,
-        input_states = input_states,
-        input_municipio = input_municipio
+        full_results = full_results
       )
 
       matched_rows <- matched_rows + n_rows_affected

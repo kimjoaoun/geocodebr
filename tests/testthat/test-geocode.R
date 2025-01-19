@@ -14,8 +14,9 @@ tester <- function(addresses_table = input_df,
                    address_fields = fields,
                    n_cores = 1,
                    progress = TRUE,
+                   full_results = FALSE,
                    cache = TRUE) {
-  geocode(addresses_table, address_fields, n_cores, progress, cache)
+  geocode(addresses_table, address_fields, n_cores, progress, full_results, cache)
 }
 
 test_that("errors with incorrect input", {
@@ -36,5 +37,10 @@ test_that("errors with incorrect input", {
   expect_error(tester(cache = 1))
   expect_error(tester(cache = NA))
   expect_error(tester(cache = c(TRUE, TRUE)))
+
+  expect_error(tester(full_results = 1))
+  expect_error(tester(full_results = NA))
+  expect_error(tester(full_results = c(TRUE, TRUE)))
+
 })
 

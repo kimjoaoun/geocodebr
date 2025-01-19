@@ -99,12 +99,12 @@ geocode_dani_arrow <- function(addresses_table,
   # start progress bar
   if (progress) {
     prog <- create_progress_bar(standard_locations)
-
     message_looking_for_matches()
   }
 
   n_rows <- nrow(standard_locations)
   matched_rows <- 0
+
 
   # start matching
   for (case in all_possible_match_types) {
