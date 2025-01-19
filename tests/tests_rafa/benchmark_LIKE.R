@@ -283,7 +283,7 @@ d <- cnf |>
 
 # open input data
 data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
-input_df <- read.csv(data_path)
+input_df <- data.table::fread(data_path, encoding = 'Latin-1')
 
 
 # fields <- geocodebr::setup_address_fields(
@@ -311,7 +311,7 @@ rafa_loop <- function(){
     estado = 'nm_uf'
   )
 
-  df_rafa_loop <- geocodebr::geocode(
+  df_rafa <- geocodebr::geocode(
     addresses_table = input_df,
     address_fields = fields,
     n_cores = 7,
@@ -333,19 +333,36 @@ df_dani <- geocodebr:::geocode_dani_arrow(
 table(df_rafa_loop$precision) / nrow(df_rafa_loop)*100
 
 
+unique(df_rafa$match_type) |> length()
 
-df <- left_join(select(df_rafa, c('id', 'match_type', 'precision')),
-                select(df_rafa2, c('id', 'match_type', 'precision')), by='id')
-
-data.table::setDT(df)
-data.table::setnames(
-  df,
-  old = c('match_type.x', 'match_type.y', 'precision.x', 'precision.y'),
-  new = c('match_type.d', 'match_type.p', 'precision.d', 'precision.p') )
+table(df_rafa$match_type)
 
 
-table(df$match_type.d, df$match_type.p)
-
-
-
-
+  # en01: logradouro, numero, cep e bairro
+  # en02: logradouro, numero e cep
+  # en03: logradouro, numero e bairro
+  # en04: logradouro e numero
+      # pn01: logradouro, numero, cep e bairro
+      # pn02: logradouro, numero e cep
+      # pn03: logradouro, numero e bairro
+      # pn04: logradouro e numero
+  # ei01: logradouro, numero, cep e bairro
+  # ei02: logradouro, numero e cep
+  # ei03: logradouro, numero e bairro
+  # ei04: logradouro e numero
+        # pi01: logradouro, numero, cep e bairro
+        # pi02: logradouro, numero e cep
+        # pi03: logradouro, numero e bairro
+        # pi04: logradouro e numero
+  # er01: logradouro, cep e bairro
+  # er02: logradouro e cep
+  # er03: logradouro e bairro
+  # er04: logradouro
+      # pr01: logradouro, cep e bairro
+      # pr02: logradouro e cep
+      # pr03: logradouro e bairro
+      # pr04: logradouro
+  # ec01: municipio, cep, localidade
+  # ec02: municipio, cep
+  # eb01: municipio, localidade
+  # em01: municipio
