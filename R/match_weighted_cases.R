@@ -14,7 +14,7 @@ match_weighted_cases <- function(con,
   table_name <- gsub('logradouro_sem_numero', 'logradouro_numero', table_name)
 
   # build path to local file
-  path_to_parquet <- paste0(geocodebr::get_cache_dir(), "/", table_name, ".parquet")
+  path_to_parquet <- paste0(listar_pasta_cache(), "/", table_name, ".parquet")
 
   # determine geographical scope of the search
   input_states <- DBI::dbGetQuery(con, "SELECT DISTINCT estado FROM input_padrao_db;")$estado

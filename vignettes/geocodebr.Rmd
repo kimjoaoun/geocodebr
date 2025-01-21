@@ -1,11 +1,11 @@
 ---
-title: "Introduction to geocodebr"
+title: "Introdução ao geocodebr"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 code-annotations: hover
 urlcolor: blue
 vignette: >
-  %\VignetteIndexEntry{Introduction to geocodebr}
+  %\VignetteIndexEntry{Introdução ao geocodebr}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
@@ -19,22 +19,19 @@ knitr::opts_chunk$set(
 )
 ```
 
-Geocoding refers to the act of finding a point in space, usually represented by
-a pair of coordinates, given a location address. The **{geocodebr}** package allows one to efficiently geocode Brazilian addresses using the National 
-Registry of Addresses for Statistical Purposes (english for *Cadastro Nacional 
-de Endereços para Fins Estatísticos*, CNEFE), a data set collected and
-[published](https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html) by the Brazilian official statistics and geography office, IBGE, containing the addresses of more than 100 million households and establishments in Brazil.
+A geolocalização refere-se ao ato de encontrar um ponto no espaço, geralmente representado por um par de coordenadas, a partir de uma informação de endereço. O pacote **{geocodebr}** permite geolocalizar endereços brasileiros de forma simples e eficiente, utilizando como referências dados públicos de endereços do Brasil. A principal base de referência é o Cadastro Nacional de Endereços para Fins Estatísticos (CNEFE), um conjunto de dados coletado e [publicado](https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html) pelo Instituto Brasileiro de Geografia e Estatística (IBGE), que contém os endereços de mais de 110 milhões de domicílios e estabelecimentos no país.
 
-## Basic usage
 
-Before using *{geocodebr}*, please make sure you have it installed in your
-computer. You can download either the most stable version from CRAN...
+
+## Instalação
+
+Antes de usar o **{geocodebr}**, certifique-se de que ele está instalado no seu computador. Você pode baixar a versão mais estável do CRAN...
 
 ```{r, eval = FALSE}
 install.packages("geocodebr")
 ```
 
-... or the development version from GitHub.
+... ou a versão em desenvolvimento no GitHub.
 
 ```{r, eval = FALSE}
 # install.packages("pak")
@@ -43,9 +40,8 @@ pak::pak("ipeaGIT/geocodebr")
 
 Then attach it to the current R session:
 
-```{r}
-library(geocodebr)
-```
+
+## Utilização
 
 The main function of package is `geocode()`, which
 takes a data frame of addresses as input and outputs the same data frame with
@@ -55,12 +51,13 @@ package includes a few sample data sets in the installation. In the example
 below, we use a small data set that contains addresses with commonly seen
 issues, such as missing information and mistyped fields.
 
-**Note:** Running the function for the first time may take a while, since
-*{geocodebr}* needs to download the CNEFE data, which sums up to about 5.5 GB.
-This data is stored locally, so it is downloaded only once. More info about data 
-caching below.
+A principal função do pacote é a `geocode()`, que recebe uma tabela (`data.frame`) de endereços como entrada e retorna a mesma tabela acrescida com as colunas de latitude e longitude de cada endereço correspondido, além de  colunas indicando o nível de precisão dos resultados. Para demonstrar seu uso, o pacote inclui alguns conjuntos de dados de exemplo na instalação. No exemplo abaixo, utilizamos um pequeno conjunto de dados que contém endereços com problemas comuns, como informações ausentes e campos digitados incorretamente.
+
+**Nota:** A execução da função `geocode()`pela primeira vez pode demorar, pois o **{geocodebr}** precisa baixar os dados de endereços, que somam cerca de 5,5 GB. Esses dados são armazenados localmente, portanto, o download é feito apenas uma vez. Mais informações sobre o armazenamento em cache dos dados estão disponíveis abaixo.
 
 ```{r}
+library(geocodebr)
+
 df <- read.csv(
   system.file("extdata/small_sample.csv", package = "geocodebr")
 )
@@ -89,13 +86,13 @@ df_geo <- geocodebr::geocode(
 head(df_geo)
 ```
 
-The output coordinates use the official geodetic reference system used in Brazil: SIRGAS2000, CRS(4674). The results of {geocodebr} are classified into six broad `precisao` categories depending on how exactly each input address was matched with CNEFE data. The accuracy of the results are indicated in two columns of the output: `precisao` and `tipo_resultado`. More information below.
+As coordendas espaciais do output usam sistema de referência ofical do Brasil: SIRGAS2000, CRS(4674). Os resultados do {geocodebr} são classificados em seis amplas categorias de precisão, dependendo de quão exatamente cada endereço de entrada foi correspondido com os dados do CNEFE. O grau de precisão é indicado em duas colunas da tabela de output: `precisao` e `tipo_resultado`. Mais informações abaixo.
 
 
-# Precision categories:
+# Precissão dos resultados:
 
-The results of {geocodebr} are classified into six broad `precisao` categories:
- 
+Os resultados do **{geocodebr}** são classificados em seis categorias gerais de `precisao`, dependendo do nível de exatidão com que cada endereço de input foi encontrado nos dados do CNEFE:
+
 - "numero"
 - "numero_aproximado"
 - "logradouro"
@@ -104,14 +101,14 @@ The results of {geocodebr} are classified into six broad `precisao` categories:
 - "municipio"
 - `NA` (not found)
 
-Each precision level can be disaggregated into more refined match types.
+Cada nível de precisão pode ser desagregado em tipos de correspondência mais refinados.
 
-## Match Type
+## Tipos de resultados
 
-The column `tipo_resultado` provides more refined information on how exactly each input address was matched with CNEFE. In every category, {geocodebr} takes the average latitude and longitude of the addresses included in CNEFE that match the input address based on combinations of different fields. In the strictest case, for example, the function finds a deterministic match for all of the fields of a given address (`"estado"`, `"municipio"`, `"logradouro"`, `"numero"`, `"cep"`, `"localidade"`). Think for example of a building with several apartments that match the same street address and number. In such case, the coordinates of the apartments will differ very slightly, and {geocodebr} takes the average
-of those coordinates. In a less rigorous example, in which only the fields (`"estado"`, `"municipio"`, `"logradouro"`, `"localidade"`) are matched, {geocodebr} calculates the average coordinates of all the addresses in CNEFE along that street and which fall within the same neighborhood.
+A coluna `tipo_resultado` fornece informações mais detalhadas sobre como exatamente cada endereço de entrada foi encontrado no CNEFE. Em cada categoria, o **{geocodebr}** calcula a média da latitude e longitude  dos endereços incluídos no CNEFE que correspondem ao endereço de entrada, com base em combinações de diferentes campos. No caso mais rigoroso, por exemplo, a função encontra uma correspondência determinística para todos os campos de um dado endereço (`"estado"`, `"municipio"`, `"logradouro"`, `"numero"`, `"cep"`, `"localidade"`). Pense, por exemplo, em um prédio com vários apartamentos que correspondem ao mesmo endereço de rua e número. Nesse caso, as coordenadas dos apartamentos podem diferir ligeiramente, e o **{geocodebr}** calcula a média dessas coordenadas. Em um caso menos rigoroso, no qual apenas os campos (`"estado"`, `"municipio"`, `"logradouro"`, `"localidade"`) são encontrados, o **{geocodebr}** calcula as coordenadas médias de todos os endereços no CNEFE ao longo daquela rua e que se encontram na mesma localidade/bairro. Assim, as coordenadas de resultado tendem a ser o ponto médio do trecho daquela rua que passa dentro daquela localidade/bairro.
 
-The complete list of precision levels, their corresponding match type categories and the fields considered in each category are described below:
+A lista completa dos níveis de precisão (`precisao`), suas categorias de tipo de correspondência (`tipo_resultado`) e os campos de endereço considerados em cada categoria estão descritos abaixo:
+
 
 - precisao: **"numero"**
   - tipo_resultado:
@@ -135,7 +132,7 @@ The complete list of precision levels, their corresponding match type categories
     - pi03: logradouro, numero e localidade
     - pi04: logradouro e numero
 
-- precisao: **"rua"** (when input number is missing 'S/N')
+- precisao: **"logradouro"** (when input number is missing 'S/N')
   - tipo_resultado:
     - er01: logradouro, cep e localidade
     - er02: logradouro e cep
@@ -159,19 +156,22 @@ The complete list of precision levels, their corresponding match type categories
   - tipo_resultado:
     - em01: municipio
 
-***Note:*** Match types starting with 'p' use probabilistic matching of the logradouro field, while types starting with 'e' use deterministic matching only. **Match types with probabilistic matching are not implemented in {geocodebr} yet**.
+
+***Nota:*** As categorias de `match_type` que começam com 'p' utilizam correspondência probabilística do campo logradouro, enquanto os tipos que começam com 'e' utilizam apenas correspondência determinística. **As categorias de `match_type` que usam correspondência probabilística ainda não estão implementados no {geocodebr}**.
 
 
 
+# Cache de dados
 
-# Data cache
+A primeira vez que o usuário executa a função `geocode()`, o **{geocodebr}** fará o download de alguns arquivos de referência e os armazenará localmente. Dessa forma, os dados precisam ser baixados apenas uma vez. É importante notar que esses arquivos exigem aproximadamente 5,5 GB de espaço no seu disco local.
 
-The first time the user runs the `geocode()` function, {geocodebr} will download a few reference files and store them locally. This way, the data only needs to be downloaded once. Mind you that these files require approximately 4GB of space in your local drive.
 
-The package includes the following functions to help users manage cached files:
+O pacote inclui as seguintes funções para ajudar os usuários a gerenciar os arquivos em cache:
 
-- `get_cache_dir()`: returns the path to where the cached data is stored. By default, files are cached in the package directory.
-- `set_cache_dir()`: set a custom directory to be used. This configuration is persistent across different R sessions.
-- `list_cached_data()`: list  all files currently cached
-- `clean_cache_dir()`: delete all files of the cache directory used by {geocodebr}
+- `listar_pasta_cache()`: retorna o caminho onde os dados em cache estão armazenados. Por padrão, os arquivos são armazenados no diretório do pacote.
+- `definir_pasta_cache()`: define um diretório personalizado para ser utilizado. Essa configuração é persistente entre diferentes sessões do R.
+- `listar_dados_cache()`: lista todos os arquivos atualmente armazenados em cache.
+- `deletar_pasta_cache()`: exclui todos os arquivos do diretório de cache utilizado pelo **{geocodebr}**.
+
+
 

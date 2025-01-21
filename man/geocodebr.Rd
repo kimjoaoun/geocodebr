@@ -6,7 +6,7 @@
 \alias{geocodebr-package}
 \title{geocodebr: Geocode Brazilian Addresses with CNEFE}
 \description{
-Simple and efficient way to geocode data in Brazil. The package provides functions to geocode from addresses to spatial coordinates and to (soon) reverse-geocode from spatial coordinates to addresses. The package is built on top of open spatial data sets of Brazilian addresses, mainly using the National Registry of Addresses for Statistical Purposes (English for *Cadastro Nacional de Endereços para Fins Estatísticos*, CNEFE). CNEFE is published by the Brazilian official statistics and geography office, IBGE (\url{https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html}).
+Método simples e eficiente de geolocalizar dados no Brasil. O pacote traz funções para geolocalizar endereços para encontrar suas em coordenadas espaciais e, em breve, para realizar geolocalização reversa de coordenadas espaciais para endereços. O pacote é baseado em conjuntos de dados espaciais abertos de endereços brasileiros, utilizando principalmente o Cadastro Nacional de Endereços para Fins Estatísticos (CNEFE). O CNEFE é publicado pelo Instituto Brasileiro de Geografia e Estatística (IBGE), órgão oficial de estatísticas e geografia do Brasil.
 }
 \seealso{
 Useful links:

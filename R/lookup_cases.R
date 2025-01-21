@@ -40,49 +40,49 @@ lookup_cases <- function(con,
   )
 
   query_lookup <- glue::glue(
-      "UPDATE standard_locations ",
-      "SET lat = filtered_cnefe.lat,
+    "UPDATE standard_locations ",
+    "SET lat = filtered_cnefe.lat,
            lon = filtered_cnefe.lon,
            match_type = '{case}',
            matched_address = filtered_cnefe.endereco_completo ",
-      "FROM ",
-      "filtered_cnefe ",
-      " WHERE {cols_not_null} AND ",
-            "standard_locations.match_type IS NULL AND {join_condition}"
-    )
+    "FROM ",
+    "filtered_cnefe ",
+    " WHERE {cols_not_null} AND ",
+    "standard_locations.match_type IS NULL AND {join_condition}"
+  )
 
 
-    # cases with no number
-    if (case %in% possible_match_types_no_number) {
-        query_lookup <- gsub("standard_locations.numero_padr IS NOT NULL AND ", "", query_lookup)
-    }
+  # cases with no number
+  if (case %in% possible_match_types_no_number) {
+    query_lookup <- gsub("standard_locations.numero_padr IS NOT NULL AND ", "", query_lookup)
+  }
 
   # cases with no logradouro
   if (case %in% possible_match_types_no_logradouro) {
     query_lookup <- gsub("standard_locations.logradouro_padr IS NOT NULL AND ", "", query_lookup)
   }
 
-    # whether to keep all columns in the result
-    if (isFALSE(full_results)) {
-        query_lookup <- gsub("matched_address = filtered_cnefe.endereco_completo", "", query_lookup)
-      }
+  # whether to keep all columns in the result
+  if (isFALSE(full_results)) {
+    query_lookup <- gsub("matched_address = filtered_cnefe.endereco_completo", "", query_lookup)
+  }
 
 
-    n_rows_affected <- DBI::dbExecute(con, query_lookup)
+  n_rows_affected <- DBI::dbExecute(con, query_lookup)
 
-    duckdb::duckdb_unregister_arrow(con, "filtered_cnefe")
+  duckdb::duckdb_unregister_arrow(con, "filtered_cnefe")
 
   return(n_rows_affected)
 }
 
 
 lookup_weighted_cases <- function(con,
-                         relevant_cols,
-                         case,
-                         full_results,
-                         lookup_vector,
-                         input_states,
-                         input_municipio){
+                                  relevant_cols,
+                                  case,
+                                  full_results,
+                                  lookup_vector,
+                                  input_states,
+                                  input_municipio){
 
 
   # read corresponding parquet file
@@ -93,7 +93,7 @@ lookup_weighted_cases <- function(con,
   y <- table_name <- gsub('estado_municipio', 'municipio', table_name)
 
   # build path to local file
-  path_to_parquet <- paste0(geocodebr::get_cache_dir(), "/", table_name, ".parquet")
+  path_to_parquet <- paste0(listar_pasta_cache(), "/", table_name, ".parquet")
 
   # filter cnefe to include only states and municipalities
   # present in the input table, reducing the search scope and consequently
@@ -130,8 +130,8 @@ lookup_weighted_cases <- function(con,
       LEFT JOIN filtered_cnefe
       ON {join_condition}
       WHERE {cols_not_null} AND ",
-      "standard_locations.match_type IS NULL AND ",
-      "filtered_cnefe.numero IS NOT NULL;"
+    "standard_locations.match_type IS NULL AND ",
+    "filtered_cnefe.numero IS NOT NULL;"
   )
 
 

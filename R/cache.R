@@ -1,22 +1,22 @@
-#' Set the cache directory used in geocodebr
+#' Define um diretório de cache para o geocodebr
 #'
-#' Sets the directory used to cache CNEFE data. This configuration is persistent
-#' across different R sessions.
+#' Define um diretório de cache para os dados do geocodebr. Essa configuração
+#' é persistente entre sessões do R.
 #'
-#' @param path A string. The path to the directory used to cache the data. If
-#'   `NULL` (the default), the package will use a versioned directory saved
-#'   inside the directory returned by [tools::R_user_dir()].
+#' @param path Uma string. O caminho para o diretório usado para armazenar os
+#'   dados em cache.  Se `NULL` (o padrão), o pacote usará um diretório
+#'   versionado salvo dentro do diretório retornado por [tools::R_user_dir()].
 #'
-#' @return Invisibly returns the cache directory path.
+#' @return Retorna de forma invisível o caminho do diretório de cache.
 #'
 #' @examples
-#' set_cache_dir(tempdir())
+#' definir_pasta_cache(tempdir())
 #'
-#' # back to default
-#' set_cache_dir(NULL)
+#' # retoma pasta padrão do pacote
+#' definir_pasta_cache(NULL)
 #'
 #' @export
-set_cache_dir <- function(path = NULL) {
+definir_pasta_cache <- function(path = NULL) {
   checkmate::assert_string(path, null.ok = TRUE)
 
   if (is.null(path)) {
@@ -26,7 +26,7 @@ set_cache_dir <- function(path = NULL) {
   }
 
   cli::cli_inform(
-    c("i" = "Setting cache directory to {.file {cache_dir}}."),
+    c("i" = "Definido como pasta de cache {.file {cache_dir}}."),
     class = "geocodebr_cache_dir"
   )
 
@@ -42,19 +42,22 @@ set_cache_dir <- function(path = NULL) {
   return(invisible(cache_dir))
 }
 
-#' Get the cache directory used in geocodebr
+
+
+#' Obtém a pasta de cache usado no geocodebr
 #'
-#' Gets the directory used to cache CNEFE data. Useful to inspect the directory
-#' set with [set_cache_dir()] in a previous R session. Returns the default cache
-#' directory if no custom directory has been previously set.
+#' Obtém o caminho da pasta utilizada para armazenar em cache os dados do
+#' geocodebr. Útil para inspecionar a pasta configurada com [definir_pasta_cache()]
+#' em uma sessão anterior do R. Retorna a pasta de cache padrão caso nenhuma
+#' pasta personalizado tenha sido configurada anteriormente.
 #'
-#' @return The cache directory path.
+#' @return O caminho da pasta de cache.
 #'
 #' @examples
-#' get_cache_dir()
+#' listar_pasta_cache()
 #'
 #' @export
-get_cache_dir <- function() {
+listar_pasta_cache <- function() {
   if (fs::file_exists(cache_config_file)) {
     cache_dir <- readLines(cache_config_file)
     cache_dir <- fs::path_norm(cache_dir)
@@ -67,25 +70,25 @@ get_cache_dir <- function() {
   return(cache_dir)
 }
 
-#' List cached data
+#' Listar dados em cache
 #'
-#' Lists the data saved inside the cached directory.
+#' Lista os dados salvos localmente na pasta de cache
 #'
-#' @param print_tree A logical. Whether to print the contents of the cache
-#'   directory in a tree-like format. Defaults to `FALSE`.
+#' @param print_tree Um valor lógico. Indica se o conteúdo da pasta de cache
+#'   deve ser exibido em um formato de árvore. O padrão é `FALSE`.
 #'
-#' @return The path to the cached data.
+#' @return O caminho para os arquivos em cache
 #'
 #' @examples
-#' list_cached_data()
+#' listar_dados_cache()
 #'
-#' list_cached_data(print_tree = TRUE)
+#' listar_dados_cache(print_tree = TRUE)
 #'
 #' @export
-list_cached_data <- function(print_tree = FALSE) {
+listar_dados_cache <- function(print_tree = FALSE) {
   checkmate::assert_logical(print_tree, any.missing = FALSE, len = 1)
 
-  cache_dir <- get_cache_dir()
+  cache_dir <- listar_pasta_cache()
 
   if (!fs::dir_exists(cache_dir)) return(character(0))
 
@@ -100,18 +103,18 @@ list_cached_data <- function(print_tree = FALSE) {
 }
 
 
-#' Clean the cache directory used in geocodebr
+#' Deletar pasta de cache do geocodebr
 #'
-#' Deletes the files saved in the cache directory.
+#' Deleta todos arquivos da pasta do cache.
 #'
-#' @return Invisibly returns the cache directory path.
+#' @return Retorna de forma invisível o caminho do diretório de cache.
 #'
 #' @examplesIf identical(TRUE, FALSE)
-#' clean_cache_dir()
+#' deletar_pasta_cache()
 #'
 #' @export
-clean_cache_dir <- function() {
-  cache_dir <- get_cache_dir()
+deletar_pasta_cache <- function() {
+  cache_dir <- listar_pasta_cache()
 
   unlink(cache_dir, recursive = TRUE)
 
@@ -123,7 +126,7 @@ clean_cache_dir <- function() {
 message_removed_cache_dir <- function(cache_dir) {
   geocodebr_message(
     c(
-      "v" = "Deleted cache directory previously located at {.path {cache_dir}}."
+      "v" = "Deletada a pasta de cache que se encontrava em {.path {cache_dir}}."
     )
   )
 }

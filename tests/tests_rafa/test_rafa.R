@@ -46,8 +46,8 @@ library(data.table)
 
 
 df <- read_population(year = 2010, add_labels = 'pt') |>
-      filter(code_state == 11) |>
-      collect()
+  filter(code_state == 11) |>
+  collect()
 
 
 library(censobr)
@@ -55,12 +55,12 @@ library(dplyr)
 library(arrow)
 
 df <- censobr::read_population(year = 2010, add_labels = 'pt') |>
-      group_by(code_muni, V0601) |>
-      summarise(pop = sum(V0010)) |>
-      collect() |>
-      tidyr::pivot_wider(id_cols = code_muni,
-                         names_from = V0601,
-                         values_from = pop)
+  group_by(code_muni, V0601) |>
+  summarise(pop = sum(V0010)) |>
+  collect() |>
+  tidyr::pivot_wider(id_cols = code_muni,
+                     names_from = V0601,
+                     values_from = pop)
 head(df)
 #> code_muni  Masculino Feminino
 #>     <chr>      <dbl>    <dbl>

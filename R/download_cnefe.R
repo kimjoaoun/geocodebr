@@ -41,7 +41,7 @@ download_cnefe <- function(verboso = TRUE, cache = TRUE) {
   if (!cache) {
     data_dir <- as.character(fs::path_norm(tempfile("standardized_cnefe")))
   } else {
-    data_dir <- get_cache_dir()
+    data_dir <- listar_pasta_cache()
   }
   fs::dir_create(data_dir)
 

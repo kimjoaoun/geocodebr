@@ -11,40 +11,40 @@ coverage](https://codecov.io/gh/ipeaGIT/geocodebr/branch/main/graph/badge.svg)](
 [![Lifecycle:
 experimental](https://lifecycle.r-lib.org/articles/figures/lifecycle-experimental.svg)](https://lifecycle.r-lib.org/articles/stages.html)
 
-**{geocodebr}** is a package to geocode data in Brazil. It provides a
-simple and efficient way to geocode from addresses to spatial
-coordinates and to reverse-geocode from spatial coordinates to
-addresses. The package builds on open spatial data sets of Brazilian
-addresses, mainly using the National Registry of Addresses for
-Statistical Purposes (English for *Cadastro Nacional de Endereços para
-Fins Estatísticos*, CNEFE). CNEFE is
-[published](https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html)
-by the Brazilian official statistics and Geography Office (IBGE) The
-package is currently available in R.
+O **{geocodebr}** é um pacote computacional para geolicalizar dados
+Brasileiros. O pacote oferece uma maneira simples e eficiente de
+geolicalizar endereços para encontrar suas coordenadas geográficas. O
+pacote é baseado em conjuntos de dados espaciais abertos de endereços
+brasileiros, utilizando principalmente o Cadastro Nacional de Endereços
+para Fins Estatísticos (CNEFE). O CNEFE é
+[publicado](https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html)
+pelo Instituto Brasileiro de Geografia e Estatística (IBGE). Atualmente,
+o pacote está disponível em R.
 
-## Installation
+## Instalação
 
-The package is not yet on CRAN. You can install the development version
-with:
+O pacote ainda não está disponível no CRAN. Você pode instalar a versão
+em desenvolvimento com o código abaixo:
 
 ``` r
 # install.packages("pak")
 pak::pak("ipeaGIT/geocodebr")
 ```
 
-## Basic Usage
+## Utilização
 
-### Geocoding: from addresses to spatial coordinates
+### Geolocalização: de endereços para coordenadas espaciais
 
-Once you have a table (`data.frame`) with addresses, geolocating the
-data with **{geocodebr}** can be done in two simple steps:
+Uma que você possui uma tabela de dados (`data.frame`) com endereços no
+Brasil, a geolocalização desses dados com **{geocodebr}** pode ser feita
+em apenas dois passos:
 
-1.  The first step is to use the `listar_campos()` function to declare
-    the names of the columns in your input `data.frame` that correspond
-    to each field of the addresses.
+1.  O primeiro passo é usar a função `listar_campos()` para indicar os
+    nomes das colunas no seu `data.frame` que correspondem a cada campo
+    dos endereços.
 
-2.  The second step is to use the `geocode()` function to find the
-    geographic coordinates of input addresses.
+2.  O segundo passo é usar a função `geocode()` para encontrar as
+    coordenadas geográficas dos endereços de input.
 
 ``` r
 library(geocodebr)
@@ -73,43 +73,46 @@ df <- geocodebr::geocode(
   )
 ```
 
-The results of {geocodebr} are classified into six broad `precision`
-categories depending on how exactly each input address was matched with
-CNEFE data. See more information in the function documentation or in the
-**geocoding vignette**.
+Os resultados do **{geocodebr}** são classificados em seis categorias
+gerais de `precisao`, dependendo do nível de exatidão com que cada
+endereço de input foi encontrado nos dados do CNEFE. Para mais
+informações, consulte a documentação da função ou a **vignette de
+geocode**.
 
-### Reverse-geocoding: from spatial coordinates to addresses
+### Geocode reverso: de coordenadas espaciais para endereços
 
-*soon*
+*em breve*
 
-## Related projects
+## Projetos relacionados
 
-There are numerous geolocation packages available, many of which can be
-used in R (list below). Most of these alternatives rely on commercial
-software and data sets, often imposing strict limits on the number of
-free queries. In contrast, the main advantages of {geocodebr} are that
-(a) it is completely free, allowing unlimited queries without any cost;
-(b) it operates with high speed and efficient scalability, allowing one
-to geocode millions of addresses in just a few minutes without requiring
-advanced or high-end computational infrastructure.
+Existem diversos pacotes de geolocalização disponíveis, muitos dos quais
+podem ser utilizados em R (listados abaixo). A maioria dessas
+alternativas depende de softwares e conjuntos de dados comerciais,
+geralmente impondo limites de número de consultas gratuitas. Em
+contraste, as principais vantagens do **{geocodebr}** são que o pacote:
+(a) é completamente gratuito, permitindo consultas ilimitadas sem nenhum
+custo; (b) opera com alta velocidade e escalabilidade eficiente,
+permitindo geocodificar milhões de endereços em apenas alguns minutos,
+sem a necessidade de infraestrutura computacional avançada ou de alto
+desempenho.
 
 - [{arcgisgeocode}](https://cran.r-project.org/web/packages/arcgisgeocode/index.html)
   and
   [{arcgeocoder}](https://cran.r-project.org/web/packages/arcgeocoder/index.html):
-  interface to ArcGIS Geocoding Services
+  utiliza serviço de geocode do ArcGIS
 - [{nominatimlite}](https://cran.r-project.org/web/packages/nominatimlite/index.html):
-  geocode based on OSM data
+  baseado dados do OSM
 - [{photon}](https://cran.r-project.org/web/packages/photon/index.html):
-  based on OSM data
+  baseado dados do OSM
 - [{tidygeocoder}](https://cran.r-project.org/web/packages/tidygeocoder/index.html):
-  interface several geocoding services
+  API para diversos servicos de geolocalização
 - [{googleway}](https://cran.r-project.org/web/packages/googleway/index.html)
   and
   [{mapsapi}](https://cran.r-project.org/web/packages/mapsapi/index.html):
-  interface to Google Maps APIs
+  interface para API do Google Maps
 
-## Acknowledgement <a href="https://www.ipea.gov.br"><img src="man/figures/ipea_logo.png" alt="IPEA" align="right" width="300"/></a>
+## Nota <a href="https://www.ipea.gov.br"><img src="man/figures/ipea_logo.png" alt="IPEA" align="right" width="300"/></a>
 
-Original CNEFE data is collected by the Brazilian Institute of Geography
-and Statistics (IBGE). **{geocodebr}** is developed by a team at the
-Institute for Applied Economic Research (Ipea), Brazil.
+Os dados originais do CNEFE são coletados pelo Instituto Brasileiro de
+Geografia e Estatística (IBGE). O **{geocodebr}** foi desenvolvido por
+uma equipe do Instituto de Pesquisa Econômica Aplicada (Ipea)

@@ -11,9 +11,9 @@ geocodebr_message <- function(message, .envir = parent.frame()) {
 }
 
 message_standardizing_addresses <- function() {
-  geocodebr_message(c("i" = "Standardizing input addresses"))
+  geocodebr_message(c("i" = "Padronizando endereços de entrada"))
 }
 
 message_looking_for_matches <- function() {
-  geocodebr_message(c("i" = "Looking for matches in CNEFE"))
+  geocodebr_message(c("i" = "Geolocalizando endereços"))
 }

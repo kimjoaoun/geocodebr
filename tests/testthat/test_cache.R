@@ -1,6 +1,6 @@
-# set_cache_dir -----------------------------------------------------------
+# definir_pasta_cache -----------------------------------------------------------
 
-tester <- function(path = NULL) set_cache_dir(path)
+tester <- function(path = NULL) definir_pasta_cache(path)
 
 test_that("errors with incorrect input", {
   expect_error(tester(1))
@@ -21,12 +21,12 @@ test_that("behaves correctly", {
 
   # by default uses a versioned dir inside the default R cache dir
 
-  fn_result <- suppressMessages(set_cache_dir())
+  fn_result <- suppressMessages(definir_pasta_cache())
   expect_type(fn_result, "character")
   expect_identical(fn_result, as.character(default_cache_dir))
   expect_identical(readLines(cache_config_file), unclass(default_cache_dir))
 
-  fn_result <- suppressMessages(set_cache_dir("aaa"))
+  fn_result <- suppressMessages(definir_pasta_cache("aaa"))
   expect_type(fn_result, "character")
   expect_identical(fn_result, "aaa")
   expect_identical(readLines(cache_config_file), "aaa")
@@ -41,15 +41,15 @@ test_that("messages are formatted correctly", {
   }
 
   expect_snapshot(
-    set_cache_dir(),
+    definir_pasta_cache(),
     transform = function(x) sub(default_cache_dir, "<path_to_default_dir>", x),
     cnd_class = TRUE
   )
 
-  expect_snapshot(set_cache_dir("aaa"), cnd_class = TRUE)
+  expect_snapshot(definir_pasta_cache("aaa"), cnd_class = TRUE)
 })
 
-# get_cache_dir -----------------------------------------------------------
+# listar_pasta_cache -----------------------------------------------------------
 
 test_that("behaves correctly", {
   # if the cache config file exists, we save its current content just to make
@@ -67,18 +67,18 @@ test_that("behaves correctly", {
   # default cache dir
 
   if (fs::file_exists(cache_config_file)) fs::file_delete(cache_config_file)
-  expect_identical(get_cache_dir(), as.character(default_cache_dir))
+  expect_identical(listar_pasta_cache(), as.character(default_cache_dir))
 
   writeLines("aaa", cache_config_file)
-  expect_identical(get_cache_dir(), "aaa")
+  expect_identical(listar_pasta_cache(), "aaa")
 })
 
-# list_cached_data --------------------------------------------------------
+# listar_dados_cache --------------------------------------------------------
 
 test_that("errors with incorrect input", {
-  expect_error(list_cached_data(1))
-  expect_error(list_cached_data(NA))
-  expect_error(list_cached_data(c(TRUE, TRUE)))
+  expect_error(listar_dados_cache(1))
+  expect_error(listar_dados_cache(NA))
+  expect_error(listar_dados_cache(c(TRUE, TRUE)))
 })
 
 test_that("behaves correctly", {
@@ -99,9 +99,9 @@ test_that("behaves correctly", {
   tmpdir <- tempfile()
   fs::dir_create(tmpdir)
 
-  suppressMessages(set_cache_dir(tmpdir))
+  suppressMessages(definir_pasta_cache(tmpdir))
 
-  expect_identical(list_cached_data(), character(0))
+  expect_identical(listar_dados_cache(), character(0))
 
   # previously, we used download_cnefe(progress = FALSE) here to download cnefe
   # data before listing the content. however, this takes a long time, and
@@ -111,20 +111,20 @@ test_that("behaves correctly", {
 
   file.create(fs::path(tmpdir, c("oie.parquet", "hello.parquet")))
 
-  cnefe_files <- list_cached_data()
+  cnefe_files <- listar_dados_cache()
   expect_identical(basename(cnefe_files), c("hello.parquet", "oie.parquet"))
 
   # expect a tree-like message and invisible value when print_tree=TRUE
 
   expect_snapshot(
-    list_cached_data(print_tree = TRUE),
-    transform = function(x) sub(get_cache_dir(), "<path_to_cache_dir>", x)
+    listar_dados_cache(print_tree = TRUE),
+    transform = function(x) sub(listar_pasta_cache(), "<path_to_cache_dir>", x)
   )
 })
 
-# clean_cache_dir ---------------------------------------------------------
+# deletar_pasta_cache ---------------------------------------------------------
 
-test_that("clean_cache_dir behaves correctly", {
+test_that("deletar_pasta_cache behaves correctly", {
   # if the cache config file exists, we save its current content just to make
   # sure our tests don't disturb any workflows we have. if it doesn't, we delete
   # the file we created during the test
@@ -142,15 +142,15 @@ test_that("clean_cache_dir behaves correctly", {
   tmpdir <- tempfile()
   fs::dir_create(tmpdir)
 
-  suppressMessages(set_cache_dir(tmpdir))
+  suppressMessages(definir_pasta_cache(tmpdir))
 
   file.create(fs::path(tmpdir, "oie.parquet"))
-  expect_identical(basename(list_cached_data()), "oie.parquet")
+  expect_identical(basename(listar_dados_cache()), "oie.parquet")
 
   expect_snapshot(
-    res <- clean_cache_dir(),
+    res <- deletar_pasta_cache(),
     cnd_class = TRUE,
-    transform = function(x) sub(get_cache_dir(), "<path_to_cache_dir>", x)
+    transform = function(x) sub(listar_pasta_cache(), "<path_to_cache_dir>", x)
   )
 
   expect_identical(res, as.character(fs::path_norm(tmpdir)))

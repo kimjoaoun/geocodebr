@@ -1,5 +1,5 @@
 ---
-title: "Geolocalização com geocodebr (PORT)"
+title: "Geolocalização com geocodebr"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 code-annotations: hover
@@ -64,12 +64,12 @@ head(df)
 obs. Note que na primeira vez que o usuário usa essa fnução, {geocodebr} irá baixar alguns arquivos de referência e armaneza-los localmente. Assim, esses dados só precisam ser baixados uma única vez. Mais informações sobr o cache dos dados abaixo.
 
 
-As coordendas espaciais do output usam sistema de referência ofical do Brasil: SIRGAS2000, CRS(4674). Os resultados do {geocodebr} são classificados em seis amplas categorias de precisão, dependendo de quão exatamente cada endereço de entrada foi correspondido com os dados do CNEFE. O grau de precisão é indicado em duas colunas da tabela de output: `precision` e `match_type`. Mais informações abaixo.
+As coordendas espaciais do output usam sistema de referência ofical do Brasil: SIRGAS2000, CRS(4674). Os resultados do {geocodebr} são classificados em seis amplas categorias de precisão, dependendo de quão exatamente cada endereço de entrada foi correspondido com os dados do CNEFE. O grau de precisão é indicado em duas colunas da tabela de output: `precisao` e `tipo_resultado`. Mais informações abaixo.
 
 
-# Categorias de Precisão: `precision`
+# Categorias de Precisão: `precisao`
 
-Os resultados do **{geocodebr}** são classificados em seis amplas categorias de `precision`:
+Os resultados do **{geocodebr}** são classificados em seis amplas categorias de `precisao`:
 
 - "numero"
 - "numero_aproximado"
@@ -142,7 +142,7 @@ Na primeira vez que o usuário executar a função `geocode()`, o {geocodebr} ir
 
 O pacote inclui as seguintes funções para ajudar os usuários a gerenciar os arquivos em cache:
 
-- `get_cache_dir()`: retorna o caminho para onde os dados em cache estão armazenados. Por padrão, os arquivos são armazenados no diretório do pacote.
-- `set_cache_dir()`: define um diretório personalizado a ser usado. Essa configuração é persistente entre diferentes sessões do R.
-- `list_cached_data()`: lista todos os arquivos atualmente armazenados em cache.
-- `clean_cache_dir()`: exclui todos os arquivos do diretório de cache usado pelo {geocodebr}.
+- `listar_pasta_cache()`: retorna o caminho onde os dados em cache estão armazenados. Por padrão, os arquivos são armazenados no diretório do pacote.
+- `definir_pasta_cache()`: define um diretório personalizado para ser utilizado. Essa configuração é persistente entre diferentes sessões do R.
+- `listar_dados_cache()`: lista todos os arquivos atualmente armazenados em cache.
+- `deletar_pasta_cache()`: exclui todos os arquivos do diretório de cache utilizado pelo **{geocodebr}**.
