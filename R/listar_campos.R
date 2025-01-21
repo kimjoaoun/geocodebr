@@ -1,27 +1,27 @@
-#' Specify the columns describing the address fields
+#' Especifica as colunas que descrevem os campos dos endereços
 #'
-#' Creates a character vector specifying the columns that represent each address
-#' field in the addresses table. Os campos `estado` e `municipio` são obrigatórios.
+#' Cria um vetor de caracteres especificando as colunas que representam cada
+#' campo do endereço na tabela de endereços. Os campos `estado` e `municipio`
+#' são obrigatórios.
+
+#' @param estado Uma string. O nome da coluna que representa o estado do
+#'   endereço. Campo obrigatório.
+#' @param municipio Uma string. O nome da coluna que representa o município do
+#'   endereço. Campo obrigatório.
+#' @param logradouro Uma string. O nome da coluna que representa o *logradouro*
+#'   (endereço da rua) do endereço. Pode ser `NULL` se o campo não estiver
+#'   especificado na tabela de endereços.
+#' @param numero Uma string. O nome da coluna que representa o número do endereço.
+#'    Pode ser `NULL` se o campo não estiver especificado na tabela de endereços.
+#' @param cep Uma string. O nome da coluna que representa o *CEP* (Código de
+#'    Endereçamento Postal) do endereço. Pode ser `NULL` se o campo não estiver
+#'    especificado na tabela de endereços.
+#' @param localidade Uma string. O nome da coluna que representa a localidade
+#'   (equivalente ao 'bairro' em áreas urbanas) do endereço. Pode ser `NULL` se
+#'   esse campo não estiver presente na tabela de endereços.
 #'
-#' @param estado A string. The name of the column representing the state of the
-#'   address.
-#' @param municipio A string. The name of the column representing the city of
-#'   the address.
-#' @param logradouro A string. The name of the column representing the
-#'   *logradouro* (street address) of the address. May be `NULL` if the field is
-#'   not specified in the addresses table.
-#' @param numero A string. The name of the column representing the street number
-#'   of the address. May be `NULL` if the field is not specified in the
-#'   addresses table.
-#' @param cep A string. The name of the column representing the *CEP* (ZIP code)
-#'   of the address. May be `NULL` if the field is not specified in the
-#'   addresses table.
-#' @param localidade Uma string. O nome da localidade (equivalente a 'bairro' em
-#'   areas urbanas) do endereço. Pode ser `NULL` se esse campo não estiver
-#'   presente na tabela de endereços.
-#'
-#' @return A character vector in which the names are the address fields and the
-#'   values are the columns that represent them in the addresses table.
+#' @return Um vetor de caracteres no qual os nomes são os campos do endereço e os
+#'   valores são as colunas que os representam na tabela de endereços.
 #'
 #' @examples
 #' listar_campos(

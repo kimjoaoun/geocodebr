@@ -2,7 +2,7 @@
 % Please edit documentation in R/listar_campos.R
 \name{listar_campos}
 \alias{listar_campos}
-\title{Specify the columns describing the address fields}
+\title{Especifica as colunas que descrevem os campos dos endereços}
 \usage{
 listar_campos(
   estado,
@@ -14,35 +14,35 @@ listar_campos(
 )
 }
 \arguments{
-\item{estado}{A string. The name of the column representing the state of the
-address.}
+\item{estado}{Uma string. O nome da coluna que representa o estado do
+endereço. Campo obrigatório.}
 
-\item{municipio}{A string. The name of the column representing the city of
-the address.}
+\item{municipio}{Uma string. O nome da coluna que representa o município do
+endereço. Campo obrigatório.}
 
-\item{logradouro}{A string. The name of the column representing the
-\emph{logradouro} (street address) of the address. May be \code{NULL} if the field is
-not specified in the addresses table.}
+\item{logradouro}{Uma string. O nome da coluna que representa o \emph{logradouro}
+(endereço da rua) do endereço. Pode ser \code{NULL} se o campo não estiver
+especificado na tabela de endereços.}
 
-\item{numero}{A string. The name of the column representing the street number
-of the address. May be \code{NULL} if the field is not specified in the
-addresses table.}
+\item{numero}{Uma string. O nome da coluna que representa o número do endereço.
+Pode ser \code{NULL} se o campo não estiver especificado na tabela de endereços.}
 
-\item{cep}{A string. The name of the column representing the \emph{CEP} (ZIP code)
-of the address. May be \code{NULL} if the field is not specified in the
-addresses table.}
+\item{cep}{Uma string. O nome da coluna que representa o \emph{CEP} (Código de
+Endereçamento Postal) do endereço. Pode ser \code{NULL} se o campo não estiver
+especificado na tabela de endereços.}
 
-\item{localidade}{Uma string. O nome da localidade (equivalente a 'bairro' em
-areas urbanas) do endereço. Pode ser \code{NULL} se esse campo não estiver
-presente na tabela de endereços.}
+\item{localidade}{Uma string. O nome da coluna que representa a localidade
+(equivalente ao 'bairro' em áreas urbanas) do endereço. Pode ser \code{NULL} se
+esse campo não estiver presente na tabela de endereços.}
 }
 \value{
-A character vector in which the names are the address fields and the
-values are the columns that represent them in the addresses table.
+Um vetor de caracteres no qual os nomes são os campos do endereço e os
+valores são as colunas que os representam na tabela de endereços.
 }
 \description{
-Creates a character vector specifying the columns that represent each address
-field in the addresses table. Os campos \code{estado} e \code{municipio} são obrigatórios.
+Cria um vetor de caracteres especificando as colunas que representam cada
+campo do endereço na tabela de endereços. Os campos \code{estado} e \code{municipio}
+são obrigatórios.
 }
 \examples{
 listar_campos(
