@@ -1,20 +1,3 @@
-# bairro = localidade
-#
-# match_type = tipo_resultado
-# precison = precisao
-# addresses_table = enderecos
-# campos_endereco = address_fields
-# resultado_completo = FALSE
-#
-# verboso = TRUE
-# cache = TRUE
-# n_cores = 1
-#
-#
-# logradouro_encontrado
-# numero_encontrado
-# localdiade_encontrada
-#
 # * adicionar colnas extra
 
 

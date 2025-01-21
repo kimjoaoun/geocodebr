@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# geocodebr
+# geocodebr: Geolocalização de Endereços Brasileiros
 
 [![CRAN
 status](https://www.r-pkg.org/badges/version/geocodebr)](https://CRAN.R-project.org/package=geocodebr)
@@ -11,15 +11,15 @@ coverage](https://codecov.io/gh/ipeaGIT/geocodebr/branch/main/graph/badge.svg)](
 [![Lifecycle:
 experimental](https://lifecycle.r-lib.org/articles/figures/lifecycle-experimental.svg)](https://lifecycle.r-lib.org/articles/stages.html)
 
-O **{geocodebr}** é um pacote computacional para geolicalizar dados
-Brasileiros. O pacote oferece uma maneira simples e eficiente de
-geolicalizar endereços para encontrar suas coordenadas geográficas. O
+O **{geocodebr}** é um pacote computacional para geolicalização de
+endereços Brasileiros. O pacote oferece uma maneira simples e eficiente
+de geolicalizar endereços para encontrar suas coordenadas geográficas. O
 pacote é baseado em conjuntos de dados espaciais abertos de endereços
 brasileiros, utilizando principalmente o Cadastro Nacional de Endereços
 para Fins Estatísticos (CNEFE). O CNEFE é
 [publicado](https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html)
 pelo Instituto Brasileiro de Geografia e Estatística (IBGE). Atualmente,
-o pacote está disponível em R.
+o pacote está disponível apenas em R.
 
 ## Instalação
 

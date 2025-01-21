@@ -77,7 +77,7 @@ df_geo <- geocodebr::geocode(
   enderecos = df,
   campos_endereco = campos,
   resultado_completo = FALSE,
-  verboso = TRUE,
+  verboso = FALSO,
   cache = TRUE,
   n_cores = 1
   )

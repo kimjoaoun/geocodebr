@@ -7,7 +7,7 @@ Authors@R: c(
            comment = c(ORCID = "0000-0001-8066-1105")),
     person("Rafael H. M.", "Pereira", role = "aut",
            comment = c(ORCID = "0000-0003-2125-7465")),
-    person("Ipea - Institute for Applied Economic Research", role = c("cph", "fnd"))
+    person("Ipea - Instituto de Pesquisa Econômica Aplicada", role = c("cph", "fnd"))
   )
 Description: Método simples e eficiente de geolocalizar dados no Brasil. O 
     pacote traz funções para geolocalizar endereços para encontrar suas em 
@@ -28,7 +28,9 @@ Imports:
     checkmate,
     cli,
     data.table,
+    DBI,
     dplyr,
+    duckdb,
     enderecobr,
     fs,
     glue,
@@ -39,9 +41,7 @@ Imports:
     tools
 Suggests:
     covr,
-    DBI,
     dbplyr,
-    duckdb,
     geobr,
     ggplot2 (>= 3.3.1),
     knitr,

@@ -4,7 +4,7 @@
 \name{geocodebr}
 \alias{geocodebr}
 \alias{geocodebr-package}
-\title{geocodebr: Geocode Brazilian Addresses with CNEFE}
+\title{geocodebr: Geolocalização de Endereços Brasileiros}
 \description{
 Método simples e eficiente de geolocalizar dados no Brasil. O pacote traz funções para geolocalizar endereços para encontrar suas em coordenadas espaciais e, em breve, para realizar geolocalização reversa de coordenadas espaciais para endereços. O pacote é baseado em conjuntos de dados espaciais abertos de endereços brasileiros, utilizando principalmente o Cadastro Nacional de Endereços para Fins Estatísticos (CNEFE). O CNEFE é publicado pelo Instituto Brasileiro de Geografia e Estatística (IBGE), órgão oficial de estatísticas e geografia do Brasil.
 }
@@ -27,7 +27,7 @@ Authors:
 
 Other contributors:
 \itemize{
-  \item Ipea - Institute for Applied Economic Research [copyright holder, funder]
+  \item Ipea - Instituto de Pesquisa Econômica Aplicada [copyright holder, funder]
 }
 
 }
