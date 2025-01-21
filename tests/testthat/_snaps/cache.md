@@ -1,30 +1,30 @@
 # messages are formatted correctly
 
     Code
-      set_cache_dir()
+      definir_pasta_cache()
     Message <geocodebr_cache_dir>
       i Setting cache directory to '<path_to_default_dir>'.
 
 ---
 
     Code
-      set_cache_dir("aaa")
+      definir_pasta_cache("aaa")
     Message <geocodebr_cache_dir>
       i Setting cache directory to 'aaa'.
 
 # behaves correctly
 
     Code
-      list_cached_data(print_tree = TRUE)
+      listar_dados_cache(print_tree = TRUE)
     Output
       <path_to_cache_dir>
       +-- hello.parquet
       \-- oie.parquet
 
-# clean_cache_dir behaves correctly
+# deletar_pasta_cache behaves correctly
 
     Code
-      res <- clean_cache_dir()
+      res <- deletar_pasta_cache()
     Message <geocodebr_message_removed_cache_dir>
       v Deleted cache directory previously located at '<path_to_cache_dir>'.
 
