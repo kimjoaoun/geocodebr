@@ -108,7 +108,7 @@ add_precision_col <- function(con, update_tb = NULL){
   WHEN tipo_resultado IN ('en01', 'en02', 'en03', 'en04',
                           'pn01', 'pn02', 'pn03', 'pn04') THEN 'numero'
   WHEN tipo_resultado IN ('ei01', 'ei02', 'ei03', 'ei04',
-                          'pi01', 'pi02', 'pi03', 'pi04') THEN 'numero_aproximacao'
+                          'pi01', 'pi02', 'pi03', 'pi04') THEN 'numero_aproximado'
   WHEN tipo_resultado IN ('er01', 'er02', 'er03', 'er04',
                           'pr01', 'pr02', 'pr03', 'pr04') THEN 'logradouro'
   WHEN tipo_resultado IN ('ec01', 'ec02') THEN 'cep'

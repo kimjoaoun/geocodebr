@@ -10,9 +10,10 @@ download_cnefe(verboso = TRUE, cache = TRUE)
 \item{verboso}{A logical. Whether to display a download progress bar.
 Defaults to \code{TRUE}.}
 
-\item{cache}{A logical. Whether CNEFE data should be saved to/read from
-cache, reducing processing time in future calls. Defaults to \code{TRUE}. When
-\code{FALSE}, CNEFE data is downloaded to a temporary directory.}
+\item{cache}{Um valor lógico. Indica se os dados do CNEFE devem ser salvos ou
+lidos do cache, reduzindo o tempo de processamento em chamadas futuras. O
+padrão é \code{TRUE}. Quando \code{FALSE}, os dados do CNEFE são baixados para um
+diretório temporário.}
 }
 \value{
 Invisibly returns the path to the directory where the data was saved.

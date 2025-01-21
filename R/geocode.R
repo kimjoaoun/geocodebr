@@ -1,37 +1,36 @@
 #' Geolocaliza endereços no Brasil
 #'
-#' Geocodes Brazilian addresses based on CNEFE data. Addresses must be passed as
-#' a data frame in which each column describes one address field (street name,
-#' street number, neighborhood, etc). The input addresses are matched with CNEFE
-#' following different precision levels For more info, please see the Details
-#' section. The output coordinates use the geodetic reference system
-#' "SIRGAS2000", CRS(4674).
+#' Geocodifica endereços brasileiros com base nos dados do CNEFE. Os endereços
+#' de input devem ser passados como um `data.frame`, no qual cada coluna
+#' descreve um campo do endereço (logradouro, número, cep, etc). O resuldos dos
+#' endereços geolocalizados podem seguir diferentes níveis de precisão. Consulte
+#' abaixo a seção "Detalhes" para mais informações. As coordenadas de output
+#' utilizam o sistema de referência geodésico "SIRGAS2000", CRS(4674).
 #'
-#' @param enderecos A data frame. The addresses to be geocoded. Each
-#'   column must represent an address field.
-#' @param campos_endereco A character vector. The correspondence between each
-#'   address field and the name of the column that describes it in the
-#'   `enderecos`. The [listar_campos()] function helps creating
-#'   this vector and performs some checks on the input. Address fields
-#'   passed as `NULL` are ignored and the function must receive at least one
-#'   non-null field. If manually creating the vector, please note that the
-#'   vector names should be the same names used in the [listar_campos()]
-#'   parameters.
-#' @param resultado_completo Logical. Whether the output should include additional
-#'       columns, like the matched address of reference. Defaults to `FALSE`.
+#' @param enderecos Um `data.frame`. Os endereços a serem geolocalizados. Cada
+#'    coluna deve representar um campo do endereço.
+#' @param campos_endereco Um vetor de caracteres. A correspondência entre cada
+#'    campo de endereço e o nome da coluna que o descreve na tabela `enderecos`.
+#'    A função [listar_campos()] auxilia na criação deste vetor e realiza
+#'    algumas verificações nos dados de entrada. Campos de endereço passados
+#'    como `NULL` serão ignorados, e a função deve receber pelo menos um campo
+#'    não nulo, além  dos campos `"estado"` e `"municipio"`, que são
+#'    obrigatórios. Note que o campo  `"localidade"` é equivalente a 'bairro'.
+#' @param resultado_completo Lógico. Indica se o output deve incluir colunas
+#'    adicionais, como o endereço encontrado de referência. Por padrão, é `FALSE`.
 #' @template verboso
 #' @template cache
 #' @template n_cores
 #'
-#' @return Returns the data frame passed in `enderecos` with the latitude
-#'   (`lat`) and longitude (`lon`) of each matched address, as well as two
-#'   columns (`precision` and `match_type`) indicating the precision level with
-#'   which the address was matched.
+#' @return Retorna o `data.frame` de input `enderecos` adicionado das colunas de
+#'   latitude (`lat`) e longitude (`lon`), bem como as colunas (`precisao` e
+#'   `tipo_resultado`) que indicam o nível de precisão e o tipo de resultado.
 #'
 #' @template precision_section
 #'
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 #'
+#' # ler amostra de dados
 #' data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
 #' input_df <- read.csv(data_path)
 #'
@@ -59,7 +58,7 @@ geocode <- function(enderecos,
                     verboso = TRUE,
                     cache = TRUE,
                     n_cores = 1
-                    ){
+){
 
   # check input
   checkmate::assert_data_frame(enderecos)

@@ -14,154 +14,157 @@ geocode(
 )
 }
 \arguments{
-\item{enderecos}{A data frame. The addresses to be geocoded. Each
-column must represent an address field.}
+\item{enderecos}{Um \code{data.frame}. Os endereços a serem geolocalizados. Cada
+coluna deve representar um campo do endereço.}
 
-\item{campos_endereco}{A character vector. The correspondence between each
-address field and the name of the column that describes it in the
-\code{enderecos}. The \code{\link[=listar_campos]{listar_campos()}} function helps creating
-this vector and performs some checks on the input. Address fields
-passed as \code{NULL} are ignored and the function must receive at least one
-non-null field. If manually creating the vector, please note that the
-vector names should be the same names used in the \code{\link[=listar_campos]{listar_campos()}}
-parameters.}
+\item{campos_endereco}{Um vetor de caracteres. A correspondência entre cada
+campo de endereço e o nome da coluna que o descreve na tabela \code{enderecos}.
+A função \code{\link[=listar_campos]{listar_campos()}} auxilia na criação deste vetor e realiza
+algumas verificações nos dados de entrada. Campos de endereço passados
+como \code{NULL} serão ignorados, e a função deve receber pelo menos um campo
+não nulo, além  dos campos \code{"estado"} e \code{"municipio"}, que são
+obrigatórios. Note que o campo  \code{"localidade"} é equivalente a 'bairro'.}
 
-\item{resultado_completo}{Logical. Whether the output should include additional
-columns, like the matched address of reference. Defaults to \code{FALSE}.}
+\item{resultado_completo}{Lógico. Indica se o output deve incluir colunas
+adicionais, como o endereço encontrado de referência. Por padrão, é \code{FALSE}.}
 
-\item{verboso}{A logical. Whether to display progress bars when downloading
-CNEFE data and when geocoding the addresses. Defaults to \code{TRUE}.}
+\item{verboso}{Um valor lógico. Indica se barras de progresso e mensagens
+devem ser exibidas durante o download dos dados do CNEFE e a geocodificação
+dos endereços. O padrão é \code{TRUE}.}
 
-\item{cache}{A logical. Whether CNEFE data should be saved to/read from
-cache, reducing processing time in future calls. Defaults to \code{TRUE}. When
-\code{FALSE}, CNEFE data is downloaded to a temporary directory.}
+\item{cache}{Um valor lógico. Indica se os dados do CNEFE devem ser salvos ou
+lidos do cache, reduzindo o tempo de processamento em chamadas futuras. O
+padrão é \code{TRUE}. Quando \code{FALSE}, os dados do CNEFE são baixados para um
+diretório temporário.}
 
-\item{n_cores}{A number. The number of cores to be used in parallel
-execution. Defaults to 1.}
+\item{n_cores}{Um número. O número de núcleos de CPU a serem utilizados no
+processamento dos dados. O padrão é 1.}
 }
 \value{
-Returns the data frame passed in \code{enderecos} with the latitude
-(\code{lat}) and longitude (\code{lon}) of each matched address, as well as two
-columns (\code{precision} and \code{match_type}) indicating the precision level with
-which the address was matched.
+Retorna o \code{data.frame} de input \code{enderecos} adicionado das colunas de
+latitude (\code{lat}) e longitude (\code{lon}), bem como as colunas (\code{precisao} e
+\code{tipo_resultado}) que indicam o nível de precisão e o tipo de resultado.
 }
 \description{
-Geocodes Brazilian addresses based on CNEFE data. Addresses must be passed as
-a data frame in which each column describes one address field (street name,
-street number, neighborhood, etc). The input addresses are matched with CNEFE
-following different precision levels For more info, please see the Details
-section. The output coordinates use the geodetic reference system
-"SIRGAS2000", CRS(4674).
+Geocodifica endereços brasileiros com base nos dados do CNEFE. Os endereços
+de input devem ser passados como um \code{data.frame}, no qual cada coluna
+descreve um campo do endereço (logradouro, número, cep, etc). O resuldos dos
+endereços geolocalizados podem seguir diferentes níveis de precisão. Consulte
+abaixo a seção "Detalhes" para mais informações. As coordenadas de output
+utilizam o sistema de referência geodésico "SIRGAS2000", CRS(4674).
 }
 \details{
-Precision categories:
-}
-\section{Precision}{
-The geocode results are classified into six broad \code{precision} categories:
+Precisão dos resultados:
+
+Os resultados do \strong{{geocodebr}} são classificados em seis amplas categorias de \code{precisao}:
 \itemize{
 \item "numero"
 \item "numero_interpolado"
 \item "rua"
 \item "cep"
-\item "bairro"
+\item "localidade"
 \item "municipio"
-\item \code{NA} (not found)
+\item \code{NA} (não encontrado)
 }
 
-Each precision level can be disaggregated into more refined match types.
+Cada nível de precisão pode ser desagregado em tipos de correspondência mais
+refinados.
 }
+\section{Tipos de resultados}{
+A coluna \code{match_type} fornece informações mais detalhadas sobre como
+exatamente cada endereço de entrada foi encontrado no CNEFE. Em cada
+categoria,  o \strong{{geocodebr}} calcula a média da latitude e longitude dos
+endereços incluídos no CNEFE que correspondem ao endereço de entrada, com
+base em combinações de diferentes campos. No caso mais rigoroso, por exemplo,
+a função encontra uma correspondência determinística para todos os campos de
+um dado endereço (\code{"estado"}, \code{"municipio"}, \code{"logradouro"}, \code{"numero"},
+\code{"cep"}, \code{"localidade"}). Pense, por exemplo, em um prédio com vários
+apartamentos que correspondem ao mesmo endereço de rua e número. Nesse caso,
+as coordenadas dos apartamentos podem diferir ligeiramente, e o
+\strong{{geocodebr}} calcula a média dessas coordenadas. Em um caso menos rigoroso,
+no qual apenas os campos (\code{"estado"}, \code{"municipio"}, \code{"logradouro"},
+\code{"localidade"}) são encontrados, o \strong{{geocodebr}} calcula as coordenadas
+médias de todos os endereços no CNEFE ao longo daquela rua e que se encontram
+na mesma localidade/bairro. Assim, as coordenadas de resultado tendem a ser o
+ponto médio do trecho daquela rua que passa dentro daquela localidade/bairro.
 
-\section{Match Type}{
-The column \code{match_type} provides more refined information on how exactly each
-input address was matched with CNEFE. In every category, the function takes
-the average latitude and longitude of the addresses included in CNEFE that
-match the input address based on combinations of different fields. In the
-strictest case, for example, the function finds a deterministic match for all
-of the fields of a given address (estado, municipio, logradouro, numero, cep,
-localidade). Think for example of a building with several apartments that
-match the same street address and number. In such case, the coordinates of
-the apartments will differ very slightly, and the function takes the average
-of those coordinates. In a less rigorous example, in which only the fields
-(estado, municipio, rua, bairro) are matched, the function calculates the
-average coordinates of all the addresses in CNEFE along that street and which
-fall within the same neighborhood.
-
-The complete list of precision levels and match type categories are:
+A lista completa dos níveis de precisão (\code{precisao}), suas categorias de tipo
+de correspondência (\code{tipo_resultado}) e os campos de endereço considerados em
+cada categoria estão descritos abaixo:
 \itemize{
-\item Precision: \strong{"numero"}
+\item precisao: \strong{"numero"}
 \itemize{
-\item match_type:
-\itemize{
-\item en01: logradouro, numero, cep e bairro
+\item tipo_resultado:
+\item en01: logradouro, numero, cep e localidade
 \item en02: logradouro, numero e cep
-\item en03: logradouro, numero e bairro
+\item en03: logradouro, numero e localidade
 \item en04: logradouro e numero
-\item pn01: logradouro, numero, cep e bairro
+\item pn01: logradouro, numero, cep e localidade
 \item pn02: logradouro, numero e cep
-\item pn03: logradouro, numero e bairro
+\item pn03: logradouro, numero e localidade
 \item pn04: logradouro e numero
 }
-}
-\item Precision: \strong{"numero_interpolado"}
+\item precisao: \strong{"numero_aproximado"}
 \itemize{
-\item match_type:
-\itemize{
-\item ei01: logradouro, numero, cep e bairro
+\item tipo_resultado:
+\item ei01: logradouro, numero, cep e localidade
 \item ei02: logradouro, numero e cep
-\item ei03: logradouro, numero e bairro
+\item ei03: logradouro, numero e localidade
 \item ei04: logradouro e numero
-\item pi01: logradouro, numero, cep e bairro
+\item pi01: logradouro, numero, cep e localidade
 \item pi02: logradouro, numero e cep
-\item pi03: logradouro, numero e bairro
+\item pi03: logradouro, numero e localidade
 \item pi04: logradouro e numero
 }
-}
-\item Precision: \strong{"rua"} (when input number is missing 'S/N')
+\item precisao: \strong{"logradouro"} (quando o número de entrada está faltando 'S/N')
 \itemize{
-\item match_type:
+\item tipo_resultado:
 \itemize{
-\item er01: logradouro, cep e bairro
+\item er01: logradouro, cep e localidade
 \item er02: logradouro e cep
-\item er03: logradouro e bairro
+\item er03: logradouro e localidade
 \item er04: logradouro
-\item pr01: logradouro, cep e bairro
+\item pr01: logradouro, cep e localidade
 \item pr02: logradouro e cep
-\item pr03: logradouro e bairro
+\item pr03: logradouro e localidade
 \item pr04: logradouro
 }
 }
-\item Precision: \strong{"cep"}
+\item precisao: \strong{"cep"}
 \itemize{
-\item match_type:
+\item tipo_resultado:
 \itemize{
-\item ec01 municipio, cep, localidade
-\item ec02 municipio, cep
+\item ec01: municipio, cep, localidade
+\item ec02: municipio, cep
 }
 }
-\item Precision: \strong{"bairro"}
+\item precisao: \strong{"localidade"}
 \itemize{
-\item match_type:
+\item tipo_resultado:
 \itemize{
-\item eb01 municipio, localidade
+\item eb01: municipio, localidade
 }
 }
-\item Precision: \strong{"municipio"}
+\item precisao: \strong{"municipio"}
 \itemize{
-\item match_type:
+\item tipo_resultado:
 \itemize{
-\item em01 municipio
+\item em01: municipio
 }
 }
 }
 
-Note: Match types starting with 'p' use probabilistic matching of the
-logradouro field, while types starting with 'e' use deterministic matching
-only. Match types with probabilistic matching ARE NOT implemented yet.
+\emph{\strong{Nota:}} As categorias de \code{match_type} que começam com 'p' utilizam
+correspondência probabilística do campo logradouro, enquanto os tipos que
+começam com 'e' utilizam apenas correspondência determinística. \strong{As
+categorias de \code{tipo_resultado} que usam correspondência probabilística ainda
+não estão implementadas no {geocodebr}}.
 }
 
 \examples{
 \dontshow{if (identical(tolower(Sys.getenv("NOT_CRAN")), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 
+# ler amostra de dados
 data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
 

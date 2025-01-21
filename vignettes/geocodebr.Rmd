@@ -65,34 +65,42 @@ df <- read.csv(
   system.file("extdata/small_sample.csv", package = "geocodebr")
 )
 
-result <- geocodebr::geocode(
-  addresses_table = df,
-  address_fields = geocodebr::listar_campos(
-    logradouro = "nm_logradouro",
-    numero = "Numero",
-    cep = "Cep",
-    bairro = "Bairro",
-    municipio = "nm_municipio",
-    estado = "nm_uf"
-  ),
-  progress = FALSE
-)
+# Primeiro passo: inidicar o nome das colunas com cada campo dos enderecos
+campos <- geocodebr::listar_campos(
+  logradouro = "nm_logradouro",
+  numero = "Numero",
+  cep = "Cep",
+  localidade = "Bairro",
+  municipio = "nm_municipio",
+  estado = "nm_uf"
+  )
 
-head(result)
+# Segundo passo: geolocalizar
+df_geo <- geocodebr::geocode(
+  enderecos = df,
+  campos_endereco = campos,
+  resultado_completo = FALSE,
+  verboso = TRUE,
+  cache = TRUE,
+  n_cores = 1
+  )
+
+
+head(df_geo)
 ```
 
-The output coordinates use the official geodetic reference system used in Brazil: SIRGAS2000, CRS(4674). The results of {geocodebr} are classified into six broad `precision` categories depending on how exactly each input address was matched with CNEFE data. The accuracy of the results are indicated in two columns of the output: `precision` and `match_type`. More information below.
+The output coordinates use the official geodetic reference system used in Brazil: SIRGAS2000, CRS(4674). The results of {geocodebr} are classified into six broad `precisao` categories depending on how exactly each input address was matched with CNEFE data. The accuracy of the results are indicated in two columns of the output: `precisao` and `tipo_resultado`. More information below.
 
 
 # Precision categories:
 
-The results of {geocodebr} are classified into six broad `precision` categories:
+The results of {geocodebr} are classified into six broad `precisao` categories:
  
 - "numero"
-- "numero_interpolado"
-- "rua"
+- "numero_aproximado"
+- "logradouro"
 - "cep"
-- "bairro"
+- "localidade"
 - "municipio"
 - `NA` (not found)
 
@@ -100,55 +108,55 @@ Each precision level can be disaggregated into more refined match types.
 
 ## Match Type
 
-The column `match_type` provides more refined information on how exactly each input address was matched with CNEFE. In every category, {geocodebr} takes the average latitude and longitude of the addresses included in CNEFE that match the input address based on combinations of different fields. In the strictest case, for example, the function finds a deterministic match for all of the fields of a given address (`"estado"`, `"municipio"`, `"logradouro"`, `"numero"`, `"cep"`, `"localidade"`). Think for example of a building with several apartments that match the same street address and number. In such case, the coordinates of the apartments will differ very slightly, and {geocodebr} takes the average
+The column `tipo_resultado` provides more refined information on how exactly each input address was matched with CNEFE. In every category, {geocodebr} takes the average latitude and longitude of the addresses included in CNEFE that match the input address based on combinations of different fields. In the strictest case, for example, the function finds a deterministic match for all of the fields of a given address (`"estado"`, `"municipio"`, `"logradouro"`, `"numero"`, `"cep"`, `"localidade"`). Think for example of a building with several apartments that match the same street address and number. In such case, the coordinates of the apartments will differ very slightly, and {geocodebr} takes the average
 of those coordinates. In a less rigorous example, in which only the fields (`"estado"`, `"municipio"`, `"logradouro"`, `"localidade"`) are matched, {geocodebr} calculates the average coordinates of all the addresses in CNEFE along that street and which fall within the same neighborhood.
 
 The complete list of precision levels, their corresponding match type categories and the fields considered in each category are described below:
 
-- precision: **"numero"**
-  - match_type:
-    - en01: logradouro, numero, cep e bairro
+- precisao: **"numero"**
+  - tipo_resultado:
+    - en01: logradouro, numero, cep e localidade
     - en02: logradouro, numero e cep
-    - en03: logradouro, numero e bairro
+    - en03: logradouro, numero e localidade
     - en04: logradouro e numero
-    - pn01: logradouro, numero, cep e bairro
+    - pn01: logradouro, numero, cep e localidade
     - pn02: logradouro, numero e cep
-    - pn03: logradouro, numero e bairro
+    - pn03: logradouro, numero e localidade
     - pn04: logradouro e numero
 
-- precision: **"numero_interpolado"**
-  - match_type:
-    - ei01: logradouro, numero, cep e bairro
+- precisao: **"numero_interpolado"**
+  - tipo_resultado:
+    - ei01: logradouro, numero, cep e localidade
     - ei02: logradouro, numero e cep
-    - ei03: logradouro, numero e bairro
+    - ei03: logradouro, numero e localidade
     - ei04: logradouro e numero
-    - pi01: logradouro, numero, cep e bairro
+    - pi01: logradouro, numero, cep e localidade
     - pi02: logradouro, numero e cep
-    - pi03: logradouro, numero e bairro
+    - pi03: logradouro, numero e localidade
     - pi04: logradouro e numero
 
-- precision: **"rua"** (when input number is missing 'S/N')
-  - match_type:
-    - er01: logradouro, cep e bairro
+- precisao: **"rua"** (when input number is missing 'S/N')
+  - tipo_resultado:
+    - er01: logradouro, cep e localidade
     - er02: logradouro e cep
-    - er03: logradouro e bairro
+    - er03: logradouro e localidade
     - er04: logradouro
-    - pr01: logradouro, cep e bairro
+    - pr01: logradouro, cep e localidade
     - pr02: logradouro e cep
-    - pr03: logradouro e bairro
+    - pr03: logradouro e localidade
     - pr04: logradouro
 
-- precision: **"cep"**
-  - match_type:
+- precisao: **"cep"**
+  - tipo_resultado:
     - ec01: municipio, cep, localidade
     - ec02: municipio, cep
 
-- precision: **"bairro"**
-  - match_type:
+- precisao: **"localidade"**
+  - tipo_resultado:
     - eb01: municipio, localidade
 
-- precision: **"municipio"**
-  - match_type:
+- precisao: **"municipio"**
+  - tipo_resultado:
     - em01: municipio
 
 ***Note:*** Match types starting with 'p' use probabilistic matching of the logradouro field, while types starting with 'e' use deterministic matching only. **Match types with probabilistic matching are not implemented in {geocodebr} yet**.

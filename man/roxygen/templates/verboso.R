@@ -1,2 +1,3 @@
-#' @param verboso A logical. Whether to display progress bars when downloading
-#'   CNEFE data and when geocoding the addresses. Defaults to `TRUE`.
+#' @param verboso Um valor lógico. Indica se barras de progresso e mensagens
+#'   devem ser exibidas durante o download dos dados do CNEFE e a geocodificação
+#'   dos endereços. O padrão é `TRUE`.

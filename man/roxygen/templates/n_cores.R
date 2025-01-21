@@ -1,2 +1,2 @@
-#' @param n_cores A number. The number of cores to be used in parallel
-#'   execution. Defaults to 1.
+#' @param n_cores Um número. O número de núcleos de CPU a serem utilizados no
+#'   processamento dos dados. O padrão é 1.

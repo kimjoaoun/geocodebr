@@ -12,8 +12,8 @@ the duckdb connection is created on temporary directory. If
 \code{db_path = "memory"}, the duckdb connection is created on the RAM
 memory.}
 
-\item{n_cores}{A number. The number of cores to be used in parallel
-execution. Defaults to 1.}
+\item{n_cores}{Um número. O número de núcleos de CPU a serem utilizados no
+processamento dos dados. O padrão é 1.}
 }
 \value{
 A duckdb connection.

@@ -1,5 +1,5 @@
-tester <- function(progress = TRUE, cache = TRUE) {
-  download_cnefe(progress, cache)
+tester <- function(verboso = TRUE, cache = TRUE) {
+  download_cnefe(verboso, cache)
 }
 
 test_that("errors with incorrect input", {
