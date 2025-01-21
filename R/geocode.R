@@ -62,12 +62,15 @@ geocode <- function(addresses_table,
                     ){
 
   # check input
-  assert_address_fields(address_fields, addresses_table)
   checkmate::assert_data_frame(addresses_table)
   checkmate::assert_number(n_cores, lower = 1, finite = TRUE)
   checkmate::assert_logical(progress, any.missing = FALSE, len = 1)
   checkmate::assert_logical(cache, any.missing = FALSE, len = 1)
   checkmate::assert_logical(full_results, any.missing = FALSE, len = 1)
+  address_fields <- assert_and_assign_address_fields(
+    address_fields,
+    addresses_table
+  )
 
   # normalize input data -------------------------------------------------------
 

@@ -300,19 +300,16 @@ probabilistic_logradouro_match_types <- c(
 
 
 
-assert_address_fields <- function(address_fields, addresses_table) {
+assert_and_assign_address_fields <- function(address_fields, addresses_table) {
+  possible_fields <- c(
+    "logradouro", "numero", "cep", "bairro", "municipio", "estado"
+  )
+
   col <- checkmate::makeAssertCollection()
   checkmate::assert_names(
     names(address_fields),
     type = "unique",
-    subset.of = c(
-      "logradouro",
-      "numero",
-      "cep",
-      "bairro",
-      "municipio",
-      "estado"
-    ),
+    subset.of = possible_fields,
     add = col
   )
   checkmate::assert_names(
@@ -322,7 +319,14 @@ assert_address_fields <- function(address_fields, addresses_table) {
   )
   checkmate::reportAssertions(col)
 
-  return(invisible(TRUE))
+  missing_fields <- setdiff(possible_fields, names(address_fields))
+
+  missing_fields_list <- vector(mode = "list", length = length(missing_fields))
+  names(missing_fields_list) <- missing_fields
+
+  complete_fields_list <- append(as.list(address_fields), missing_fields_list)
+
+  return(complete_fields_list)
 }
 
 
