@@ -12,7 +12,6 @@ match_weighted_cases <- function(con,
   table_name <- paste(key_cols, collapse = "_")
   table_name <- gsub('estado_municipio', 'municipio', table_name)
   table_name <- gsub('logradouro_sem_numero', 'logradouro_numero', table_name)
-  y <- table_name
 
   # build path to local file
   path_to_parquet <- paste0(geocodebr::get_cache_dir(), "/", table_name, ".parquet")
@@ -32,7 +31,6 @@ match_weighted_cases <- function(con,
   # register filtered_cnefe to db
   duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
 
-  y <- 'filtered_cnefe'
 
   # Create the JOIN condition by concatenating the key columns
   join_condition <- paste(
@@ -45,48 +43,67 @@ match_weighted_cases <- function(con,
     collapse = ' AND '
   )
 
-
-  # Construct the SQL match query
-  query_match <- glue::glue(
-    "CREATE OR REPLACE TEMPORARY VIEW temp_db AS",
-      " SELECT {x}.tempidgeocodebr, {x}.numero, {y}.numero AS numero_db,
-               {y}.lat, {y}.lon, {y}.endereco_completo",
-      " FROM {x}",
-      " LEFT JOIN {y}",
-      " ON {join_condition}",
-      " WHERE {cols_not_null} AND {x}.numero IS NOT NULL AND {y}.numero IS NOT NULL;"
-  )
-
   # whether to keep all columns in the result
-  if (isFALSE(full_results)) {
-    query_match <- gsub(", filtered_cnefe.endereco_completo", "", query_match)
+
+  additional_cols <- ""
+
+  if (isTRUE(full_results)) {
+    additional_cols <- paste0(", filtered_cnefe.endereco_completo")
+
+    #
+    #   colunas_encontradas <- glue::glue( ", endereco_encontrado, estado_encontrado,
+    #       municipio_encontrado, logradouro_encontrado, numero_encontrado,
+    #       cep_encontrado, localidade_encontrada"
+    #     )
+    #
+    #   additional_cols <- paste0(
+    #     glue::glue("filtered_cnefe.{key_cols} AS {key_cols}_encontrado"),
+    #     collapse = ', ')
+    #
+    #   additional_cols <- gsub('logradouro_sem_numero_encontrado', 'logradouro_encontrado', additional_cols)
+    #   additional_cols <- gsub('localidade_encontrado', 'localidade_encontrada', additional_cols)
+    #   additional_cols <- paste0(", filtered_cnefe.endereco_completo AS endereco_encontrado, ", additional_cols)
   }
+
+  # match query
+  query_match <- glue::glue(
+    "CREATE OR REPLACE TEMPORARY VIEW temp_db AS ",
+      "SELECT {x}.tempidgeocodebr, {x}.numero, {y}.numero AS numero_db, ",
+               "{y}.lat, {y}.lon {additional_cols} ",
+      "FROM {x} ",
+      "LEFT JOIN {y} ",
+      "ON {join_condition} ",
+      "WHERE {cols_not_null} AND {x}.numero IS NOT NULL AND {y}.numero IS NOT NULL;"
+  )
 
   DBI::dbExecute(con, query_match)
 
 
-  # summarize
+  # summarize query
   query_aggregate <- glue::glue(
     "CREATE TEMPORARY TABLE {output_tb} AS
-    SELECT tempidgeocodebr,
-    SUM((1/ABS(numero - numero_db) * lon)) / SUM(1/ABS(numero - numero_db)) AS lon,
-    SUM((1/ABS(numero - numero_db) * lat)) / SUM(1/ABS(numero - numero_db)) AS lat,
-    '{match_type}' AS match_type,
-     REGEXP_REPLACE(FIRST(endereco_completo), ', \\d+ -', CONCAT(', ', FIRST(numero), ' (aprox) -')) AS matched_address
-    FROM temp_db
-    GROUP BY tempidgeocodebr;"
-  )
-
-  if (isFALSE(full_results)) {
-      query_aggregate <- glue::glue(
-        "CREATE TEMPORARY TABLE {output_tb} AS
         SELECT tempidgeocodebr,
-        SUM((1/ABS(numero - numero_db) * lon)) / SUM(1/ABS(numero - numero_db)) AS lon,
         SUM((1/ABS(numero - numero_db) * lat)) / SUM(1/ABS(numero - numero_db)) AS lat,
-        '{match_type}' AS match_type
+        SUM((1/ABS(numero - numero_db) * lon)) / SUM(1/ABS(numero - numero_db)) AS lon,
+        '{match_type}' AS tipo_resultado
         FROM temp_db
         GROUP BY tempidgeocodebr;"
-        )
+  )
+
+
+  if (isTRUE(full_results)) {
+
+    query_aggregate <- glue::glue(
+      "CREATE TEMPORARY TABLE {output_tb} AS
+        SELECT tempidgeocodebr,
+        SUM((1/ABS(numero - numero_db) * lat)) / SUM(1/ABS(numero - numero_db)) AS lat,
+        SUM((1/ABS(numero - numero_db) * lon)) / SUM(1/ABS(numero - numero_db)) AS lon,
+        '{match_type}' AS tipo_resultado,
+        REGEXP_REPLACE(FIRST(endereco_completo), ', \\d+ -', CONCAT(', ', FIRST(numero), ' (aprox) -')) AS endereco_encontrado
+
+        FROM temp_db
+        GROUP BY tempidgeocodebr;"
+      )
     }
 
   temp_n <- DBI::dbExecute(con, query_aggregate)
@@ -100,7 +117,6 @@ match_weighted_cases <- function(con,
     update_tb = x,
     reference_tb = output_tb
   )
-
 
 
   return(temp_n)

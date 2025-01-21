@@ -70,20 +70,25 @@ geocode_db <- function(addresses_table,
                        overwrite = TRUE, temporary = TRUE)
 
 
-  # empty output table that will be populated -----------------------------------------------
+  # create an empty output table that will be populated -----------------------------------------------
+
+  additional_cols <- ""
+  if (isTRUE(full_results)) {
+    additional_cols <- glue::glue(", endereco_encontrado VARCHAR")
+    # additional_cols <- glue::glue(
+    #   ", endereco_encontrado VARCHAR, logradouro_encontrado VARCHAR, ",
+    #   "numero_encontrado VARCHAR, localidade_encontrada VARCHAR, ",
+    #   "cep_encontrado VARCHAR, municipio_encontrado VARCHAR, estado_encontrado VARCHAR"
+    # )
+  }
 
   query_create_empty_output_db <- glue::glue(
-    "CREATE OR REPLACE TABLE output_db (
-    tempidgeocodebr INTEGER,
-    lon NUMERIC,
-    lat NUMERIC,
-    match_type VARCHAR, matched_address VARCHAR);"
+    "CREATE TABLE output_db (
+     tempidgeocodebr INTEGER,
+     lat NUMERIC,
+     lon NUMERIC,
+     tipo_resultado VARCHAR {additional_cols});"
   )
-
-  if (isFALSE(full_results)) {
-    query_create_empty_output_db <- gsub(", matched_address VARCHAR);", ");",
-                                         query_create_empty_output_db)
-  }
 
   DBI::dbExecute(con, query_create_empty_output_db)
 
@@ -100,6 +105,7 @@ geocode_db <- function(addresses_table,
 
   # start matching
   for (case in all_possible_match_types ) {
+
     relevant_cols <- get_relevant_cols_arrow(case)
 
     if (progress) update_progress_bar(matched_rows, case)
@@ -170,7 +176,6 @@ match_cases2 <- function(con,
   table_name <- paste(key_cols, collapse = "_")
   table_name <- gsub('estado_municipio', 'municipio', table_name)
   table_name <- gsub('logradouro_sem_numero', 'logradouro', table_name)
-  y <- table_name
 
   # build path to local file
   path_to_parquet <- paste0(geocodebr::get_cache_dir(), "/", table_name, ".parquet")
@@ -199,28 +204,47 @@ match_cases2 <- function(con,
   )
 
   cols_not_null <-  paste(
-    glue::glue("filtered_cnefe.{key_cols} IS NOT NULL"),
+    glue::glue("{x}.{key_cols} IS NOT NULL"),
     collapse = ' AND '
   )
 
-  # query for left join
+  # whether to keep all columns in the result
+  colunas_encontradas <- ""
+  additional_cols <- ""
+
+  if (isTRUE(full_results)) {
+    colunas_encontradas <- paste0(", endereco_encontrado")
+    additional_cols <- paste0(", filtered_cnefe.endereco_completo AS endereco_encontrado")
+
+    #
+    #   colunas_encontradas <- glue::glue( ", endereco_encontrado, estado_encontrado,
+    #       municipio_encontrado, logradouro_encontrado, numero_encontrado,
+    #       cep_encontrado, localidade_encontrada"
+    #     )
+    #
+    #   additional_cols <- paste0(
+    #     glue::glue("filtered_cnefe.{key_cols} AS {key_cols}_encontrado"),
+    #     collapse = ', ')
+    #
+    #   additional_cols <- gsub('logradouro_sem_numero_encontrado', 'logradouro_encontrado', additional_cols)
+    #   additional_cols <- gsub('localidade_encontrado', 'localidade_encontrada', additional_cols)
+    #   additional_cols <- paste0(", filtered_cnefe.endereco_completo AS endereco_encontrado, ", additional_cols)
+  }
+
+  # summarize query
   query_match <- glue::glue(
-    "INSERT INTO output_db (tempidgeocodebr, lon, lat, match_type, matched_address)
-      SELECT {x}.tempidgeocodebr, filtered_cnefe.lon, filtered_cnefe.lat, '{match_type}' AS match_type, filtered_cnefe.endereco_completo AS matched_address
+    "INSERT INTO output_db (tempidgeocodebr, lat, lon, tipo_resultado {colunas_encontradas})
+      SELECT {x}.tempidgeocodebr, filtered_cnefe.lat, filtered_cnefe.lon,
+             '{match_type}' AS tipo_resultado {additional_cols}
       FROM {x}
       LEFT JOIN filtered_cnefe
       ON {join_condition}
       WHERE {cols_not_null} AND filtered_cnefe.lon IS NOT NULL;"
   )
 
-
-  if (isFALSE(full_results)) {
-    query_match <- gsub("lat, match_type, matched_address)", "lat, match_type)", query_match)
-    query_match <- gsub(", filtered_cnefe.endereco_completo AS matched_address", "", query_match)
-  }
-
-
   temp_n <- DBI::dbExecute(con, query_match)
+
+
   duckdb::duckdb_unregister_arrow(con, "filtered_cnefe")
 
   # UPDATE input_padrao_db: Remove observations found in previous step
@@ -248,7 +272,6 @@ match_weighted_cases2 <- function(con,
   table_name <- paste(key_cols, collapse = "_")
   table_name <- gsub('estado_municipio', 'municipio', table_name)
   table_name <- gsub('logradouro_sem_numero', 'logradouro_numero', table_name)
-  y <- table_name
 
   # build path to local file
   path_to_parquet <- paste0(geocodebr::get_cache_dir(), "/", table_name, ".parquet")
@@ -268,7 +291,6 @@ match_weighted_cases2 <- function(con,
   # register filtered_cnefe to db
   duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
 
-  y <- 'filtered_cnefe'
 
   # Create the JOIN condition by concatenating the key columns
   join_condition <- paste(
@@ -277,54 +299,78 @@ match_weighted_cases2 <- function(con,
   )
 
   cols_not_null <-  paste(
-    glue::glue("filtered_cnefe.{key_cols} IS NOT NULL"),
+    glue::glue("{x}.{key_cols} IS NOT NULL"),
     collapse = ' AND '
   )
 
-  # Construct the SQL match query
-  query_match <- glue::glue(
-    "CREATE OR REPLACE TEMPORARY VIEW temp_db AS
-      SELECT {x}.tempidgeocodebr, {x}.numero, {y}.numero as numero_db, {y}.lat, {y}.lon, {y}.endereco_completo
-      FROM {x}
-      LEFT JOIN {y}
-      ON {join_condition}
-      WHERE {cols_not_null} AND {y}.numero IS NOT NULL;"
-  )
+  # whether to keep all columns in the result
+  colunas_encontradas <- ""
+  additional_cols <- ""
 
-  if (isFALSE(full_results)) {
-    query_match <- gsub(", filtered_cnefe.endereco_completo", "", query_match)
+  if (isTRUE(full_results)) {
+    colunas_encontradas <- paste0(", endereco_encontrado")
+    additional_cols <- paste0(", filtered_cnefe.endereco_completo AS endereco_encontrado")
+
+    #
+    #   colunas_encontradas <- glue::glue( ", endereco_encontrado, estado_encontrado,
+    #       municipio_encontrado, logradouro_encontrado, numero_encontrado,
+    #       cep_encontrado, localidade_encontrada"
+    #     )
+    #
+    #   additional_cols <- paste0(
+    #     glue::glue("filtered_cnefe.{key_cols} AS {key_cols}_encontrado"),
+    #     collapse = ', ')
+    #
+    #   additional_cols <- gsub('logradouro_sem_numero_encontrado', 'logradouro_encontrado', additional_cols)
+    #   additional_cols <- gsub('localidade_encontrado', 'localidade_encontrada', additional_cols)
+    #   additional_cols <- paste0(", filtered_cnefe.endereco_completo AS endereco_encontrado, ", additional_cols)
   }
+
+  # match query
+  query_match <- glue::glue(
+    "CREATE OR REPLACE TEMPORARY VIEW temp_db AS ",
+    "SELECT {x}.tempidgeocodebr, {x}.numero, {y}.numero AS numero_db, ",
+    "{y}.lat, {y}.lon {additional_cols} ",
+    "FROM {x} ",
+    "LEFT JOIN {y} ",
+    "ON {join_condition} ",
+    "WHERE {cols_not_null} AND {x}.numero IS NOT NULL AND {y}.numero IS NOT NULL;"
+  )
 
   DBI::dbExecute(con, query_match)
 
 
-  # summarize
+  # summarize query
   query_aggregate <- glue::glue(
-    "INSERT INTO output_db (tempidgeocodebr, lon, lat, match_type, matched_address)
+    "INSERT INTO output_db (tempidgeocodebr, lat, lon, tipo_resultado)
       SELECT tempidgeocodebr,
-      SUM((1/ABS(numero - numero_db) * lon)) / SUM(1/ABS(numero - numero_db)) AS lon,
       SUM((1/ABS(numero - numero_db) * lat)) / SUM(1/ABS(numero - numero_db)) AS lat,
-      '{match_type}' AS match_type,
-       REGEXP_REPLACE(FIRST(endereco_completo), ', \\d+ -', CONCAT(', ', FIRST(numero), ' (aprox) -')) AS matched_address
+      SUM((1/ABS(numero - numero_db) * lon)) / SUM(1/ABS(numero - numero_db)) AS lon,
+      '{match_type}' AS tipo_resultado,
       FROM temp_db
       GROUP BY tempidgeocodebr;"
   )
 
-  if (isFALSE(full_results)) {
+
+  if (isTRUE(full_results)) {
+
     query_aggregate <- glue::glue(
-      "INSERT INTO output_db (tempidgeocodebr, lon, lat, match_type)
-          SELECT tempidgeocodebr,
-          SUM((1/ABS(numero - numero_db) * lon)) / SUM(1/ABS(numero - numero_db)) AS lon,
-          SUM((1/ABS(numero - numero_db) * lat)) / SUM(1/ABS(numero - numero_db)) AS lat,
-          '{match_type}' AS match_type
-          FROM temp_db
-          GROUP BY tempidgeocodebr;"
+      "INSERT INTO output_db (tempidgeocodebr, lat, lon, tipo_resultado {colunas_encontradas})
+        SELECT tempidgeocodebr,
+        SUM((1/ABS(numero - numero_db) * lat)) / SUM(1/ABS(numero - numero_db)) AS lat,
+        SUM((1/ABS(numero - numero_db) * lon)) / SUM(1/ABS(numero - numero_db)) AS lon,
+        '{match_type}' AS tipo_resultado,
+         REGEXP_REPLACE(FIRST(endereco_completo), ', \\d+ -', CONCAT(', ', FIRST(numero), ' (aprox) -')) AS endereco_encontrado
+      FROM temp_db
+      GROUP BY tempidgeocodebr;"
     )
+
   }
 
-  temp_n <- DBI::dbExecute(con, query_aggregate)
-  duckdb::duckdb_unregister_arrow(con, "filtered_cnefe")
+  temp_n <- DBI::dbExecute(con, query_match)
 
+
+  duckdb::duckdb_unregister_arrow(con, "filtered_cnefe")
 
   # UPDATE input_padrao_db: Remove observations found in previous step
   update_input_db(

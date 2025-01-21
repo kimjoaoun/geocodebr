@@ -5,15 +5,21 @@
 \title{Specify the columns describing the address fields}
 \usage{
 setup_address_fields(
+  estado,
+  municipio,
   logradouro = NULL,
   numero = NULL,
   cep = NULL,
-  bairro = NULL,
-  municipio = NULL,
-  estado = NULL
+  bairro = NULL
 )
 }
 \arguments{
+\item{estado}{A string. The name of the column representing the state of the
+address.}
+
+\item{municipio}{A string. The name of the column representing the city of
+the address.}
+
 \item{logradouro}{A string. The name of the column representing the
 \emph{logradouro} (street address) of the address. May be \code{NULL} if the field is
 not specified in the addresses table.}
@@ -29,14 +35,6 @@ addresses table.}
 \item{bairro}{A string. The name of the column representing the neighborhood
 of the address. May be \code{NULL} if the field is not specified in the
 addresses table.}
-
-\item{municipio}{A string. The name of the column representing the city of
-the address. May be \code{NULL} if the field is not specified in the addresses
-table.}
-
-\item{estado}{A string. The name of the column representing the state of the
-address. May be \code{NULL} if the field is not specified in the addresses
-table.}
 }
 \value{
 A character vector in which the names are the address fields and the
@@ -44,7 +42,7 @@ values are the columns that represent them in the addresses table.
 }
 \description{
 Creates a character vector specifying the columns that represent each address
-field in the addresses table.
+field in the addresses table. Os campos \code{estado} e \code{municipio} são obrigatórios.
 }
 \examples{
 setup_address_fields(

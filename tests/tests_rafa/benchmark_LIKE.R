@@ -1,3 +1,27 @@
+bairro = localidade
+
+match_type = tipo_resultado
+precison = precisao
+
+
+
+addresses_table = enderecos
+
+campos_endereco = address_fields
+resultado_completo = FALSE
+
+verboso = TRUE
+cache = TRUE
+n_cores = 1
+
+
+logradouro_encontrado
+numero_encontrado
+localdiade_encontrada
+
+* adicionar colnas extra
+
+
 #' TO DO
 #'
 #' a) estrateia de montar output: com empty db ou tabelas separadas por case_match ?
@@ -55,14 +79,14 @@ library(dplyr)
 data_path <- system.file("extdata/large_sample.parquet", package = "geocodebr")
 input_df <- arrow::read_parquet(data_path)
 
-# input_df <- rbind(input_df,input_df,input_df,input_df,input_df,input_df,input_df)
 
+#
 # addresses_table = input_df
 # n_cores = 7
 # ncores <- 7
 # progress = T
 # cache = TRUE
-# full_results = F
+# full_results = T
 # address_fields <- geocodebr::setup_address_fields(
 #   logradouro = 'logradouro',
 #   numero = 'numero',
@@ -97,37 +121,10 @@ rafaF <- function(){ message('rafa F')
   )
 }
 
-bench::mark( t = rafaF(), iterations = 3, check = F)
-#     expression     min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory     time
-#     <bch:expr> <bch:t> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>     <list>
-#   1 t            11.6s  12.2s    0.0821     145MB    0.329     3    12      36.5s <df>   <Rprofmem> <bench_tm>
-#   1 t            11.3s  11.5s    0.0854     126MB    0.313     3    11      35.1s <df>   <Rprofmem> <bench_tm>
-#***1 t            11.3s  11.7s    0.0861     126MB    0.258     3     9      34.8s <df>   <Rprofmem> <bench_tm>
-#***1 t            11.5s  11.7s    0.0843     126MB    0.309     3    11      35.6s <df>   <Rprofmem> <bench_tm>
 
 
-rafaT <- function(){ message('rafa T')
-  df_rafaT <- geocodebr::geocode(
-    addresses_table = input_df,
-    address_fields = fields,
-    n_cores = ncores,
-    full_results = T,
-    progress = T
-  )
-}
-
-dani_arrowT <- function(){ message('dani T')
-  df_dani <- geocodebr:::geocode_dani_arrow(
-    addresses_table = input_df,
-    address_fields = fields,
-    n_cores = ncores,
-    full_results = T,
-    progress = T
-  )
-}
-
-dani_arrowF <- function(){ message('dani F')
-  df_dani <- geocodebr:::geocode_dani_arrow(
+rafadbT <- function(){ message('rafa db T')
+  df_rafadbT <- geocodebr:::geocode_db(
     addresses_table = input_df,
     address_fields = fields,
     n_cores = ncores,
@@ -135,6 +132,9 @@ dani_arrowF <- function(){ message('dani F')
     progress = T
   )
 }
+
+
+
 
 
 mb <- microbenchmark::microbenchmark(
@@ -285,7 +285,7 @@ d <- cnf |>
 data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
 input_df <- read.csv(data_path, encoding = 'Latin-1')
 
-input_df <- input_df[c(3,4,27)]
+
 
 # fields <- geocodebr::setup_address_fields(
 #   logradouro = 'nm_logradouro',
@@ -300,6 +300,7 @@ input_df <- input_df[c(3,4,27)]
 # n_cores = 7
 # progress = T
 # cache=T
+# full_results=T
 
 
 rafa_loop <- function(){
@@ -322,14 +323,6 @@ rafa_loop <- function(){
   )
 }
 
-df_dani <- geocodebr:::geocode_dani_arrow(
-  addresses_table = input_df,
-  address_fields = fields,
-  n_cores = 7,
-  progress = T,
-  cache=T,
-  full_results = F
-)
 
 table(df_rafa_loop$precision) / nrow(df_rafa_loop)*100
 

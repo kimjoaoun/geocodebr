@@ -70,7 +70,7 @@ geocode_db <- function(addresses_table,
                        overwrite = TRUE, temporary = TRUE)
 
 
-  # empty output table that will be populated -----------------------------------------------
+  # create an empty output table that will be populated -----------------------------------------------
 
   query_create_empty_output_db <- glue::glue(
     "CREATE OR REPLACE TABLE output_db (

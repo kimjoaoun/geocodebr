@@ -241,7 +241,7 @@ subset(t , logradouro_no_numbers %like% "DESEMBARGADOR SOUTO MAIOR")
 
 
 # cad unico --------------------------------------------------------------------
-sample_size <- 20000000
+sample_size <- 1000000
 
 cad_con <- ipeadatalake::ler_cadunico(
   data = 202312,
@@ -416,6 +416,7 @@ daniF <- function(){ message('dani')
   return(2+2)
   }
 
+
 mb <- microbenchmark::microbenchmark(
   rafa_drop = rafaF(),
   dani_drop = daniF(),
@@ -513,11 +514,11 @@ bm_rafa_keep
 
 
 
-time_dani1 <- system.time( df_dani_arrow <- dani_arrow() ) # 22.85667
-time_dani2 <- system.time( df_dani_arrow <- dani_arrow() ) # 30.45833
-time_dani3 <- system.time( df_dani_arrow <- dani_arrow() ) # 40.58983
-time_dani4 <- system.time( df_dani_arrow <- dani_arrow() ) #
-time_dani5 <- system.time( df_dani_arrow <- dani_arrow() ) #
+time_dani1 <- system.time( df_dani_arrow <- daniT() ) # 22.85667
+time_dani2 <- system.time( df_dani_arrow <- daniT() ) # 30.45833
+time_dani3 <- system.time( df_dani_arrow <- daniT() ) # 40.58983
+time_dani4 <- system.time( df_dani_arrow <- daniT() ) #
+time_dani5 <- system.time( df_dani_arrow <- daniT() ) #
 time_rafa_keep1 <- system.time( rafa_keep <- rafaT() ) # 33.182
 time_rafa_keep2 <- system.time( rafa_keep <- rafaT() ) # 31.47183
 time_rafa_keep3 <- system.time( rafa_keep <- rafaT() ) # 34.2515
@@ -594,52 +595,9 @@ bm
 
 
 
-rafaT_db <- function(){ message('rafa Tdb')
-  message(Sys.time())
-  df_rafaT <- geocodebr:::geocode_db(
-    addresses_table = cad,
-    address_fields = fields_cad,
-    n_cores = 10, # 7
-    full_results = T,
-    progress = T
-  )
-  message(Sys.time())
-  return(2+2)
-}
 
 
-bm <- bench::mark(
-  rafa_keep = rafaT(),
-  rafa_keep_db = rafaT_db(),
-  check = F,
-  iterations  = 5
-)
-bm
 
-# 1 milhao 66666666666
-#     expression     min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory     time
-#     <bch:expr>   <bch> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>     <list>
-#   1 rafa_keep_db 1.07m  1.19m    0.0141     897MB   0.102      5    36       5.9m <NULL> <Rprofmem> <bench_tm>
-#   2 rafa_keep    1.29m  1.34m    0.0124     811MB   0.0819     5    33      6.72m <NULL> <Rprofmem> <bench_tm>
-#
-#     expression      min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory     time
-#     <bch:expr>   <bch:> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>     <list>
-#   1 rafa_keep    56.04s  1.06m    0.0160     889MB   0.0959     5    30      5.21m <NULL> <Rprofmem> <bench_tm>
-#   2 rafa_keep_db  1.15m  1.19m    0.0141     826MB   0.0647     5    23      5.92m <NULL> <Rprofmem> <bench_tm>
-
-
-# 1 milhao 6666666
-
-# A tibble: 2 × 13
-#     expression     min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory     time
-#     <bch:expr> <bch:t> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>     <list>
-#   1 dani_keep    1.05m   1.3m    0.0133     807MB   0.0716     5    27      6.28m <NULL> <Rprofmem> <bench_tm>
-#   2 rafa_keep    1.37m   1.4m    0.0120     811MB   0.0623     5    26      6.96m <NULL> <Rprofmem> <bench_tm>
-#
-#     expression     min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory     time
-#     <bch:expr> <bch:t> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>     <list>
-#   1 rafa_keep    1.01m  1.18m    0.0144     895MB   0.0805     5    28       5.8m <NULL> <Rprofmem> <bench_tm>
-#   2 dani_keep    1.44m  1.47m    0.0113     731MB   0.0565     5    25      7.37m <NULL> <Rprofmem> <bench_tm>
 
 
 
@@ -648,24 +606,51 @@ bm
 gc()
 
 bm <- bench::mark(
-  #rafa_keep = rafaT(),
-  dani_keep = daniT(),
-  # rafa_keep_db = rafaT_db(),
+  # rafa_keep = rafaT(),
+  # dani_keep = daniT(),
+  rafa_keep_db = rafaT_db(),
   check = F,
   iterations  = 5
 )
 bm
 
+
+
+# 1 milhao 66666666666
+#   expression     min  median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory     time
+#   <bch:expr>   <bch>  <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>     <list>
+# 1 rafa_keep    56.04s  1.06m    0.0160     889MB   0.0959     5    30      5.21m <NULL> <Rprofmem> <bench_tm>
+# 1 rafa_keep_db 1.07m   1.19m    0.0141     897MB   0.102      5    36      5.9m <NULL> <Rprofmem> <bench_tm>
+# 1 dani_keep    1.05m   1.3m     0.0133     807MB   0.0716     5    27      6.28m <NULL> <Rprofmem> <bench_tm>
+
+# 1 rafa_keep        1m  1.22m    0.0138     889MB    0.105     5    38      6.04m <NULL>
+# 1 rafa_keep_db  1.03m  1.30m    0.0134     847MB   0.0914     5    34      6.2m <NULL>
+# 1 dani_keep     59.9s  1.31m    0.0130     807MB   0.0860     5    33      6.4m <NULL>
+
+
 # 5 milhoes  66666666666
 #   expression     min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory     time
 #   <bch:expr> <bch:t> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>     <list>
 # 1 rafa_keep    4.95m  7.41m   0.00233    4.37GB   0.0168     5    36      35.8m <NULL> <Rprofmem> <bench_tm>
+# 1 rafa_keep_db 5.48m  8.40m   0.00208    4.45GB   0.0145     5    35      40.1m <NULL> <Rprofmem>
+# 1 dani_keep    6.64m  10.3m   0.00158    4.03GB   0.0107     5    34      52.7m <NULL> <Rprofmem>
 
-#   expression      min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory
-#   <bch:expr>   <bch:> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>
-# 1 rafa_keep_db  5.48m   8.4m   0.00208    4.45GB   0.0145     5    35      40.1m <NULL> <Rprofmem>
 
-#   expression      min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory
-#   <bch:expr> <bch:tm> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>
-# 1 dani_keep     6.64m  10.3m   0.00158    4.03GB   0.0107     5    34      52.7m <NULL> <Rprofmem>
+
+# 20 mihoes 666666666
+#     expression      min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result
+#     <bch:expr>  <bch:t> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list>
+#   1 rafa_keep     20.6m  33.3m  0.000523    17.2GB  0.00324     5    31      2.66h <NULL>
+#   1 rafa_keep_db  22.7m  36.6m  0.000464    17.5GB  0.00288     5    31         3h <NULL>
+#   1 dani_keep     40.9m  1.14h  0.000242    15.8GB  0.00145     5    30      5.75h <NULL>
+
+
+
+
+
+
+
+
+
+
 

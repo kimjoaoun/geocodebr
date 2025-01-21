@@ -2,14 +2,14 @@
 % Please edit documentation in R/geocode.R
 \name{geocode}
 \alias{geocode}
-\title{Geocode Brazilian addresses}
+\title{Geolocaliza endereços no Brasil}
 \usage{
 geocode(
   addresses_table,
   address_fields = setup_address_fields(),
+  full_results = FALSE,
   n_cores = 1,
   progress = TRUE,
-  full_results = FALSE,
   cache = TRUE
 )
 }
@@ -26,14 +26,14 @@ non-null field. If manually creating the vector, please note that the
 vector names should be the same names used in the \code{\link[=setup_address_fields]{setup_address_fields()}}
 parameters.}
 
+\item{full_results}{Logical. Whether the output should include additional
+columns, like the matched address of reference. Defaults to \code{FALSE}.}
+
 \item{n_cores}{A number. The number of cores to be used in parallel
 execution. Defaults to 1.}
 
 \item{progress}{A logical. Whether to display progress bars when downloading
 CNEFE data and when geocoding the addresses. Defaults to \code{TRUE}.}
-
-\item{full_results}{Logical. Whether the output should include additional
-columns, like the matched address of reference. Defaults to \code{FALSE}.}
 
 \item{cache}{A logical. Whether CNEFE data should be saved to/read from
 cache, reducing processing time in future calls. Defaults to \code{TRUE}. When

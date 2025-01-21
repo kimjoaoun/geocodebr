@@ -1,4 +1,4 @@
-#' Geocode Brazilian addresses
+#' Geolocaliza endereços no Brasil
 #'
 #' Geocodes Brazilian addresses based on CNEFE data. Addresses must be passed as
 #' a data frame in which each column describes one address field (street name,
@@ -17,10 +17,10 @@
 #'   non-null field. If manually creating the vector, please note that the
 #'   vector names should be the same names used in the [setup_address_fields()]
 #'   parameters.
-#' @template n_cores
-#' @template progress
 #' @param full_results Logical. Whether the output should include additional
 #'       columns, like the matched address of reference. Defaults to `FALSE`.
+#' @template n_cores
+#' @template progress
 #' @template cache
 #'
 #' @return Returns the data frame passed in `addresses_table` with the latitude
@@ -55,10 +55,12 @@
 #' @export
 geocode <- function(addresses_table,
                     address_fields = setup_address_fields(),
+                    full_results = FALSE,
                     n_cores = 1,
                     progress = TRUE,
-                    full_results = FALSE,
-                    cache = TRUE){
+                    cache = TRUE
+                    ){
+
   # check input
   assert_address_fields(address_fields, addresses_table)
   checkmate::assert_data_frame(addresses_table)
@@ -127,7 +129,6 @@ geocode <- function(addresses_table,
   duckdb::dbWriteTable(con, "input_padrao_db", input_padrao,
                        overwrite = TRUE, temporary = TRUE)
 
-
   # START MATCHING -----------------------------------------------
 
   # start progress bar
@@ -142,12 +143,13 @@ geocode <- function(addresses_table,
 
   # start matching
   for (case in all_possible_match_types ) {
-      relevant_cols <- get_relevant_cols_arrow(case)
+
+    key_cols <- get_relevant_cols_arrow(case)
 
     if (progress) update_progress_bar(matched_rows, case)
 
 
-    if (all(relevant_cols %in% names(input_padrao))) {
+    if (all(key_cols %in% names(input_padrao))) {
 
       # select match function
       match_fun <- ifelse(case %in% number_interpolation_types, match_weighted_cases, match_cases)
@@ -157,7 +159,7 @@ geocode <- function(addresses_table,
         x = 'input_padrao_db',
         y = 'filtered_cnefe', # keep this for now
         output_tb = paste0('output_', case),
-        key_cols = relevant_cols,
+        key_cols = key_cols,
         match_type = case,
         full_results = full_results
       )
@@ -191,7 +193,7 @@ geocode <- function(addresses_table,
   output_query <- paste("CREATE TEMPORARY TABLE output_db AS",
                         paste0("SELECT ", paste0('*', " FROM ", all_output_tbs),
                                collapse = " UNION ALL ")
-                        )
+  )
 
   DBI::dbExecute(con, output_query)
 

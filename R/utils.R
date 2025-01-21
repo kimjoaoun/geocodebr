@@ -98,22 +98,22 @@ add_precision_col <- function(con, update_tb = NULL){
   # add empty column
   DBI::dbExecute(
     con,
-    glue::glue("ALTER TABLE {update_tb} ADD COLUMN precision TEXT;")
+    glue::glue("ALTER TABLE {update_tb} ADD COLUMN precisao TEXT;")
   )
 
   # populate column
   query_precision <- glue::glue("
   UPDATE {update_tb}
-  SET precision = CASE
-  WHEN match_type IN ('en01', 'en02', 'en03', 'en04',
-                      'pn01', 'pn02', 'pn03', 'pn04') THEN 'number'
-  WHEN match_type IN ('ei01', 'ei02', 'ei03', 'ei04',
-                      'pi01', 'pi02', 'pi03', 'pi04') THEN 'number_approximation'
-  WHEN match_type IN ('er01', 'er02', 'er03', 'er04',
-                      'pr01', 'pr02', 'pr03', 'pr04') THEN 'street'
-  WHEN match_type IN ('ec01', 'ec02') THEN 'cep'
-  WHEN match_type = 'eb01' THEN 'neighborhood'
-  WHEN match_type = 'em01' THEN 'municipality'
+  SET precisao = CASE
+  WHEN tipo_resultado IN ('en01', 'en02', 'en03', 'en04',
+                          'pn01', 'pn02', 'pn03', 'pn04') THEN 'numero'
+  WHEN tipo_resultado IN ('ei01', 'ei02', 'ei03', 'ei04',
+                          'pi01', 'pi02', 'pi03', 'pi04') THEN 'numero_aproximacao'
+  WHEN tipo_resultado IN ('er01', 'er02', 'er03', 'er04',
+                          'pr01', 'pr02', 'pr03', 'pr04') THEN 'logradouro'
+  WHEN tipo_resultado IN ('ec01', 'ec02') THEN 'cep'
+  WHEN tipo_resultado = 'eb01' THEN 'localidade'
+  WHEN tipo_resultado = 'em01' THEN 'municipio'
   ELSE NULL
   END;")
 
@@ -134,10 +134,10 @@ merge_results <- function(con,
   # x = 'output_db'
   # y = 'output_caso_01'
   # key_column = 'tempidgeocodebr'
-  select_columns_y = c('lat', 'lon', 'match_type', 'precision', 'matched_address')
+  select_columns_y = c('lat', 'lon', 'tipo_resultado', 'precisao', 'endereco_encontrado')
 
   if (isFALSE(full_results)) {
-    select_columns_y <- select_columns_y[select_columns_y != 'matched_address']
+    select_columns_y <- select_columns_y[select_columns_y != 'endereco_encontrado']
   }
 
   # drop temp id column
