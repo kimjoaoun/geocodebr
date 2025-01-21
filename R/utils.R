@@ -129,14 +129,14 @@ merge_results <- function(con,
                           y,
                           key_column,
                           select_columns,
-                          full_results){
+                          resultado_completo){
 
   # x = 'output_db'
   # y = 'output_caso_01'
   # key_column = 'tempidgeocodebr'
   select_columns_y = c('lat', 'lon', 'tipo_resultado', 'precisao', 'endereco_encontrado')
 
-  if (isFALSE(full_results)) {
+  if (isFALSE(resultado_completo)) {
     select_columns_y <- select_columns_y[select_columns_y != 'endereco_encontrado']
   }
 
@@ -302,7 +302,7 @@ probabilistic_logradouro_match_types <- c(
 
 assert_and_assign_address_fields <- function(address_fields, addresses_table) {
   possible_fields <- c(
-    "logradouro", "numero", "cep", "bairro", "municipio", "estado"
+    "logradouro", "numero", "cep", "localidade", "municipio", "estado"
   )
 
   col <- checkmate::makeAssertCollection()

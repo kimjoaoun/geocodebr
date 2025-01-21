@@ -1,25 +1,21 @@
-bairro = localidade
-
-match_type = tipo_resultado
-precison = precisao
-
-
-
-addresses_table = enderecos
-
-campos_endereco = address_fields
-resultado_completo = FALSE
-
-verboso = TRUE
-cache = TRUE
-n_cores = 1
-
-
-logradouro_encontrado
-numero_encontrado
-localdiade_encontrada
-
-* adicionar colnas extra
+# bairro = localidade
+#
+# match_type = tipo_resultado
+# precison = precisao
+# addresses_table = enderecos
+# campos_endereco = address_fields
+# resultado_completo = FALSE
+#
+# verboso = TRUE
+# cache = TRUE
+# n_cores = 1
+#
+#
+# logradouro_encontrado
+# numero_encontrado
+# localdiade_encontrada
+#
+# * adicionar colnas extra
 
 
 #' TO DO
@@ -80,20 +76,20 @@ data_path <- system.file("extdata/large_sample.parquet", package = "geocodebr")
 input_df <- arrow::read_parquet(data_path)
 
 
-#
-# addresses_table = input_df
-# n_cores = 7
-# ncores <- 7
-# progress = T
-# cache = TRUE
-# full_results = T
-# address_fields <- geocodebr::setup_address_fields(
-#   logradouro = 'logradouro',
-#   numero = 'numero',
-#   cep = 'cep',
-#   bairro = 'bairro',
-#   municipio = 'municipio',
-#   estado = 'uf')
+
+enderecos = input_df
+n_cores = 7
+ncores <- 7
+verboso = T
+cache = TRUE
+resultado_completo = T
+campos_endereco <- geocodebr::listar_campos(
+  logradouro = 'logradouro',
+  numero = 'numero',
+  cep = 'cep',
+  localidade = 'bairro',
+  municipio = 'municipio',
+  estado = 'uf')
 
 
 
@@ -102,34 +98,46 @@ ncores <- 7
 
 
 
-fields <- geocodebr::setup_address_fields(
+campos <- geocodebr::listar_campos(
   logradouro = 'logradouro',
   numero = 'numero',
   cep = 'cep',
-  bairro = 'bairro',
+  localidade = 'bairro',
   municipio = 'municipio',
   estado = 'uf'
 )
 
 rafaF <- function(){ message('rafa F')
   df_rafaF <- geocodebr::geocode(
-    addresses_table = input_df,
-    address_fields = fields,
+    enderecos = input_df,
+    campos_endereco = campos,
     n_cores = ncores,
-    full_results = F,
-    progress = T
+    resultado_completo = F,
+    verboso = T
+  )
+}
+
+
+rafaT <- function(){ message('rafa F')
+  df_rafaT <- geocodebr::geocode(
+    enderecos = input_df,
+    campos_endereco = campos,
+    n_cores = ncores,
+    resultado_completo = T,
+    verboso = T
   )
 }
 
 
 
+
 rafadbT <- function(){ message('rafa db T')
   df_rafadbT <- geocodebr:::geocode_db(
-    addresses_table = input_df,
-    address_fields = fields,
+    enderecos = input_df,
+    campos_endereco = campos,
     n_cores = ncores,
-    full_results = F,
-    progress = T
+    resultado_completo = T,
+    verboso = T
   )
 }
 

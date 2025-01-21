@@ -67,7 +67,7 @@ df <- read.csv(
 
 result <- geocodebr::geocode(
   addresses_table = df,
-  address_fields = geocodebr::setup_address_fields(
+  address_fields = geocodebr::listar_campos(
     logradouro = "nm_logradouro",
     numero = "Numero",
     cep = "Cep",

@@ -7,23 +7,23 @@
 #' section. The output coordinates use the geodetic reference system
 #' "SIRGAS2000", CRS(4674).
 #'
-#' @param addresses_table A data frame. The addresses to be geocoded. Each
+#' @param enderecos A data frame. The addresses to be geocoded. Each
 #'   column must represent an address field.
-#' @param address_fields A character vector. The correspondence between each
+#' @param campos_endereco A character vector. The correspondence between each
 #'   address field and the name of the column that describes it in the
-#'   `addresses_table`. The [setup_address_fields()] function helps creating
+#'   `enderecos`. The [listar_campos()] function helps creating
 #'   this vector and performs some checks on the input. Address fields
 #'   passed as `NULL` are ignored and the function must receive at least one
 #'   non-null field. If manually creating the vector, please note that the
-#'   vector names should be the same names used in the [setup_address_fields()]
+#'   vector names should be the same names used in the [listar_campos()]
 #'   parameters.
-#' @param full_results Logical. Whether the output should include additional
+#' @param resultado_completo Logical. Whether the output should include additional
 #'       columns, like the matched address of reference. Defaults to `FALSE`.
-#' @template n_cores
-#' @template progress
+#' @template verboso
 #' @template cache
+#' @template n_cores
 #'
-#' @return Returns the data frame passed in `addresses_table` with the latitude
+#' @return Returns the data frame passed in `enderecos` with the latitude
 #'   (`lat`) and longitude (`lon`) of each matched address, as well as two
 #'   columns (`precision` and `match_type`) indicating the precision level with
 #'   which the address was matched.
@@ -35,41 +35,41 @@
 #' data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
 #' input_df <- read.csv(data_path)
 #'
-#' fields <- geocodebr::setup_address_fields(
+#' fields <- geocodebr::listar_campos(
 #'   logradouro = "nm_logradouro",
 #'   numero = "Numero",
 #'   cep = "Cep",
-#'   bairro = "Bairro",
+#'   localidade = "Bairro",
 #'   municipio = "nm_municipio",
 #'   estado = "nm_uf"
 #' )
 #'
 #' df <- geocodebr::geocode(
-#'   addresses_table = input_df,
-#'   address_fields = fields,
-#'   progress = FALSE
+#'   enderecos = input_df,
+#'   campos_endereco = fields,
+#'   verboso = FALSE
 #'   )
 #'
 #' head(df)
 #'
 #' @export
-geocode <- function(addresses_table,
-                    address_fields = setup_address_fields(),
-                    full_results = FALSE,
-                    n_cores = 1,
-                    progress = TRUE,
-                    cache = TRUE
+geocode <- function(enderecos,
+                    campos_endereco = listar_campos(),
+                    resultado_completo = FALSE,
+                    verboso = TRUE,
+                    cache = TRUE,
+                    n_cores = 1
                     ){
 
   # check input
-  checkmate::assert_data_frame(addresses_table)
+  checkmate::assert_data_frame(enderecos)
   checkmate::assert_number(n_cores, lower = 1, finite = TRUE)
-  checkmate::assert_logical(progress, any.missing = FALSE, len = 1)
+  checkmate::assert_logical(verboso, any.missing = FALSE, len = 1)
   checkmate::assert_logical(cache, any.missing = FALSE, len = 1)
-  checkmate::assert_logical(full_results, any.missing = FALSE, len = 1)
-  address_fields <- assert_and_assign_address_fields(
-    address_fields,
-    addresses_table
+  checkmate::assert_logical(resultado_completo, any.missing = FALSE, len = 1)
+  campos_endereco <- assert_and_assign_address_fields(
+    campos_endereco,
+    enderecos
   )
 
   # normalize input data -------------------------------------------------------
@@ -77,17 +77,17 @@ geocode <- function(addresses_table,
   # standardizing the addresses table to increase the chances of finding a match
   # in the CNEFE data
 
-  if (progress) message_standardizing_addresses()
+  if (verboso) message_standardizing_addresses()
 
   input_padrao <- enderecobr::padronizar_enderecos(
-    enderecos = addresses_table,
+    enderecos = enderecos,
     campos_do_endereco = enderecobr::correspondencia_campos(
-      logradouro = address_fields[["logradouro"]],
-      numero = address_fields[["numero"]],
-      cep = address_fields[["cep"]],
-      bairro = address_fields[["bairro"]],
-      municipio = address_fields[["municipio"]],
-      estado = address_fields[["estado"]]
+      logradouro = campos_endereco[["logradouro"]],
+      numero = campos_endereco[["numero"]],
+      cep = campos_endereco[["cep"]],
+      bairro = campos_endereco[["localidade"]],
+      municipio = campos_endereco[["municipio"]],
+      estado = campos_endereco[["estado"]]
     ),
     formato_estados = "sigla",
     formato_numeros = 'integer'
@@ -114,14 +114,14 @@ geocode <- function(addresses_table,
 
   # create temp id
   input_padrao[, tempidgeocodebr := 1:nrow(input_padrao) ]
-  data.table::setDT(addresses_table)[, tempidgeocodebr := 1:nrow(input_padrao) ]
+  data.table::setDT(enderecos)[, tempidgeocodebr := 1:nrow(input_padrao) ]
 
   # # sort input data
   # input_padrao <- input_padrao[order(estado, municipio, logradouro_sem_numero, numero, cep, localidade)]
 
   # downloading cnefe
   cnefe_dir <- download_cnefe(
-    progress = progress,
+    verboso = verboso,
     cache = cache
   )
 
@@ -135,7 +135,7 @@ geocode <- function(addresses_table,
   # START MATCHING -----------------------------------------------
 
   # start progress bar
-  if (progress) {
+  if (verboso) {
     prog <- create_progress_bar(input_padrao)
     message_looking_for_matches()
   }
@@ -149,7 +149,7 @@ geocode <- function(addresses_table,
 
     key_cols <- get_relevant_cols_arrow(case)
 
-    if (progress) update_progress_bar(matched_rows, case)
+    if (verboso) update_progress_bar(matched_rows, case)
 
 
     if (all(key_cols %in% names(input_padrao))) {
@@ -164,7 +164,7 @@ geocode <- function(addresses_table,
         output_tb = paste0('output_', case),
         key_cols = key_cols,
         match_type = case,
-        full_results = full_results
+        resultado_completo = resultado_completo
       )
 
       matched_rows <- matched_rows + n_rows_affected
@@ -175,7 +175,7 @@ geocode <- function(addresses_table,
 
   }
 
-  if (progress) finish_progress_bar(matched_rows)
+  if (verboso) finish_progress_bar(matched_rows)
 
 
   # prepare output -----------------------------------------------
@@ -204,10 +204,10 @@ geocode <- function(addresses_table,
   add_precision_col(con, update_tb = 'output_db')
 
   # output with all original columns
-  duckdb::dbWriteTable(con, "input_db", addresses_table,
+  duckdb::dbWriteTable(con, "input_db", enderecos,
                        temporary = TRUE, overwrite=TRUE)
 
-  x_columns <- names(addresses_table)
+  x_columns <- names(enderecos)
 
   output_deterministic <- merge_results(
     con,
@@ -215,7 +215,7 @@ geocode <- function(addresses_table,
     y='output_db',
     key_column='tempidgeocodebr',
     select_columns = x_columns,
-    full_results = full_results
+    resultado_completo = resultado_completo
   )
 
   # Disconnect from DuckDB when done

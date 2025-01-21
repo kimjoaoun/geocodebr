@@ -24,7 +24,7 @@ knitr::opts_chunk$set(
 
 Once you have a  table (`data.frame`) with addresses, geolocating the data with **{geocodebr}** can be done in two simple steps:
 
-1. The first step is to use the `setup_address_fields()` function to declare the names of the columns in your input `data.frame` that correspond to each field of the addresses.
+1. The first step is to use the `listar_campos()` function to declare the names of the columns in your input `data.frame` that correspond to each field of the addresses.
 
 ```{r, eval=TRUE}
 library(geocodebr)
@@ -33,7 +33,7 @@ library(geocodebr)
 input_df <- read.csv(system.file("extdata/small_sample.csv", package = "geocodebr"))
 
 # 1st step: indicate the columns describing the address fields
-fields <- geocodebr::setup_address_fields(
+fields <- geocodebr::listar_campos(
   logradouro = "nm_logradouro",
   numero = "Numero",
   cep = "Cep",

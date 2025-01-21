@@ -4,18 +4,18 @@
 #' for Statistical Purposes, in portuguese) data set, purposefully built to be
 #' used with this package.
 #'
-#' @param progress A logical. Whether to display a download progress bar.
+#' @param verboso A logical. Whether to display a download progress bar.
 #'   Defaults to `TRUE`.
 #' @template cache
 #'
 #' @return Invisibly returns the path to the directory where the data was saved.
 #'
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
-#' download_cnefe(progress = FALSE)
+#' download_cnefe(verboso = FALSE)
 #'
 #' @export
-download_cnefe <- function(progress = TRUE, cache = TRUE) {
-  checkmate::assert_logical(progress, any.missing = FALSE, len = 1)
+download_cnefe <- function(verboso = TRUE, cache = TRUE) {
+  checkmate::assert_logical(verboso, any.missing = FALSE, len = 1)
   checkmate::assert_logical(cache, any.missing = FALSE, len = 1)
 
   all_files <- c(
@@ -55,7 +55,7 @@ download_cnefe <- function(progress = TRUE, cache = TRUE) {
 
   if (length(files_to_download) == 0) return(invisible(data_dir))
 
-  downloaded_files <- download_files(data_dir, files_to_download, progress)
+  downloaded_files <- download_files(data_dir, files_to_download, verboso)
 
   # the download_dir object below should be identical to data_dir, but we return
   # its value, instead of data_dir, just to make sure the that data is
@@ -68,12 +68,12 @@ download_cnefe <- function(progress = TRUE, cache = TRUE) {
 }
 
 
-download_files <- function(data_dir, files_to_download, progress) {
+download_files <- function(data_dir, files_to_download, verboso) {
   requests <- lapply(files_to_download, httr2::request)
 
   dest_files <- fs::path(data_dir, basename(files_to_download))
 
-  responses <- perform_requests_in_parallel(requests, dest_files, progress)
+  responses <- perform_requests_in_parallel(requests, dest_files, verboso)
 
   response_errored <- purrr::map_lgl(
     responses,
@@ -85,7 +85,7 @@ download_files <- function(data_dir, files_to_download, progress) {
   return(dest_files)
 }
 
-perform_requests_in_parallel <- function(requests, dest_files, progress) {
+perform_requests_in_parallel <- function(requests, dest_files, verboso) {
   # we create this wrapper around httr2::req_perform_parallel just for testing
   # purposes. it's easier to mock this function when testing than to mock a
   # function from another package.
@@ -100,7 +100,7 @@ perform_requests_in_parallel <- function(requests, dest_files, progress) {
     requests,
     paths = dest_files,
     on_error = "continue",
-    progress = ifelse(progress == TRUE, "Downloading CNEFE data", FALSE)
+    progress = ifelse(verboso == TRUE, "Baixandos dados do CNEFE", FALSE)
   )
 }
 

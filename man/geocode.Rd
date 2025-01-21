@@ -5,42 +5,42 @@
 \title{Geolocaliza endereços no Brasil}
 \usage{
 geocode(
-  addresses_table,
-  address_fields = setup_address_fields(),
-  full_results = FALSE,
-  n_cores = 1,
-  progress = TRUE,
-  cache = TRUE
+  enderecos,
+  campos_endereco = listar_campos(),
+  resultado_completo = FALSE,
+  verboso = TRUE,
+  cache = TRUE,
+  n_cores = 1
 )
 }
 \arguments{
-\item{addresses_table}{A data frame. The addresses to be geocoded. Each
+\item{enderecos}{A data frame. The addresses to be geocoded. Each
 column must represent an address field.}
 
-\item{address_fields}{A character vector. The correspondence between each
+\item{campos_endereco}{A character vector. The correspondence between each
 address field and the name of the column that describes it in the
-\code{addresses_table}. The \code{\link[=setup_address_fields]{setup_address_fields()}} function helps creating
+\code{enderecos}. The \code{\link[=listar_campos]{listar_campos()}} function helps creating
 this vector and performs some checks on the input. Address fields
 passed as \code{NULL} are ignored and the function must receive at least one
 non-null field. If manually creating the vector, please note that the
-vector names should be the same names used in the \code{\link[=setup_address_fields]{setup_address_fields()}}
+vector names should be the same names used in the \code{\link[=listar_campos]{listar_campos()}}
 parameters.}
 
-\item{full_results}{Logical. Whether the output should include additional
+\item{resultado_completo}{Logical. Whether the output should include additional
 columns, like the matched address of reference. Defaults to \code{FALSE}.}
 
-\item{n_cores}{A number. The number of cores to be used in parallel
-execution. Defaults to 1.}
-
-\item{progress}{A logical. Whether to display progress bars when downloading
+\item{verboso}{A logical. Whether to display progress bars when downloading
 CNEFE data and when geocoding the addresses. Defaults to \code{TRUE}.}
 
 \item{cache}{A logical. Whether CNEFE data should be saved to/read from
 cache, reducing processing time in future calls. Defaults to \code{TRUE}. When
 \code{FALSE}, CNEFE data is downloaded to a temporary directory.}
+
+\item{n_cores}{A number. The number of cores to be used in parallel
+execution. Defaults to 1.}
 }
 \value{
-Returns the data frame passed in \code{addresses_table} with the latitude
+Returns the data frame passed in \code{enderecos} with the latitude
 (\code{lat}) and longitude (\code{lon}) of each matched address, as well as two
 columns (\code{precision} and \code{match_type}) indicating the precision level with
 which the address was matched.
@@ -165,19 +165,19 @@ only. Match types with probabilistic matching ARE NOT implemented yet.
 data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
 
-fields <- geocodebr::setup_address_fields(
+fields <- geocodebr::listar_campos(
   logradouro = "nm_logradouro",
   numero = "Numero",
   cep = "Cep",
-  bairro = "Bairro",
+  localidade = "Bairro",
   municipio = "nm_municipio",
   estado = "nm_uf"
 )
 
 df <- geocodebr::geocode(
-  addresses_table = input_df,
-  address_fields = fields,
-  progress = FALSE
+  enderecos = input_df,
+  campos_endereco = fields,
+  verboso = FALSE
   )
 
 head(df)

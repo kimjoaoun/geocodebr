@@ -16,36 +16,36 @@
 #' @param cep A string. The name of the column representing the *CEP* (ZIP code)
 #'   of the address. May be `NULL` if the field is not specified in the
 #'   addresses table.
-#' @param bairro A string. The name of the column representing the neighborhood
-#'   of the address. May be `NULL` if the field is not specified in the
-#'   addresses table.
+#' @param localidade Uma string. O nome da localidade (equivalente a 'bairro' em
+#'   areas urbanas) do endereço. Pode ser `NULL` se esse campo não estiver
+#'   presente na tabela de endereços.
 #'
 #' @return A character vector in which the names are the address fields and the
 #'   values are the columns that represent them in the addresses table.
 #'
 #' @examples
-#' setup_address_fields(
+#' listar_campos(
 #'   logradouro = "Nome_logradouro",
 #'   numero = "Numero",
 #'   cep = "CEP",
-#'   bairro = "Bairro",
+#'   localidade = "Bairro",
 #'   municipio = "Cidade",
 #'   estado = "UF"
 #' )
 #'
 #' @export
-setup_address_fields <- function(estado,
-                                 municipio,
-                                 logradouro = NULL,
-                                 numero = NULL,
-                                 cep = NULL,
-                                 bairro = NULL) {
+listar_campos <- function(estado,
+                          municipio,
+                          logradouro = NULL,
+                          numero = NULL,
+                          cep = NULL,
+                          localidade = NULL) {
 
   col <- checkmate::makeAssertCollection()
   checkmate::assert_string(logradouro, null.ok = TRUE, add = col)
   checkmate::assert_string(numero, null.ok = TRUE, add = col)
   checkmate::assert_string(cep, null.ok = TRUE, add = col)
-  checkmate::assert_string(bairro, null.ok = TRUE, add = col)
+  checkmate::assert_string(localidade, null.ok = TRUE, add = col)
   checkmate::assert_string(municipio, null.ok = TRUE, add = col)
   checkmate::assert_string(estado, null.ok = TRUE, add = col)
   checkmate::reportAssertions(col)
@@ -54,7 +54,7 @@ setup_address_fields <- function(estado,
     logradouro = logradouro,
     numero = numero,
     cep = cep,
-    bairro = bairro,
+    localidade = localidade,
     municipio = municipio,
     estado = estado
   )
@@ -66,7 +66,7 @@ setup_address_fields <- function(estado,
 
 error_null_address_fields <- function() {
   geocodebr_error(
-    "At least one of the arguments must not be {.code NULL}.",
+    "Pelo menos um campo não pode ser nulo {.code NULL}.",
     call = rlang::caller_env()
   )
 }

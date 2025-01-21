@@ -4,7 +4,7 @@ match_cases <- function(con,
                         output_tb,
                         key_cols,
                         match_type,
-                        full_results){
+                        resultado_completo){
 
   # read correspondind parquet file
   table_name <- paste(key_cols, collapse = "_")
@@ -47,7 +47,7 @@ match_cases <- function(con,
   colunas_encontradas <- ""
   additional_cols <- ""
 
-  if (isTRUE(full_results)) {
+  if (isTRUE(resultado_completo)) {
     additional_cols <- paste0(", filtered_cnefe.endereco_completo AS endereco_encontrado")
 
   #

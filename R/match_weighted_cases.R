@@ -4,7 +4,7 @@ match_weighted_cases <- function(con,
                                  output_tb,
                                  key_cols,
                                  match_type,
-                                 full_results
+                                 resultado_completo
                                  ){
 
 
@@ -47,7 +47,7 @@ match_weighted_cases <- function(con,
 
   additional_cols <- ""
 
-  if (isTRUE(full_results)) {
+  if (isTRUE(resultado_completo)) {
     additional_cols <- paste0(", filtered_cnefe.endereco_completo")
 
     #
@@ -91,7 +91,7 @@ match_weighted_cases <- function(con,
   )
 
 
-  if (isTRUE(full_results)) {
+  if (isTRUE(resultado_completo)) {
 
     query_aggregate <- glue::glue(
       "CREATE TEMPORARY TABLE {output_tb} AS
