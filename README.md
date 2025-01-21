@@ -39,9 +39,9 @@ pak::pak("ipeaGIT/geocodebr")
 Once you have a table (`data.frame`) with addresses, geolocating the
 data with **{geocodebr}** can be done in two simple steps:
 
-1.  The first step is to use the `setup_address_fields()` function to
-    declare the names of the columns in your input `data.frame` that
-    correspond to each field of the addresses.
+1.  The first step is to use the `listar_campos()` function to declare
+    the names of the columns in your input `data.frame` that correspond
+    to each field of the addresses.
 
 2.  The second step is to use the `geocode()` function to find the
     geographic coordinates of input addresses.
@@ -49,25 +49,27 @@ data with **{geocodebr}** can be done in two simple steps:
 ``` r
 library(geocodebr)
 
-# read input sample data
+# carregando uma amostra de dados
 input_df <- read.csv(system.file("extdata/small_sample.csv", package = "geocodebr"))
 
-# 1st step: indicate the columns describing the address fields
-fields <- geocodebr::setup_address_fields(
+# Primeiro passo: inidicar o nome das colunas com cada campo dos enderecos
+campos <- geocodebr::listar_campos(
   logradouro = "nm_logradouro",
   numero = "Numero",
   cep = "Cep",
-  bairro = "Bairro",
+  localidade = "Bairro",
   municipio = "nm_municipio",
   estado = "nm_uf"
   )
 
-# 2nd step: geocode
+# Segundo passo: geolocalizar
 df <- geocodebr::geocode(
-  addresses_table = input_df,
-  address_fields = fields,
-  n_cores = 1,
-  progress = FALSE
+  enderecos = input_df,
+  campos_endereco = campos,
+  resultado_completo = FALSE,
+  verboso = TRUE,
+  cache = TRUE,
+  n_cores = 1
   )
 ```
 
