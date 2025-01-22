@@ -22,7 +22,9 @@ endereço. Campo obrigatório.}
 
 \item{logradouro}{Uma string. O nome da coluna que representa o \emph{logradouro}
 (endereço da rua) do endereço. Pode ser \code{NULL} se o campo não estiver
-especificado na tabela de endereços.}
+especificado na tabela de endereços. O campo de \code{logradouro} \emph{não} deve
+incluir o \code{numero} do endereço, pois o número deve ser indicado numa coluna
+separada.}
 
 \item{numero}{Uma string. O nome da coluna que representa o número do endereço.
 Pode ser \code{NULL} se o campo não estiver especificado na tabela de endereços.}

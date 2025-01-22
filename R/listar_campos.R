@@ -10,7 +10,9 @@
 #'   endereço. Campo obrigatório.
 #' @param logradouro Uma string. O nome da coluna que representa o *logradouro*
 #'   (endereço da rua) do endereço. Pode ser `NULL` se o campo não estiver
-#'   especificado na tabela de endereços.
+#'   especificado na tabela de endereços. O campo de `logradouro` *não* deve
+#'   incluir o `numero` do endereço, pois o número deve ser indicado numa coluna
+#'   separada.
 #' @param numero Uma string. O nome da coluna que representa o número do endereço.
 #'    Pode ser `NULL` se o campo não estiver especificado na tabela de endereços.
 #' @param cep Uma string. O nome da coluna que representa o *CEP* (Código de
