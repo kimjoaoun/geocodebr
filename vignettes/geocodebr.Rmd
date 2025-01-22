@@ -19,159 +19,207 @@ knitr::opts_chunk$set(
 )
 ```
 
-A geolocalização refere-se ao ato de encontrar um ponto no espaço, geralmente representado por um par de coordenadas, a partir de uma informação de endereço. O pacote **{geocodebr}** permite geolocalizar endereços brasileiros de forma simples e eficiente, utilizando como referências dados públicos de endereços do Brasil. A principal base de referência é o Cadastro Nacional de Endereços para Fins Estatísticos (CNEFE), um conjunto de dados coletado e [publicado](https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html) pelo Instituto Brasileiro de Geografia e Estatística (IBGE), que contém os endereços de mais de 110 milhões de domicílios e estabelecimentos no país.
-
-
+Geolocalização refere-se ao ato de encontrar um ponto no espaço, geralmente
+representado por um par de coordenadas, a partir de um determinado endereço. O
+**geocodebr** permite geolocalizar endereços brasileiros de forma simples e
+eficiente, a partir de dados públicos de endereços do Brasil. A principal base
+de referência é o Cadastro Nacional de Endereços para Fins Estatísticos (CNEFE),
+um conjunto de dados coletado e
+[publicado](https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html)
+pelo Instituto Brasileiro de Geografia e Estatística (IBGE) que contém os
+endereços de mais de 110 milhões de domicílios e estabelecimentos do país.
 
 ## Instalação
 
-Antes de usar o **{geocodebr}**, certifique-se de que ele está instalado no seu computador. Você pode baixar a versão mais estável do CRAN...
+A versão estável do pacote pode ser baixada do CRAN com o comando a seguir:
 
 ```{r, eval = FALSE}
 install.packages("geocodebr")
 ```
 
-... ou a versão em desenvolvimento no GitHub.
+Caso prefira, a versão em desenvolvimento também pode ser usada. Para isso, use
+o seguinte comando:
 
 ```{r, eval = FALSE}
 # install.packages("pak")
 pak::pak("ipeaGIT/geocodebr")
 ```
 
-Then attach it to the current R session:
-
-
 ## Utilização
 
-The main function of package is `geocode()`, which
-takes a data frame of addresses as input and outputs the same data frame with
-the latitude and longitude of each matched address, as well as two columns
-indicating the precision level of the matches. To demonstrate its usage, the
-package includes a few sample data sets in the installation. In the example
-below, we use a small data set that contains addresses with commonly seen
-issues, such as missing information and mistyped fields.
+A principal função do pacote é a `geocode()`, que recebe uma tabela
+(`data.frame`) de endereços como entrada e retorna a mesma tabela geolocalizada
+como saída. Por padrão, a tabela de *output* é acrescida de colunas com a
+latitude e longitude encontradas para cada endereço correspondido, bem como de
+colunas indicando o nível de precisão dos resultados. No exemplo abaixo,
+utilizamos um pequeno conjunto de dados que contém endereços com problemas
+comuns, como informações ausentes e campos digitados incorretamente, para
+demonstrar o uso da função:
 
-A principal função do pacote é a `geocode()`, que recebe uma tabela (`data.frame`) de endereços como entrada e retorna a mesma tabela acrescida com as colunas de latitude e longitude de cada endereço correspondido, além de  colunas indicando o nível de precisão dos resultados. Para demonstrar seu uso, o pacote inclui alguns conjuntos de dados de exemplo na instalação. No exemplo abaixo, utilizamos um pequeno conjunto de dados que contém endereços com problemas comuns, como informações ausentes e campos digitados incorretamente.
-
-**Nota:** A execução da função `geocode()`pela primeira vez pode demorar, pois o **{geocodebr}** precisa baixar os dados de endereços, que somam cerca de 5,5 GB. Esses dados são armazenados localmente, portanto, o download é feito apenas uma vez. Mais informações sobre o armazenamento em cache dos dados estão disponíveis abaixo.
+**Nota:** A `geocode()` requer que os dados do CNEFE estejam armazenados
+localmente. No total, esses dados somam cerca de 5,5 GB, o que pode fazer com
+que a primeira execução da função demore, já que é necessário baixar os dados
+para a sua máquina. Esses dados, no entanto, são salvos de forma persistente,
+logo não é preciso baixá-los mais do que uma vez.
 
 ```{r}
 library(geocodebr)
 
-df <- read.csv(
-  system.file("extdata/small_sample.csv", package = "geocodebr")
-)
+ends <- read.csv(system.file("extdata/small_sample.csv", package = "geocodebr"))
 
-# Primeiro passo: inidicar o nome das colunas com cada campo dos enderecos
-campos <- geocodebr::listar_campos(
+campos <- listar_campos(
+  estado = "nm_uf",
+  municipio = "nm_municipio",
   logradouro = "nm_logradouro",
   numero = "Numero",
   cep = "Cep",
-  localidade = "Bairro",
-  municipio = "nm_municipio",
-  estado = "nm_uf"
-  )
+  localidade = "Bairro"
+)
 
-# Segundo passo: geolocalizar
-df_geo <- geocodebr::geocode(
-  enderecos = df,
-  campos_endereco = campos,
-  resultado_completo = FALSE,
-  verboso = FALSE,
-  cache = TRUE,
-  n_cores = 1
-  )
+ends_geo <- geocode(ends, campos_endereco = campos, verboso = FALSE)
 
-
-head(df_geo)
+head(ends_geo)
 ```
 
-As coordendas espaciais do output usam sistema de referência ofical do Brasil: SIRGAS2000, CRS(4674). Os resultados do {geocodebr} são classificados em seis amplas categorias de precisão, dependendo de quão exatamente cada endereço de entrada foi correspondido com os dados do CNEFE. O grau de precisão é indicado em duas colunas da tabela de output: `precisao` e `tipo_resultado`. Mais informações abaixo.
+Note que no exemplo acima nós também utilizamos a função `listar_campos()`, que
+facilita o processo de especificação da correspondência entre as colunas da
+tabela e os campos esperados de cada endereço. Com ela, nós definimos que a
+coluna que contém a informação de logradouro se chama `"nm_logradouro"`, que a
+coluna de número se chama `"Numero"`, etc. Essa função é opcional, e poderíamos
+simplesmente passar um vetor de caracteres no formato `c(logradouro =
+"nm_logradouro", numero = "Numero", ...)`. A `listar_campos()`, no entanto,
+realiza alguns testes nas colunas e na tabela, garantindo que o *input* passado
+esteja corretamente formatado.
 
+As coordendas espaciais do resultado usam o sistema de referência SIRGAS2000,
+padrão adotado pelo IBGE em todo o Brasil. Cada par de coordenadas encontrado
+pode ser classificado conforme o seu grau de precisão (coluna `precisao`) e os
+campos do endereço utilizados para encontrá-lo (`tipo_resultado`). A seção a
+seguir apresenta mais informações sobre essas colunas.
 
-# Precissão dos resultados:
+### Grau de precisão dos resultados
 
-Os resultados do **{geocodebr}** são classificados em seis categorias gerais de `precisao`, dependendo do nível de exatidão com que cada endereço de input foi encontrado nos dados do CNEFE:
+As coordenadas incluídas no resultado da `geocode()` são calculadas a partir da
+média das coordenadas dos endereços do CNEFE que correspondem a cada um dos
+endereços de *input*. A correspondência entre os endereços de entrada e os do
+CNEFE pode ser feita com base em diferentes combinações de campos, impactando,
+assim, na precisão do resultado retornado.
 
-- "numero"
-- "numero_aproximado"
-- "logradouro"
-- "cep"
-- "localidade"
-- "municipio"
-- `NA` (not found)
+No caso mais rigoroso, a função encontra uma correspondência determinística para
+cada um dos campos do endereço (estado, município, logradouro, número, CEP e
+localidade). Pense, por exemplo, em um prédio com vários apartamentos, cuja
+única variação no endereço se dá a nível de apartamento: o resultado, nesse
+caso, é a média das coordenadas dos apartamentos, que podem diferir
+ligeiramente.
 
-Cada nível de precisão pode ser desagregado em tipos de correspondência mais refinados.
+Em um caso menos rigoroso, no qual são encontradas correspondências apenas para
+os campos de estado, município, logradouro e localidade, a função calcula as
+coordenadas médias de todos os endereços do CNEFE que se encontram na mesma rua
+e na mesma localidade. O resultado, portanto, é agregado a nível de rua,
+tendendo para a extremidade do logradouro com maior concentração de endereços.
 
-## Tipos de resultados
+A coluna `precisao` se refere ao nível de agregação das coordenadas do CNEFE
+utilizadas pela `geocode()`. A função sempre retorna o resultado de maior
+precisão possível - ou seja, ela só vai procurar endereços com precisão
+`"numero_aproximado"` (ver a seguir) caso não tenha encontrado correspondência
+de precisão `"numero"`. As coordenadas calculadas podem ser classificadas em
+seis diferentes categorias de precisão:
 
-A coluna `tipo_resultado` fornece informações mais detalhadas sobre como exatamente cada endereço de entrada foi encontrado no CNEFE. Em cada categoria, o **{geocodebr}** calcula a média da latitude e longitude  dos endereços incluídos no CNEFE que correspondem ao endereço de entrada, com base em combinações de diferentes campos. No caso mais rigoroso, por exemplo, a função encontra uma correspondência determinística para todos os campos de um dado endereço (`"estado"`, `"municipio"`, `"logradouro"`, `"numero"`, `"cep"`, `"localidade"`). Pense, por exemplo, em um prédio com vários apartamentos que correspondem ao mesmo endereço de rua e número. Nesse caso, as coordenadas dos apartamentos podem diferir ligeiramente, e o **{geocodebr}** calcula a média dessas coordenadas. Em um caso menos rigoroso, no qual apenas os campos (`"estado"`, `"municipio"`, `"logradouro"`, `"localidade"`) são encontrados, o **{geocodebr}** calcula as coordenadas médias de todos os endereços no CNEFE ao longo daquela rua e que se encontram na mesma localidade/bairro. Assim, as coordenadas de resultado tendem a ser o ponto médio do trecho daquela rua que passa dentro daquela localidade/bairro.
+- `"numero"` - calculadas a partir de endereços que compartilham o mesmo
+logradouro e número;
+- `"numero_aproximado"` - calculadas a partir de endereços que compartilham o
+mesmo logradouro, mas número de *input* não encontra correspondência exata no
+CNEFE e sua localização é calculada a partir de uma interpolação espacial;
+- `"logradouro"` - calculadas a partir de endereços que compartilham o mesmo
+logradouro (número de *input* está ausente ou é S/N);
+- `"cep"` - calculadas a partir de endereços que compartilham o mesmo CEP;
+- `"localidade"` - calculadas a partir de endereços que compartilham a mesma
+localidade;
+- `"municipio"` - calculadas a partir de endereços que compartilham o mesmo
+município.
 
-A lista completa dos níveis de precisão (`precisao`), suas categorias de tipo de correspondência (`tipo_resultado`) e os campos de endereço considerados em cada categoria estão descritos abaixo:
+A coluna `tipo_resultado` fornece informações mais detalhadas sobre os campos de
+endereço utilizados no cálculo das coordenadas de cada endereço de entrada. Cada
+categoria é nomeada a partir de um código de quatro caracteres:
 
+- o primeiro, sempre `e` ou `p`, determina se a correspondência foi feita de
+forma determinística (`e`) ou probabilística (`p`) - a segunda opção ainda não
+foi implementada no pacote, mas é planejada em versões futuras;
+- o segundo faz menção à categoria de `precisao` na qual o resultado foi
+classificado (`n` para `"numero"`, `i` para `"numero_aproximado"`, `r` para
+`"logradouro"`, `c` para `"cep"`, `b` para `"localidade"` e `m` para
+`"municipio"`);
+- o terceiro e o quarto designam a classificação de cada categoria dentro de seu
+grupo - via de regra, quanto menor o número formado por esses caracteres, mais
+precisa são as coordenadas calculadas.
 
-- precisao: **"numero"**
-  - tipo_resultado:
-    - en01: logradouro, numero, cep e localidade
-    - en02: logradouro, numero e cep
-    - en03: logradouro, numero e localidade
-    - en04: logradouro e numero
-    - pn01: logradouro, numero, cep e localidade
-    - pn02: logradouro, numero e cep
-    - pn03: logradouro, numero e localidade
-    - pn04: logradouro e numero
+As categorias de `tipo_resultado` são listadas abaixo, junto às categorias de
+`precisao` a qual elas estão associadas:
 
-- precisao: **"numero_aproximado"**
-  - tipo_resultado:
-    - ei01: logradouro, numero, cep e localidade
-    - ei02: logradouro, numero e cep
-    - ei03: logradouro, numero e localidade
-    - ei04: logradouro e numero
-    - pi01: logradouro, numero, cep e localidade
-    - pi02: logradouro, numero e cep
-    - pi03: logradouro, numero e localidade
-    - pi04: logradouro e numero
+- precisao `"numero"`
+  - `en01` - logradouro, numero, cep e localidade
+  - `en02` - logradouro, numero e cep
+  - `en03` - logradouro, numero e localidade
+  - `en04` - logradouro e numero
+  - `pn01` - logradouro, numero, cep e localidade
+  - `pn02` - logradouro, numero e cep
+  - `pn03` - logradouro, numero e localidade
+  - `pn04` - logradouro e numero
 
-- precisao: **"logradouro"** (quando o número de entrada está faltando 'S/N')
-  - tipo_resultado:
-    - er01: logradouro, cep e localidade
-    - er02: logradouro e cep
-    - er03: logradouro e localidade
-    - er04: logradouro
-    - pr01: logradouro, cep e localidade
-    - pr02: logradouro e cep
-    - pr03: logradouro e localidade
-    - pr04: logradouro
+- precisao `"numero_aproximado"`
+  - `ei01` - logradouro, numero, cep e localidade
+  - `ei02` - logradouro, numero e cep
+  - `ei03` - logradouro, numero e localidade
+  - `ei04` - logradouro e numero
+  - `pi01` - logradouro, numero, cep e localidade
+  - `pi02` - logradouro, numero e cep
+  - `pi03` - logradouro, numero e localidade
+  - `pi04` - logradouro e numero
 
-- precisao: **"cep"**
-  - tipo_resultado:
-    - ec01: municipio, cep, localidade
-    - ec02: municipio, cep
+- precisao `"logradouro"` (quando o número de entrada está faltando 'S/N')
+  - `er01` - logradouro, cep e localidade
+  - `er02` - logradouro e cep
+  - `er03` - logradouro e localidade
+  - `er04` - logradouro
+  - `pr01` - logradouro, cep e localidade
+  - `pr02` - logradouro e cep
+  - `pr03` - logradouro e localidade
+  - `pr04` - logradouro
 
-- precisao: **"localidade"**
-  - tipo_resultado:
-    - eb01: municipio, localidade
+- precisao `"cep"`
+  - `ec01` - municipio, cep, localidade
+  - `ec02` - municipio, cep
 
-- precisao: **"municipio"**
-  - tipo_resultado:
-    - em01: municipio
+- precisao `"localidade"`
+  - `eb01` - municipio, localidade
 
+- precisao `"municipio"`
+  - `em01` - municipio
 
-***Nota:*** As categorias de `match_type` que começam com 'p' utilizam correspondência probabilística do campo logradouro, enquanto os tipos que começam com 'e' utilizam apenas correspondência determinística. **As categorias de `match_type` que usam correspondência probabilística ainda não estão implementados no {geocodebr}**.
+Endereços não encontrados são retornados com latitude, longitude, precisão e
+tipo de resultado `NA`.
 
+### Cache de dados
 
+Como comentado anteriormente, os dados do CNEFE são baixados na primeira vez que
+a `geocode()` é executada. Esses dados ficam salvos no *cache* do pacote e não
+precisam ser baixados novamente. O pacote inclui algumas funções que ajudam a
+gerenciar o *cache*:
 
-# Cache de dados
+- `listar_pasta_cache()` - retorna o endereço do *cache* na sua máquina, onde os
+dados do CNEFE estão salvos;
+- `definir_pasta_cache()` - define uma pasta personalizada para ser usada como
+*cache*. Essa configuração é persistente entre diferentes sessões do R;
+- `listar_dados_cache()` - lista todos os arquivos armazenados no *cache*;
+- `deletar_pasta_cache()` - exclui a pasta de *cache*, bem como todos os
+arquivos que estavam armazenados dentro dela.
 
-A primeira vez que o usuário executa a função `geocode()`, o **{geocodebr}** fará o download de alguns arquivos de referência e os armazenará localmente. Dessa forma, os dados precisam ser baixados apenas uma vez. É importante notar que esses arquivos exigem aproximadamente 5,5 GB de espaço no seu disco local.
+Após rodar o código desta *vignette*, é provável que o seu *cache* esteja
+configurado como a seguir:
 
+```{r}
+listar_pasta_cache()
 
-O pacote inclui as seguintes funções para ajudar os usuários a gerenciar os arquivos em cache:
-
-- `listar_pasta_cache()`: retorna o caminho onde os dados em cache estão armazenados. Por padrão, os arquivos são armazenados no diretório do pacote.
-- `definir_pasta_cache()`: define um diretório personalizado para ser utilizado. Essa configuração é persistente entre diferentes sessões do R.
-- `listar_dados_cache()`: lista todos os arquivos atualmente armazenados em cache.
-- `deletar_pasta_cache()`: exclui todos os arquivos do diretório de cache utilizado pelo **{geocodebr}**.
-
-
+listar_dados_cache()
+```
 
