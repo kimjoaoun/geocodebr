@@ -9,7 +9,7 @@ match_weighted_cases <- function(con,
   # read corresponding parquet file
   table_name <- paste(key_cols, collapse = "_")
   table_name <- gsub('estado_municipio', 'municipio', table_name)
-  table_name <- gsub('logradouro_sem_numero', 'logradouro_numero', table_name)
+  table_name <- gsub('logradouro_sem_numero', 'logradouro', table_name)
 
   # build path to local file
   path_to_parquet <- paste0(geocodebr::listar_pasta_cache(), "/", table_name, ".parquet")
@@ -29,6 +29,8 @@ match_weighted_cases <- function(con,
   # register filtered_cnefe to db
   duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
 
+  # remove numero from key cols to allow for the matching
+  key_cols <- key_cols[key_cols != 'numero']
 
   # Create the JOIN condition by concatenating the key columns
   join_condition <- paste(

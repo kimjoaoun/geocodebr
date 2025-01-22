@@ -232,21 +232,21 @@ get_relevant_cols_rafa <- function(case) {
 
 
 get_relevant_cols_arrow <- function(case) {
-  relevant_cols <- if (case %in% c('en01', 'pn01') ) {
+  relevant_cols <- if (case %in% c('en01', 'ei01', 'pn01') ) {
     c("estado", "municipio", "logradouro_sem_numero", "numero", "cep", "localidade")
-  } else if (case %in% c('en02', 'pn02')) {
+  } else if (case %in% c('en02', 'ei02', 'pn02')) {
     c("estado", "municipio", "logradouro_sem_numero", "numero", "cep")
-  } else if (case %in% c('en03', 'pn03')) {
+  } else if (case %in% c('en03', 'ei03', 'pn03')) {
     c("estado", "municipio", "logradouro_sem_numero", "numero", "localidade")
-  } else if (case %in% c('en04', 'pn04')) {
+  } else if (case %in% c('en04', 'ei04', 'pn04')) {
     c("estado", "municipio", "logradouro_sem_numero", "numero")
-  } else if (case %in% c('er01', 'pr01', 'ei01', 'pi01')) {
+  } else if (case %in% c('er01', 'pr01', 'pi01')) {
     c("estado", "municipio", "logradouro_sem_numero", "cep", "localidade")
-  } else if (case %in% c('er02', 'pr02', 'ei02', 'pi02')) {
+  } else if (case %in% c('er02', 'pr02', 'pi02')) {
     c("estado", "municipio", "logradouro_sem_numero", "cep")
-  } else if (case %in% c('er03', 'pr03', 'ei03', 'pi03')) {
+  } else if (case %in% c('er03', 'pr03', 'pi03')) {
     c("estado", "municipio", "logradouro_sem_numero", "localidade")
-  } else if (case %in% c('er04', 'pr04', 'ei04', 'pi04')) {
+  } else if (case %in% c('er04', 'pr04', 'pi04')) {
     c("estado", "municipio", "logradouro_sem_numero")
   } else if (case == 'ec01') {
     c("estado", "municipio", "cep", "localidade")

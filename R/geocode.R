@@ -95,14 +95,21 @@ geocode <- function(enderecos,
   # keep and rename colunms of input_padrao to use the
   # same column names used in cnefe data set
   data.table::setDT(input_padrao)
-  cols_to_keep <- names(input_padrao)[! names(input_padrao) %in% campos_endereco]
+  cols_to_keep <- names(input_padrao)[ names(input_padrao) %like% '_padr']
   input_padrao <- input_padrao[, .SD, .SDcols = c(cols_to_keep)]
   names(input_padrao) <- c(gsub("_padr", "", names(input_padrao)))
 
+  if ('logradouro' %in% names(input_padrao)) {
   data.table::setnames(
-    x = input_padrao,
-    old = c('logradouro', 'bairro'),
-    new = c('logradouro_sem_numero', 'localidade'))
+    x = input_padrao, old = 'logradouro', new = 'logradouro_sem_numero'
+    )
+  }
+
+  if ('bairro' %in% names(input_padrao)) {
+    data.table::setnames(
+      x = input_padrao, old = 'bairro', new = 'localidade'
+    )
+  }
 
   # create temp id
   input_padrao[, tempidgeocodebr := 1:nrow(input_padrao) ]
@@ -123,17 +130,17 @@ geocode <- function(enderecos,
 
   # Convert input data frame to DuckDB table
   duckdb::dbWriteTable(con, "input_padrao_db", input_padrao,
-                       overwrite = TRUE, temporary = TRUE)
-
+                       overwrite = TRUE, temporary = TRUE
+                       )
 
   # create an empty output table that will be populated -----------------------------------------------
 
   additional_cols <- ""
   if (isTRUE(resultado_completo)) {
     additional_cols <- glue::glue(
-      ", endereco_encontrado VARCHAR, logradouro_encontrado VARCHAR, ",
-      "numero_encontrado VARCHAR, localidade_encontrada VARCHAR, ",
-      "cep_encontrado VARCHAR, municipio_encontrado VARCHAR, estado_encontrado VARCHAR"
+    ", endereco_encontrado VARCHAR, logradouro_encontrado VARCHAR,
+    numero_encontrado VARCHAR, localidade_encontrada VARCHAR,
+    cep_encontrado VARCHAR, municipio_encontrado VARCHAR, estado_encontrado VARCHAR"
     )
   }
 
@@ -143,7 +150,7 @@ geocode <- function(enderecos,
      lat NUMERIC,
      lon NUMERIC,
      tipo_resultado VARCHAR {additional_cols});"
-  )
+    )
 
   DBI::dbExecute(con, query_create_empty_output_db)
 
