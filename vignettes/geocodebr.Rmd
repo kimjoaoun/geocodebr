@@ -77,7 +77,7 @@ df_geo <- geocodebr::geocode(
   enderecos = df,
   campos_endereco = campos,
   resultado_completo = FALSE,
-  verboso = FALSO,
+  verboso = FALSE,
   cache = TRUE,
   n_cores = 1
   )
@@ -121,7 +121,7 @@ A lista completa dos níveis de precisão (`precisao`), suas categorias de tipo 
     - pn03: logradouro, numero e localidade
     - pn04: logradouro e numero
 
-- precisao: **"numero_interpolado"**
+- precisao: **"numero_aproximado"**
   - tipo_resultado:
     - ei01: logradouro, numero, cep e localidade
     - ei02: logradouro, numero e cep
@@ -132,7 +132,7 @@ A lista completa dos níveis de precisão (`precisao`), suas categorias de tipo 
     - pi03: logradouro, numero e localidade
     - pi04: logradouro e numero
 
-- precisao: **"logradouro"** (when input number is missing 'S/N')
+- precisao: **"logradouro"** (quando o número de entrada está faltando 'S/N')
   - tipo_resultado:
     - er01: logradouro, cep e localidade
     - er02: logradouro e cep

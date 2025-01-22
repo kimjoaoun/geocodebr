@@ -60,19 +60,19 @@ input_df <- arrow::read_parquet(data_path)
 
 
 
-enderecos = input_df
-n_cores = 7
-ncores <- 7
-verboso = T
-cache = TRUE
-resultado_completo = T
-campos_endereco <- geocodebr::listar_campos(
-  logradouro = 'logradouro',
-  numero = 'numero',
-  cep = 'cep',
-  localidade = 'bairro',
-  municipio = 'municipio',
-  estado = 'uf')
+# enderecos = input_df
+# n_cores = 7
+# ncores <- 7
+# verboso = T
+# cache = TRUE
+# resultado_completo = T
+# campos_endereco <- geocodebr::listar_campos(
+#   logradouro = 'logradouro',
+#   numero = 'numero',
+#   cep = 'cep',
+#   localidade = 'bairro',
+#   municipio = 'municipio',
+#   estado = 'uf')
 
 
 
@@ -111,18 +111,6 @@ rafaT <- function(){ message('rafa F')
   )
 }
 
-
-
-
-rafadbT <- function(){ message('rafa db T')
-  df_rafadbT <- geocodebr:::geocode_db(
-    enderecos = input_df,
-    campos_endereco = campos,
-    n_cores = ncores,
-    resultado_completo = T,
-    verboso = T
-  )
-}
 
 
 
@@ -197,53 +185,6 @@ set.seed(42)
 
 
 
-# LIKE operator ------------------------------------------------------------------
-input_df$Complemento <- NULL
-input_df$code_muni <- NULL
-
-input_df_like <- data.frame(
-  id=666,
-  nm_logradouro = 'DESEMBARGADOR HUGO SIMAS',
-  Numero = 1948,
-  Cep = '80520-250',
-  Bairro = 'BOM RETIRO',
-  nm_municipio = 'CURITIBA',
-  nm_uf = 'PARANA'
-)
-
-input_df_like <- rbind(input_df_like, input_df)
-
-fields <- geocodebr::setup_address_fields(
-  logradouro = 'nm_logradouro',
-  numero = 'Numero',
-  cep = 'Cep',
-  bairro = 'Bairro',
-  municipio = 'nm_municipio',
-  estado = 'nm_uf'
-)
-
-lik <- geocodebr:::geocode_like(
-  addresses_table = input_df_like,
-  address_fields = fields,
-  n_cores = 1, # 7
-  progress = F
-)
-
-head(lik)
-
-lik <- geocodebr:::geocode_rafa_like(
-  input_table = input_df_like,
-  logradouro = "nm_logradouro",
-  numero = "Numero",
-  cep = "Cep",
-  bairro = "Bairro",
-  municipio = "nm_municipio",
-  estado = "nm_uf",
-  output_simple = F,
-  n_cores=7,
-  progress = T
-)
-
 geocodebr::get_cache_dir() |>
   geocodebr:::arrow_open_dataset()  |>
   filter(estado=="PR") |>
@@ -278,41 +219,31 @@ input_df <- read.csv(data_path, encoding = 'Latin-1')
 
 
 
-# fields <- geocodebr::setup_address_fields(
-#   logradouro = 'nm_logradouro',
-#   numero = 'Numero',
-#   cep = 'Cep',
-#   bairro = 'Bairro',
-#   municipio = 'nm_municipio',
-#   estado = 'nm_uf'
-# )
-# addresses_table = input_df
-# address_fields = fields
+campos <- geocodebr::listar_campos(
+  logradouro = 'nm_logradouro',
+  numero = 'Numero',
+  cep = 'Cep',
+  localidade = 'Bairro',
+  municipio = 'nm_municipio',
+  estado = 'nm_uf'
+)
+# enderecos = input_df
+# campos_endereco = campos
 # n_cores = 7
-# progress = T
+# verboso = T
 # cache=T
-# full_results=T
+# resultado_completo=T
 
-
-rafa_loop <- function(){
-  fields <- geocodebr::setup_address_fields(
-    logradouro = 'nm_logradouro',
-    numero = 'Numero',
-    cep = 'Cep',
-    bairro = 'Bairro',
-    municipio = 'nm_municipio',
-    estado = 'nm_uf'
-  )
-
-  df_rafa <- geocodebr::geocode(
-    addresses_table = input_df,
-    address_fields = fields,
+rafaF <- function(){ message('rafa F')
+  df_rafaF <- geocodebr::geocode(
+    enderecos = input_df,
+    campos_endereco = campos,
     n_cores = 7,
-    progress = T,
-    cache=T,
-    full_results = T
+    resultado_completo = T,
+    verboso = T
   )
 }
+
 
 
 table(df_rafa_loop$precision) / nrow(df_rafa_loop)*100

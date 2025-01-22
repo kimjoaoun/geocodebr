@@ -1,10 +1,10 @@
 match_cases <- function(con,
-                        x,
-                        y,
-                        output_tb,
-                        key_cols,
-                        match_type,
-                        resultado_completo){
+                         x,
+                         y,
+                         output_tb,
+                         key_cols,
+                         match_type,
+                         resultado_completo ){
 
   # read correspondind parquet file
   table_name <- paste(key_cols, collapse = "_")
@@ -26,6 +26,7 @@ match_cases <- function(con,
     dplyr::filter(municipio %in% input_municipio) |>
     dplyr::compute()
 
+
   # register filtered_cnefe to db
   duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
 
@@ -37,40 +38,39 @@ match_cases <- function(con,
   )
 
   cols_not_null <-  paste(
-    glue::glue("filtered_cnefe.{key_cols} IS NOT NULL"),
+    glue::glue("{x}.{key_cols} IS NOT NULL"),
     collapse = ' AND '
   )
 
-
   # whether to keep all columns in the result
-
   colunas_encontradas <- ""
   additional_cols <- ""
 
   if (isTRUE(resultado_completo)) {
-    additional_cols <- paste0(", filtered_cnefe.endereco_completo AS endereco_encontrado")
 
-  #
-  #   colunas_encontradas <- glue::glue( ", endereco_encontrado, estado_encontrado,
-  #       municipio_encontrado, logradouro_encontrado, numero_encontrado,
-  #       cep_encontrado, localidade_encontrada"
-  #     )
-  #
-  #   additional_cols <- paste0(
-  #     glue::glue("filtered_cnefe.{key_cols} AS {key_cols}_encontrado"),
-  #     collapse = ', ')
-  #
-  #   additional_cols <- gsub('logradouro_sem_numero_encontrado', 'logradouro_encontrado', additional_cols)
-  #   additional_cols <- gsub('localidade_encontrado', 'localidade_encontrada', additional_cols)
-  #   additional_cols <- paste0(", filtered_cnefe.endereco_completo AS endereco_encontrado, ", additional_cols)
+    colunas_encontradas <- paste0(
+      glue::glue("{key_cols}_encontrado"),
+      collapse = ', ')
+
+    colunas_encontradas <- gsub('logradouro_sem_numero_encontrado', 'logradouro_encontrado', colunas_encontradas)
+    colunas_encontradas <- gsub('localidade_encontrado', 'localidade_encontrada', colunas_encontradas)
+    colunas_encontradas <- paste0(", endereco_encontrado, ", colunas_encontradas)
+
+    additional_cols <- paste0(
+      glue::glue("filtered_cnefe.{key_cols} AS {key_cols}_encontrado"),
+      collapse = ', ')
+
+    additional_cols <- gsub('logradouro_sem_numero_encontrado', 'logradouro_encontrado', additional_cols)
+    additional_cols <- gsub('localidade_encontrado', 'localidade_encontrada', additional_cols)
+    additional_cols <- paste0(", filtered_cnefe.endereco_completo AS endereco_encontrado, ", additional_cols)
+
   }
 
-
-  # query for left join
+  # summarize query
   query_match <- glue::glue(
-    "CREATE TEMPORARY TABLE {output_tb} AS
+    "INSERT INTO output_db (tempidgeocodebr, lat, lon, tipo_resultado {colunas_encontradas})
       SELECT {x}.tempidgeocodebr, filtered_cnefe.lat, filtered_cnefe.lon,
-      '{match_type}' AS tipo_resultado {additional_cols}
+             '{match_type}' AS tipo_resultado {additional_cols}
       FROM {x}
       LEFT JOIN filtered_cnefe
       ON {join_condition}
@@ -78,6 +78,7 @@ match_cases <- function(con,
   )
 
   temp_n <- DBI::dbExecute(con, query_match)
+
 
   duckdb::duckdb_unregister_arrow(con, "filtered_cnefe")
 

@@ -1,7 +1,7 @@
 data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
 
-fields <- listar_campos(
+campos <- listar_campos(
   logradouro = "nm_logradouro",
   numero = "Numero",
   cep = "Cep",
@@ -11,7 +11,7 @@ fields <- listar_campos(
 )
 
 tester <- function(enderecos = input_df,
-                   campos_endereco = fields,
+                   campos_endereco = campos,
                    resultado_completo = FALSE,
                    verboso = TRUE,
                    cache = TRUE,

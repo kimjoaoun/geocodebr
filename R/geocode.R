@@ -57,8 +57,7 @@ geocode <- function(enderecos,
                     resultado_completo = FALSE,
                     verboso = TRUE,
                     cache = TRUE,
-                    n_cores = 1
-){
+                    n_cores = 1 ){
 
   # check input
   checkmate::assert_data_frame(enderecos)
@@ -79,7 +78,7 @@ geocode <- function(enderecos,
   if (verboso) message_standardizing_addresses()
 
   input_padrao <- enderecobr::padronizar_enderecos(
-    enderecos = enderecos,
+    enderecos,
     campos_do_endereco = enderecobr::correspondencia_campos(
       logradouro = campos_endereco[["logradouro"]],
       numero = campos_endereco[["numero"]],
@@ -92,24 +91,18 @@ geocode <- function(enderecos,
     formato_numeros = 'integer'
   )
 
+
   # keep and rename colunms of input_padrao to use the
   # same column names used in cnefe data set
   data.table::setDT(input_padrao)
-  cols_padr <- grep("_padr", names(input_padrao), value = TRUE)
-  input_padrao <- input_padrao[, .SD, .SDcols = cols_padr]
-  names(input_padrao) <- gsub("_padr", "", cols_padr)
+  cols_to_keep <- names(input_padrao)[! names(input_padrao) %in% campos_endereco]
+  input_padrao <- input_padrao[, .SD, .SDcols = c(cols_to_keep)]
+  names(input_padrao) <- c(gsub("_padr", "", names(input_padrao)))
 
-  if ('logradouro' %in% names(input_padrao)) {
-      data.table::setnames(
-        x = input_padrao, old = 'logradouro', new = 'logradouro_sem_numero'
-        )
-    }
-
-  if ('bairro' %in% names(input_padrao)) {
-    data.table::setnames(
-      x = input_padrao, old = 'bairro', new = 'localidade'
-    )
-  }
+  data.table::setnames(
+    x = input_padrao,
+    old = c('logradouro', 'bairro'),
+    new = c('logradouro_sem_numero', 'localidade'))
 
   # create temp id
   input_padrao[, tempidgeocodebr := 1:nrow(input_padrao) ]
@@ -117,6 +110,7 @@ geocode <- function(enderecos,
 
   # # sort input data
   # input_padrao <- input_padrao[order(estado, municipio, logradouro_sem_numero, numero, cep, localidade)]
+
 
   # downloading cnefe
   cnefe_dir <- download_cnefe(
@@ -131,6 +125,29 @@ geocode <- function(enderecos,
   duckdb::dbWriteTable(con, "input_padrao_db", input_padrao,
                        overwrite = TRUE, temporary = TRUE)
 
+
+  # create an empty output table that will be populated -----------------------------------------------
+
+  additional_cols <- ""
+  if (isTRUE(resultado_completo)) {
+    additional_cols <- glue::glue(
+      ", endereco_encontrado VARCHAR, logradouro_encontrado VARCHAR, ",
+      "numero_encontrado VARCHAR, localidade_encontrada VARCHAR, ",
+      "cep_encontrado VARCHAR, municipio_encontrado VARCHAR, estado_encontrado VARCHAR"
+    )
+  }
+
+  query_create_empty_output_db <- glue::glue(
+    "CREATE TABLE output_db (
+     tempidgeocodebr INTEGER,
+     lat NUMERIC,
+     lon NUMERIC,
+     tipo_resultado VARCHAR {additional_cols});"
+  )
+
+  DBI::dbExecute(con, query_create_empty_output_db)
+
+
   # START MATCHING -----------------------------------------------
 
   # start progress bar
@@ -142,16 +159,15 @@ geocode <- function(enderecos,
   n_rows <- nrow(input_padrao)
   matched_rows <- 0
 
-
   # start matching
   for (case in all_possible_match_types ) {
 
-    key_cols <- get_relevant_cols_arrow(case)
+    relevant_cols <- get_relevant_cols_arrow(case)
 
     if (verboso) update_progress_bar(matched_rows, case)
 
 
-    if (all(key_cols %in% names(input_padrao))) {
+    if (all(relevant_cols %in% names(input_padrao))) {
 
       # select match function
       match_fun <- ifelse(case %in% number_interpolation_types, match_weighted_cases, match_cases)
@@ -160,8 +176,8 @@ geocode <- function(enderecos,
         con,
         x = 'input_padrao_db',
         y = 'filtered_cnefe', # keep this for now
-        output_tb = paste0('output_', case),
-        key_cols = key_cols,
+        output_tb = "output_db",
+        key_cols = relevant_cols,
         match_type = case,
         resultado_completo = resultado_completo
       )
@@ -176,28 +192,6 @@ geocode <- function(enderecos,
 
   if (verboso) finish_progress_bar(matched_rows)
 
-
-  # prepare output -----------------------------------------------
-  # THIS could BE IMPROVED / optimized
-
-  # list all table outputs
-  all_possible_tables <- glue::glue("output_{all_possible_match_types}")
-
-  # check which tables have been created
-  output_tables <- lapply(
-    X = all_possible_tables,
-    FUN = function(i){ ifelse( DBI::dbExistsTable(con, i), i, 'empty') }) |>
-    unlist()
-
-  all_output_tbs <- output_tables[!grepl('empty', output_tables)]
-
-  # save output to db
-  output_query <- paste("CREATE TEMPORARY TABLE output_db AS",
-                        paste0("SELECT ", paste0('*', " FROM ", all_output_tbs),
-                               collapse = " UNION ALL ")
-  )
-
-  DBI::dbExecute(con, output_query)
 
   # add precision column
   add_precision_col(con, update_tb = 'output_db')

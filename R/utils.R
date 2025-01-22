@@ -131,13 +131,15 @@ merge_results <- function(con,
                           select_columns,
                           resultado_completo){
 
-  # x = 'output_db'
-  # y = 'output_caso_01'
-  # key_column = 'tempidgeocodebr'
-  select_columns_y = c('lat', 'lon', 'tipo_resultado', 'precisao', 'endereco_encontrado')
 
-  if (isFALSE(resultado_completo)) {
-    select_columns_y <- select_columns_y[select_columns_y != 'endereco_encontrado']
+  select_columns_y = select_columns_y = c('lat', 'lon', 'tipo_resultado', 'precisao')
+
+  if (isTRUE(resultado_completo)) {
+  select_columns_y = select_columns_y = c(
+    'lat', 'lon', 'tipo_resultado', 'precisao', 'endereco_encontrado',
+    'numero_encontrado' , 'localidade_encontrada', 'cep_encontrado' ,
+    'municipio_encontrado' , 'estado_encontrado'
+    )
   }
 
   # drop temp id column
