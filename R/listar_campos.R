@@ -68,7 +68,7 @@ listar_campos <- function(estado,
 
 error_null_address_fields <- function() {
   geocodebr_error(
-    "Pelo menos um campo não pode ser nulo {.code NULL}.",
+    "Pelo menos um campo n\u00e3o pode ser nulo {.code NULL}.",
     call = rlang::caller_env()
   )
 }
