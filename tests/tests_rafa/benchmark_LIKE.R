@@ -1,4 +1,6 @@
-# * adicionar colnas extra
+#' checar numero de casas decimais
+#' rua ipe roxo em sp
+
 
 
 #' TO DO
@@ -66,6 +68,7 @@ input_df <- arrow::read_parquet(data_path)
 # verboso = T
 # cache = TRUE
 # resultado_completo = T
+# resultado_sf = F
 # campos_endereco <- geocodebr::listar_campos(
 #   logradouro = 'logradouro',
 #   numero = 'numero',

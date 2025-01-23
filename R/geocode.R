@@ -153,8 +153,8 @@ geocode <- function(enderecos,
   query_create_empty_output_db <- glue::glue(
     "CREATE TABLE output_db (
      tempidgeocodebr INTEGER,
-     lat NUMERIC,
-     lon NUMERIC,
+     lat FLOAT,
+     lon FLOAT,
      tipo_resultado VARCHAR {additional_cols});"
     )
 
