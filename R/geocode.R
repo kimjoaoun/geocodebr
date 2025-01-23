@@ -67,10 +67,11 @@ geocode <- function(enderecos,
 
   # check input
   checkmate::assert_data_frame(enderecos)
-  checkmate::assert_number(n_cores, lower = 1, finite = TRUE)
+  checkmate::assert_logical(resultado_completo, any.missing = FALSE, len = 1)
+  checkmate::assert_logical(resultado_sf, any.missing = FALSE, len = 1)
   checkmate::assert_logical(verboso, any.missing = FALSE, len = 1)
   checkmate::assert_logical(cache, any.missing = FALSE, len = 1)
-  checkmate::assert_logical(resultado_completo, any.missing = FALSE, len = 1)
+  checkmate::assert_number(n_cores, lower = 1, finite = TRUE)
   campos_endereco <- assert_and_assign_address_fields(
     campos_endereco,
     enderecos
