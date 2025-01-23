@@ -1,4 +1,3 @@
-#' checar numero de casas decimais
 #' rua ipe roxo em sp
 
 
