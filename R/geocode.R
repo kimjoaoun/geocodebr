@@ -154,8 +154,8 @@ geocode <- function(enderecos,
   query_create_empty_output_db <- glue::glue(
     "CREATE TABLE output_db (
      tempidgeocodebr INTEGER,
-     lat FLOAT,
-     lon FLOAT,
+     lat NUMERIC(8, 6),
+     lon NUMERIC(8, 6),
      tipo_resultado VARCHAR {additional_cols});"
     )
 
@@ -176,7 +176,7 @@ geocode <- function(enderecos,
   # start matching
   for (case in all_possible_match_types ) {
 
-    relevant_cols <- get_relevant_cols_arrow(case)
+    relevant_cols <- get_relevant_cols(case)
 
     if (verboso) update_progress_bar(matched_rows, case)
 

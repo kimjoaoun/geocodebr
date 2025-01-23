@@ -198,40 +198,9 @@ create_index <- function(con, tb, cols, operation, overwrite=TRUE){
 }
 
 
-get_relevant_cols_rafa <- function(case) {
-  relevant_cols <- if (case == 1) {
-    c("estado", "municipio", "logradouro_sem_numero", "numero", "cep", "localidade")
-  } else if (case == 2) {
-    c("estado", "municipio", "logradouro_sem_numero", "numero", "cep")
-  } else if (case == 3) {
-    c("estado", "municipio", "logradouro_sem_numero", "numero", "localidade")
-  } else if (case == 4) {
-    c("estado", "municipio", "logradouro_sem_numero", "numero")
-  } else if (case == 44) {
-    c("estado", "municipio", "logradouro_sem_numero")
-  } else if (case == 5) {
-    c("estado", "municipio", "logradouro_sem_numero", "cep", "localidade")
-  } else if (case == 6) {
-    c("estado", "municipio", "logradouro_sem_numero", "cep")
-  } else if (case == 7) {
-    c("estado", "municipio", "logradouro_sem_numero", "localidade")
-  } else if (case == 8) {
-    c("estado", "municipio", "logradouro_sem_numero")
-  } else if (case == 9) {
-    c("estado", "municipio", "cep", "localidade")
-  } else if (case == 10) {
-    c("estado", "municipio", "cep")
-  } else if (case == 11) {
-    c("estado", "municipio", "localidade")
-  } else if (case == 12) {
-    c("estado", "municipio")
-  }
-
-  return(relevant_cols)
-}
 
 
-get_relevant_cols_arrow <- function(case) {
+get_relevant_cols <- function(case) {
   relevant_cols <- if (case %in% c('en01', 'ei01', 'pn01') ) {
     c("estado", "municipio", "logradouro_sem_numero", "numero", "cep", "localidade")
   } else if (case %in% c('en02', 'ei02', 'pn02')) {
@@ -263,8 +232,8 @@ get_relevant_cols_arrow <- function(case) {
 
 
 all_possible_match_types <- c(
-  "en01", "en02", "en03", "en04",
-  "ei01", "ei02", "ei03", "ei04",
+  "en01", "en02", "en03",
+  "ei01", "ei02", "ei03", "en04", "ei04",
   "er01", "er02", "er03", "er04",
   #  "pn01", "pn02", "pn03", "pn04",  # we're not working with probabilistic matching yet
   #  "pi01", "pi02", "pi03", "pi04",  # we're not working with probabilistic matching yet
@@ -329,70 +298,4 @@ assert_and_assign_address_fields <- function(address_fields, addresses_table) {
   complete_fields_list <- append(as.list(address_fields), missing_fields_list)
 
   return(complete_fields_list)
-}
-
-
-
-get_relevant_cols <- function(case) {
-  relevant_cols <- if (case == 1) {
-    c("estado_padr", "municipio_padr", "logradouro_padr", "numero_padr", "cep_padr", "bairro_padr")
-  } else if (case == 2) {
-    c("estado_padr", "municipio_padr", "logradouro_padr", "numero_padr", "cep_padr")
-  } else if (case == 3) {
-    c("estado_padr", "municipio_padr", "logradouro_padr", "numero_padr", "bairro_padr")
-  } else if (case == 4) {
-    c("estado_padr", "municipio_padr", "logradouro_padr", "numero_padr")
-  } else if (case == 5) {
-    c("estado_padr", "municipio_padr", "logradouro_padr", "cep_padr", "bairro_padr")
-  } else if (case == 6) {
-    c("estado_padr", "municipio_padr", "logradouro_padr", "cep_padr")
-  } else if (case == 7) {
-    c("estado_padr", "municipio_padr", "logradouro_padr", "bairro_padr")
-  } else if (case == 8) {
-    c("estado_padr", "municipio_padr", "logradouro_padr")
-  } else if (case == 9) {
-    c("estado_padr", "municipio_padr", "cep_padr", "bairro_padr")
-  } else if (case == 10) {
-    c("estado_padr", "municipio_padr", "cep_padr")
-  } else if (case == 11) {
-    c("estado_padr", "municipio_padr", "bairro_padr")
-  } else if (case == 12) {
-    c("estado_padr", "municipio_padr")
-  }
-
-  return(relevant_cols)
-}
-
-
-
-
-
-get_relevant_cols_dani_arrow <- function(case) {
-  relevant_cols <- if (case %in% c('en01', 'pn01') ) {
-    c("estado_padr", "municipio_padr", "logradouro_padr", "numero_padr", "cep_padr", "bairro_padr")
-  } else if (case %in% c('en02', 'pn02')) {
-    c("estado_padr", "municipio_padr", "logradouro_padr", "numero_padr", "cep_padr")
-  } else if (case %in% c('en03', 'pn03')) {
-    c("estado_padr", "municipio_padr", "logradouro_padr", "numero_padr", "bairro_padr")
-  } else if (case %in% c('en04', 'pn04')) {
-    c("estado_padr", "municipio_padr", "logradouro_padr", "numero_padr")
-  } else if (case %in% c('er01', 'pr01', 'ei01', 'pi01')) {
-    c("estado_padr", "municipio_padr", "logradouro_padr", "cep_padr", "bairro_padr")
-  } else if (case %in% c('er02', 'pr02', 'ei02', 'pi02')) {
-    c("estado_padr", "municipio_padr", "logradouro_padr", "cep_padr")
-  } else if (case %in% c('er03', 'pr03', 'ei03', 'pi03')) {
-    c("estado_padr", "municipio_padr", "logradouro_padr", "bairro_padr")
-  } else if (case %in% c('er04', 'pr04', 'ei04', 'pi04')) {
-    c("estado_padr", "municipio_padr", "logradouro_padr")
-  } else if (case == 'ec01') {
-    c("estado_padr", "municipio_padr", "cep_padr", "bairro_padr")
-  } else if (case == 'ec02') {
-    c("estado_padr", "municipio_padr", "cep_padr")
-  } else if (case == 'eb01') {
-    c("estado_padr", "municipio_padr", "bairro_padr")
-  } else if (case == 'em01') {
-    c("estado_padr", "municipio_padr")
-  }
-
-  return(relevant_cols)
 }

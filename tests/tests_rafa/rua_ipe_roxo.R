@@ -98,9 +98,9 @@ df_geo <- geocodebr::geocode(
   campos_endereco = campos,
   resultado_completo = T,
   verboso = T,
-  resultado_sf = T
+  resultado_sf = F
 )
-# nchar(df_geo$lat)
+# nchar(df_geo$lat) # -23.85401
 # df_geo
 
 mapview::mapview(df_geo, zcol='tipo_resultado') + sp_muni
