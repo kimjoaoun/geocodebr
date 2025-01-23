@@ -41,8 +41,8 @@ Caso prefira, a versão em desenvolvimento também pode ser usada. Para isso, us
 o seguinte comando:
 
 ```{r, eval = FALSE}
-# install.packages("pak")
-pak::pak("ipeaGIT/geocodebr")
+# install.packages("remotes")
+remotes::install_github("ipeaGIT/geocodebr")
 ```
 
 ## Utilização

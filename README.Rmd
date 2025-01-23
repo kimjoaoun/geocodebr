@@ -32,8 +32,8 @@ O **{geocodebr}** é um pacote computacional para geolicalização de endereços
 O pacote ainda não está disponível no CRAN. Você pode instalar a versão em desenvolvimento com o código abaixo:
 
 ```r
-# install.packages("pak")
-pak::pak("ipeaGIT/geocodebr")
+# install.packages("remotes")
+remotes::install_github("ipeaGIT/geocodebr")
 ```
 
 ## Utilização

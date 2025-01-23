@@ -27,8 +27,8 @@ O pacote ainda não está disponível no CRAN. Você pode instalar a versão
 em desenvolvimento com o código abaixo:
 
 ``` r
-# install.packages("pak")
-pak::pak("ipeaGIT/geocodebr")
+# install.packages("remotes")
+remotes::install_github("ipeaGIT/geocodebr")
 ```
 
 ## Utilização
@@ -67,7 +67,7 @@ df <- geocodebr::geocode(
   enderecos = input_df,
   campos_endereco = campos,
   resultado_completo = FALSE,
-  verboso = TRUE,
+  verboso = FALSE,
   cache = TRUE,
   n_cores = 1
   )
