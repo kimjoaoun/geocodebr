@@ -196,8 +196,10 @@ As categorias de `tipo_resultado` são listadas abaixo, junto às categorias de
 - precisao `"municipio"`
   - `em01` - municipio
 
-Endereços não encontrados são retornados com latitude, longitude, precisão e
-tipo de resultado `NA`.
+Endereços não encontrados são retornados com latitude, longitude, precisão e tipo de resultado `NA`.
+
+
+***Nota:*** As categorias de `tipo_resultado` que começam com 'p' utilizam correspondência probabilística do campo logradouro, enquanto os tipos que começam com 'e' utilizam apenas correspondência determinística. **As categorias de `tipo_resultado` que usam correspondência probabilística ainda não estão implementados no pacote geocodebr**.
 
 ### Cache de dados
 

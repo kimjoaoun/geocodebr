@@ -15,19 +15,26 @@ listar_campos(
 }
 \arguments{
 \item{estado}{Uma string. O nome da coluna que representa o estado do
-endereço. Campo obrigatório.}
+endereço. Campo obrigatório. Na tabela de endereços, essa coluna pode
+conter os nomes dos estados por extenso, ou a abrevição oficial dos estados
+com duas letras, e.g. "AM", "SP", "DF", "RJ".}
 
 \item{municipio}{Uma string. O nome da coluna que representa o município do
-endereço. Campo obrigatório.}
+endereço. Campo obrigatório. Na tabela de endereços, essa coluna pode
+conter o nome dos municípios, ou o seu código IBGE de 7 dígitos.}
 
 \item{logradouro}{Uma string. O nome da coluna que representa o \emph{logradouro}
 (endereço da rua) do endereço. Pode ser \code{NULL} se o campo não estiver
-especificado na tabela de endereços. O campo de \code{logradouro} \emph{não} deve
-incluir o \code{numero} do endereço, pois o número deve ser indicado numa coluna
-separada.}
+especificado na tabela de endereços. Na tabela de endereços, essa coluna
+deve incluir o \emph{tipo} do lograoduro, indicando se trata-se de uma "Rua" ou
+"Avenida" etc, por exemplo "Avenida Presidente Getúlio Vargas". Além disso,
+essa coluna \emph{não} deve incluir o \code{numero} do endereço, pois o número deve
+ser indicado numa coluna separada.}
 
 \item{numero}{Uma string. O nome da coluna que representa o número do endereço.
-Pode ser \code{NULL} se o campo não estiver especificado na tabela de endereços.}
+Pode ser \code{NULL} se o campo não estiver especificado na tabela de endereços.
+Na tabela de endereços, valores como \code{0} ou caracteres não numerciso como
+\code{"S/N"} ou \code{"10a"} são considerados como \code{NA}.}
 
 \item{cep}{Uma string. O nome da coluna que representa o \emph{CEP} (Código de
 Endereçamento Postal) do endereço. Pode ser \code{NULL} se o campo não estiver

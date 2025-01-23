@@ -133,7 +133,7 @@ A lista completa dos níveis de precisão (`precisao`), suas categorias de tipo 
   - tipo_resultado:
     - em01: municipio
 
-***Nota:*** As categorias de `match_type` que começam com 'p' utilizam correspondência probabilística do campo logradouro, enquanto os tipos que começam com 'e' utilizam apenas correspondência determinística. **As categorias de `match_type` que usam correspondência probabilística ainda não estão implementados no {geocodebr}**.
+***Nota:*** As categorias de `tipo_resultado` que começam com 'p' utilizam correspondência probabilística do campo logradouro, enquanto os tipos que começam com 'e' utilizam apenas correspondência determinística. **As categorias de `tipo_resultado` que usam correspondência probabilística ainda não estão implementados no pacote geocodebr**.
 
 
 # Cache de Dados

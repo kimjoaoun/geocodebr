@@ -158,7 +158,7 @@ cada categoria estão descritos abaixo:
 correspondência probabilística do campo logradouro, enquanto os tipos que
 começam com 'e' utilizam apenas correspondência determinística. \strong{As
 categorias de \code{tipo_resultado} que usam correspondência probabilística ainda
-não estão implementadas no {geocodebr}}.
+não estão implementadas no pacote geocodebr}.
 }
 
 \examples{
