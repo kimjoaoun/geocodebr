@@ -18,6 +18,10 @@
 #'    obrigatórios. Note que o campo  `"localidade"` é equivalente a 'bairro'.
 #' @param resultado_completo Lógico. Indica se o output deve incluir colunas
 #'    adicionais, como o endereço encontrado de referência. Por padrão, é `FALSE`.
+#' @param resultado_sf Lógico. Indica se o resultado deve ser um objeto espacial
+#'    da classe `sf`. Por padrão, é `FALSE`, e o resultado é um `data.frame` com
+#'    as colunas `lat` e `lon`.
+#'    adicionais, como o endereço encontrado de referência. Por padrão, é `FALSE`.
 #' @template verboso
 #' @template cache
 #' @template n_cores
@@ -25,6 +29,7 @@
 #' @return Retorna o `data.frame` de input `enderecos` adicionado das colunas de
 #'   latitude (`lat`) e longitude (`lon`), bem como as colunas (`precisao` e
 #'   `tipo_resultado`) que indicam o nível de precisão e o tipo de resultado.
+#'   Alternativamente, o resultado pode ser um objeto `sf`.
 #'
 #' @template precision_section
 #'
@@ -55,6 +60,7 @@
 geocode <- function(enderecos,
                     campos_endereco = listar_campos(),
                     resultado_completo = FALSE,
+                    resultado_sf = FALSE,
                     verboso = TRUE,
                     cache = TRUE,
                     n_cores = 1 ){
@@ -221,6 +227,17 @@ geocode <- function(enderecos,
   # Disconnect from DuckDB when done
   duckdb::dbDisconnect(con)
 
-  # Return the result
+  # convert df to simple feature
+  if (isTRUE(resultado_sf)) {
+    output_deterministic <- sfheaders::sf_point(
+      obj = output_deterministic,
+      x = 'lon',
+      y = 'lat',
+      keep = TRUE
+      )
+
+    sf::st_crs(output_deterministic) <- 4674
+  }
+
   return(output_deterministic)
 }

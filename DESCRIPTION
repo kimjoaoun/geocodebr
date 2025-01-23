@@ -38,6 +38,8 @@ Imports:
     parallel,
     purrr,
     rlang,
+    sf,
+    sfheaders,
     tools
 Suggests:
     covr,

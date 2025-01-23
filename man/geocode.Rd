@@ -8,6 +8,7 @@ geocode(
   enderecos,
   campos_endereco = listar_campos(),
   resultado_completo = FALSE,
+  resultado_sf = FALSE,
   verboso = TRUE,
   cache = TRUE,
   n_cores = 1
@@ -28,6 +29,11 @@ obrigatórios. Note que o campo  \code{"localidade"} é equivalente a 'bairro'.}
 \item{resultado_completo}{Lógico. Indica se o output deve incluir colunas
 adicionais, como o endereço encontrado de referência. Por padrão, é \code{FALSE}.}
 
+\item{resultado_sf}{Lógico. Indica se o resultado deve ser um objeto espacial
+da classe \code{sf}. Por padrão, é \code{FALSE}, e o resultado é um \code{data.frame} com
+as colunas \code{lat} e \code{lon}.
+adicionais, como o endereço encontrado de referência. Por padrão, é \code{FALSE}.}
+
 \item{verboso}{Um valor lógico. Indica se barras de progresso e mensagens
 devem ser exibidas durante o download dos dados do CNEFE e a geocodificação
 dos endereços. O padrão é \code{TRUE}.}
@@ -44,6 +50,7 @@ processamento dos dados. O padrão é 1.}
 Retorna o \code{data.frame} de input \code{enderecos} adicionado das colunas de
 latitude (\code{lat}) e longitude (\code{lon}), bem como as colunas (\code{precisao} e
 \code{tipo_resultado}) que indicam o nível de precisão e o tipo de resultado.
+Alternativamente, o resultado pode ser um objeto \code{sf}.
 }
 \description{
 Geocodifica endereços brasileiros com base nos dados do CNEFE. Os endereços
