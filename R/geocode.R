@@ -176,12 +176,12 @@ geocode <- function(enderecos,
   # start matching
   for (case in all_possible_match_types ) {
 
-    relevant_cols <- get_relevant_cols(case)
+    key_cols <- get_key_cols(case)
 
     if (verboso) update_progress_bar(matched_rows, case)
 
 
-    if (all(relevant_cols %in% names(input_padrao))) {
+    if (all(key_cols %in% names(input_padrao))) {
 
       # select match function
       match_fun <- ifelse(case %in% number_interpolation_types, match_weighted_cases, match_cases)
@@ -191,7 +191,7 @@ geocode <- function(enderecos,
         x = 'input_padrao_db',
         y = 'filtered_cnefe', # keep this for now
         output_tb = "output_db",
-        key_cols = relevant_cols,
+        key_cols = key_cols,
         match_type = case,
         resultado_completo = resultado_completo
       )

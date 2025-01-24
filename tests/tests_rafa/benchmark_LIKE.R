@@ -97,8 +97,8 @@ rafaF <- function(){ message('rafa F')
     enderecos = input_df,
     campos_endereco = campos,
     n_cores = ncores,
-    resultado_completo = F,
-    verboso = T,
+    resultado_completo = T,
+    verboso = F,
     resultado_sf = F
   )
 }

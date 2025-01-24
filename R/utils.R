@@ -200,7 +200,7 @@ create_index <- function(con, tb, cols, operation, overwrite=TRUE){
 
 
 
-get_relevant_cols <- function(case) {
+get_key_cols <- function(case) {
   relevant_cols <- if (case %in% c('en01', 'ei01', 'pn01') ) {
     c("estado", "municipio", "logradouro_sem_numero", "numero", "cep", "localidade")
   } else if (case %in% c('en02', 'ei02', 'pn02')) {
