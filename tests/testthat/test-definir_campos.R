@@ -4,7 +4,7 @@ tester <- function(logradouro = NULL,
                    localidade = NULL,
                    municipio = NULL,
                    estado = NULL) {
-  listar_campos(
+  definir_campos(
     logradouro,
     numero,
     cep,

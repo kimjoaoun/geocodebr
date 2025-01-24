@@ -6,7 +6,7 @@
 \usage{
 geocode(
   enderecos,
-  campos_endereco = listar_campos(),
+  campos_endereco = definir_campos(),
   resultado_completo = FALSE,
   resultado_sf = FALSE,
   verboso = TRUE,
@@ -20,7 +20,7 @@ coluna deve representar um campo do endereço.}
 
 \item{campos_endereco}{Um vetor de caracteres. A correspondência entre cada
 campo de endereço e o nome da coluna que o descreve na tabela \code{enderecos}.
-A função \code{\link[=listar_campos]{listar_campos()}} auxilia na criação deste vetor e realiza
+A função \code{\link[=definir_campos]{definir_campos()}} auxilia na criação deste vetor e realiza
 algumas verificações nos dados de entrada. Campos de endereço passados
 como \code{NULL} serão ignorados, e a função deve receber pelo menos um campo
 não nulo, além  dos campos \code{"estado"} e \code{"municipio"}, que são
@@ -175,7 +175,7 @@ não estão implementadas no pacote geocodebr}.
 data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
 
-fields <- geocodebr::listar_campos(
+fields <- geocodebr::definir_campos(
   logradouro = "nm_logradouro",
   numero = "Numero",
   cep = "Cep",

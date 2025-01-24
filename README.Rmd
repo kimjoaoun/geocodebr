@@ -42,7 +42,7 @@ remotes::install_github("ipeaGIT/geocodebr")
 
 Uma que você possui uma tabela de dados (`data.frame`) com endereços no Brasil, a geolocalização desses dados com **{geocodebr}** pode ser feita em apenas dois passos:
 
-1. O primeiro passo é usar a função `listar_campos()` para indicar os nomes das colunas no seu `data.frame` que correspondem a cada campo dos endereços.
+1. O primeiro passo é usar a função `definir_campos()` para indicar os nomes das colunas no seu `data.frame` que correspondem a cada campo dos endereços.
 
 2. O segundo passo é usar a função `geocode()` para encontrar as coordenadas geográficas dos endereços de input.
 
@@ -54,7 +54,7 @@ library(geocodebr)
 input_df <- read.csv(system.file("extdata/small_sample.csv", package = "geocodebr"))
 
 # Primeiro passo: inidicar o nome das colunas com cada campo dos enderecos
-campos <- geocodebr::listar_campos(
+campos <- geocodebr::definir_campos(
   logradouro = "nm_logradouro",
   numero = "Numero",
   cep = "Cep",

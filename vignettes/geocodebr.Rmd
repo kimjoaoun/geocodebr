@@ -67,7 +67,7 @@ library(geocodebr)
 
 ends <- read.csv(system.file("extdata/small_sample.csv", package = "geocodebr"))
 
-campos <- listar_campos(
+campos <- definir_campos(
   estado = "nm_uf",
   municipio = "nm_municipio",
   logradouro = "nm_logradouro",
@@ -81,13 +81,13 @@ ends_geo <- geocode(ends, campos_endereco = campos, verboso = FALSE)
 head(ends_geo)
 ```
 
-Note que no exemplo acima nós também utilizamos a função `listar_campos()`, que
+Note que no exemplo acima nós também utilizamos a função `definir_campos()`, que
 facilita o processo de especificação da correspondência entre as colunas da
 tabela e os campos esperados de cada endereço. Com ela, nós definimos que a
 coluna que contém a informação de logradouro se chama `"nm_logradouro"`, que a
 coluna de número se chama `"Numero"`, etc. Essa função é opcional, e poderíamos
 simplesmente passar um vetor de caracteres no formato `c(logradouro =
-"nm_logradouro", numero = "Numero", ...)`. A `listar_campos()`, no entanto,
+"nm_logradouro", numero = "Numero", ...)`. A `definir_campos()`, no entanto,
 realiza alguns testes nas colunas e na tabela, garantindo que o *input* passado
 esteja corretamente formatado.
 
