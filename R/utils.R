@@ -132,12 +132,12 @@ merge_results <- function(con,
                           resultado_completo){
 
 
-  select_columns_y = select_columns_y = c('lat', 'lon', 'tipo_resultado', 'precisao')
+  select_columns_y <- c('lat', 'lon', 'tipo_resultado', 'precisao')
 
   if (isTRUE(resultado_completo)) {
-  select_columns_y = select_columns_y = c(
+  select_columns_y <- c(
     'lat', 'lon', 'tipo_resultado', 'precisao', 'endereco_encontrado',
-    'numero_encontrado' , 'localidade_encontrada', 'cep_encontrado' ,
+    'numero_encontrado' , 'cep_encontrado', 'localidade_encontrada',
     'municipio_encontrado' , 'estado_encontrado'
     )
   }
@@ -150,24 +150,28 @@ merge_results <- function(con,
 
   select_clause <- paste0(
     select_x, ',',
-    paste0(y, ".", select_columns_y, collapse = ", ")
+    paste0('sorted_output', ".", select_columns_y, collapse = ", ")
     )
 
+  # Create the JOIN clause dynamically
   join_condition <- paste(
-    glue::glue("{x}.{key_column} = {y}.{key_column}"),
+    glue::glue("{x}.{key_column} = sorted_output.{key_column}"),
     collapse = ' ON '
   )
 
-  # Create the SQL query
+  # Create SQL query
   query <- glue::glue(
     "SELECT {select_clause}
       FROM {x}
-      LEFT JOIN {y}
-      ON {join_condition} "
-      )
+      LEFT JOIN (
+    SELECT * FROM {y}
+      ORDER BY tempidgeocodebr ) AS sorted_output
+      ON {join_condition};"
+    )
 
   # Execute the query and fetch the merged data
   merged_data <- DBI::dbGetQuery(con, query)
+
   return(merged_data)
   }
 
