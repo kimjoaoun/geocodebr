@@ -1,7 +1,7 @@
 data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
 
-campos <- listar_campos(
+campos <- definir_campos(
   logradouro = "nm_logradouro",
   numero = "Numero",
   cep = "Cep",

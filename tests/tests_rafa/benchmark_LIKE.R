@@ -68,7 +68,7 @@ input_df <- arrow::read_parquet(data_path)
 # cache = TRUE
 # resultado_completo = T
 # resultado_sf = F
-# campos_endereco <- geocodebr::listar_campos(
+# campos_endereco <- geocodebr::definir_campos(
 #   logradouro = 'logradouro',
 #   numero = 'numero',
 #   cep = 'cep',
@@ -83,7 +83,7 @@ ncores <- 7
 
 
 
-campos <- geocodebr::listar_campos(
+campos <- geocodebr::definir_campos(
   logradouro = 'logradouro',
   numero = 'numero',
   cep = 'cep',
@@ -222,7 +222,7 @@ input_df <- read.csv(data_path, encoding = 'Latin-1')
 
 
 
-campos <- geocodebr::listar_campos(
+campos <- geocodebr::definir_campos(
   logradouro = 'nm_logradouro',
   numero = 'Numero',
   cep = 'Cep',

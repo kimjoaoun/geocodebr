@@ -58,7 +58,7 @@ data.table::setnames(
 head(rais)
 
 
-fields <- geocodebr::setup_address_fields(
+fields <- geocodebr::definir_campos(
   logradouro = 'logradouro_no_numbers',
   numero = 'numero',
   cep = 'cep',

@@ -33,7 +33,7 @@
 #'   valores são as colunas que os representam na tabela de endereços.
 #'
 #' @examples
-#' listar_campos(
+#' definir_campos(
 #'   logradouro = "Nome_logradouro",
 #'   numero = "Numero",
 #'   cep = "CEP",
@@ -43,7 +43,7 @@
 #' )
 #'
 #' @export
-listar_campos <- function(estado,
+definir_campos <- function(estado,
                           municipio,
                           logradouro = NULL,
                           numero = NULL,
