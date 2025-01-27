@@ -6,7 +6,7 @@
 #'
 #' a) estrateia de montar output: com empty db ou tabelas separadas por case_match ?
 #' b) manter columna matched_address
-#' c) dani arrow
+
 #'
 #' instalar extensoes do duckdb
 #' - spatial - acho q nao vale a pena por agora
@@ -98,11 +98,15 @@ rafaF <- function(){ message('rafa F')
     campos_endereco = campos,
     n_cores = ncores,
     resultado_completo = T,
-    verboso = F,
+    verboso = T,
     resultado_sf = F
   )
 }
 
+setDT(df_rafaF)
+df_rafaF[, empate := ifelse(.N>1,1,0), by = id]
+a <- df_rafaF[empate==1]
+table(a$precisao)
 
 rafaT <- function(){ message('rafa F')
   df_rafaT <- geocodebr::geocode(
@@ -114,8 +118,25 @@ rafaT <- function(){ message('rafa F')
   )
 }
 
+setDT(df_rafaT)
+df_rafaT[, empate := ifelse(.N>1,1,0), by = id]
+a <- df_rafaT[empate==1]
+table(a$precisao)
 
+dt.haversine <- function(lat_from, lon_from, lat_to, lon_to, r = 6378137){
+  radians <- pi/180
+  lat_to <- lat_to * radians
+  lat_from <- lat_from * radians
+  lon_to <- lon_to * radians
+  lon_from <- lon_from * radians
+  dLat <- (lat_to - lat_from)
+  dLon <- (lon_to - lon_from)
+  a <- (sin(dLat/2)^2) + (cos(lat_from) * cos(lat_to)) * (sin(dLon/2)^2)
+  return(2 * atan2(sqrt(a), sqrt(1 - a)) * r)
+}
+a <- a[order(id)]
 
+a[, dist := round(dt.haversine(lat, lon, shift(lat), shift(lon))), by=id]
 
 
 
@@ -243,7 +264,7 @@ rafaF <- function(){ message('rafa F')
     campos_endereco = campos,
     n_cores = 7,
     resultado_completo = T,
-    verboso = T
+    verboso = F
   )
 }
 

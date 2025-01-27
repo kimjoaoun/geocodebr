@@ -2,7 +2,7 @@
 # data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
 # input_df <- read.csv(data_path, encoding = 'Latin-1')
 #
-# campos <- geocodebr::listar_campos(
+# campos <- geocodebr::definir_campos(
 #   logradouro = 'nm_logradouro',
 #   numero = 'Numero',
 #   cep = 'Cep',
@@ -34,9 +34,11 @@
 #
 #
 #
+library(dplyr)
 library(mapview)
 library(sfheaders)
 library(data.table)
+mapviewOptions(platform = 'leafgl')
 
 sp_muni <- geobr::read_municipality(code_muni = 3550308)
 
@@ -85,7 +87,7 @@ df <- data.frame(
 
 sp_muni <- geobr::read_municipality(code_muni = 3550308)
 
-campos <- geocodebr::listar_campos(
+campos <- geocodebr::definir_campos(
   logradouro = 'logradouro',
   numero = 'numero',
   cep = 'cep',
@@ -110,11 +112,12 @@ df_geo$lat
 
 
 
+# teste TSE ---------------
 
 
-df <- fread("C:/Users/user/Downloads/teste_geocodebr_1km.csv")
+df <- fread("teste_geocodebr_1km.csv")
 head(df)
-i <- 2
+i <- 7
 dfi <- df[i,]
 dfi$tipo_resultado
 
@@ -126,14 +129,31 @@ muni <- df[i, 'nm_municipio']$nm_municipio
 uf <- df[i, 'nm_uf']$nm_uf
 
 tudo <- geocodebr::listar_dados_cache()[11]
+tudo <- geocodebr::listar_dados_cache()[11]
 
-filtered_cnefe_sp <- arrow::open_dataset( geocodebr::listar_dados_cache()[6] ) |>
+
+filtered_cnefe_sp <- arrow::open_dataset( tudo ) |>
   dplyr::filter(estado == 'SP') |>
   dplyr::filter(municipio == "SAO PAULO") |>
-  dplyr::filter(logradouro_sem_numero == logr) |>
-  dplyr::filter(cep == cepi) |>
+   dplyr::filter(logradouro_sem_numero == logr) |>
+  # dplyr::filter(cep == cepi) |>
+  #  dplyr::filter(localidade == bairroi) |>
+  # dplyr::filter(lat > -23.574453 & lat < -23.567316 &    # parque sao domingos
+  #               lon > -46.719479 & lon < -46.704553) |> # parque sao domingos
   dplyr::collect()
 
+
+# cnefe_original <- ipeadatalake::ler_cnefe(ano = 2022, as_data_frame = F) |> dplyr::compute()
+#
+# filtered_cnefe_sp <- cnefe_original |>
+#   dplyr::compute() |>
+#   dplyr::filter(cep == 08461620) |>
+#   dplyr::collect()
+
+
+# -23.566701, -46.717479       -23.567316, -46.704360
+#
+# -23.574453, -46.719479      -23.574429, -46.704553
 
 unique(filtered_cnefe_sp$logradouro_sem_numero)
 unique(filtered_cnefe_sp$cep)
@@ -143,7 +163,7 @@ unique(filtered_cnefe_sp$numero)
 a <- subset(filtered_cnefe_sp, cep == "04896-360")
 
 
-campos <- geocodebr::listar_campos(
+campos <- geocodebr::definir_campos(
   logradouro = 'LOGRADOURO',
   numero = 'NUMERO',
   cep = 'NR_CEP',
@@ -153,12 +173,117 @@ campos <- geocodebr::listar_campos(
 )
 
 df_geo <- geocodebr::geocode(
-  enderecos = select(df[2,], -c("lat", "lon", "tipo_resultado",'precisao')),
+  enderecos = select( df, -c("lat", "lon", "tipo_resultado",'precisao')),
   campos_endereco = campos,
   resultado_completo = T,
   verboso = T,
-  resultado_sf = T
+  resultado_sf = F
 )
+
+
+a <- sfheaders::sf_point(
+  obj = filtered_cnefe_sp,
+  x = 'lon',
+  y = 'lat',
+  keep = TRUE
+)
+sf::st_crs(a) <- 4674
+
+mapview::mapview(a, zcol='localidade') + df_geo
+
+
+
+#' notas internas:
+#' casos (1) e (5) criar o probabilistico e ver se corrige
+#'
+#' 2) se tem dois lograd com mesmo cep, pq o left join só retorna um e nao os dois?
+#'  porque na hora de gerar os parquets, a gente tira a media sem a coluna de localidade
+#'  e dai a media dá um resultado bizarro no meio do caminho.
+#'  SE alternativamente a gente fizer pra categoria er02 o merge com o parquet
+#'  que inclui o bairro, daí o left join retorna mais de um resultado. E dai
+#'  poderiamos indicar caso de empate
+#'
+
+#' 1) COLÉGIO EQUIPE
+#' ok: google e TSE
+#' O logradouro está com uma letra errada no dado de input. O nome correto da é
+#' 'Sao Vicente de PaulO', mas o input é de PaulA. TSE e Google maps concordam.
+#' geocodebr erra feio porque ainda nao tem match probabilistico por string.
+#' Se corrigir o nome da rua no input, o geocodebr acerta. Mas uma proxima etapa
+#' é implementar o match probabilistico mesmo.
+#'
+#' 2) E.E. JOSÉ DE SAN MARTIN
+#' ok: google e TSE
+#' Caso parecido com o da  'RUA IPE ROXO'. O CNEFE aponta que existem endereços
+#' no logradouro "RUA DELTA" e com o mesmo CEP "08071-060" em áreas completamente
+#' distantes entre si. Nos bairros "JABAQUARA" e "UNIAO VILA NOVA". Como nessa
+#' categoria o geobr tira a media das coordenadas de todos enderecos com mesmo
+#' lograouro e cep, o resultado sai num lugar no meio do caminho e sem sentido.
+#' To pensando uma solucao aqui q recupera a info do bairro, mesmo quando ele nao
+#' bate com o input do usuario.
+#'
+#' 3) EMEF. AMADEU MENDES
+#' O dado de input parece correto e o cnefe errado.
+#' CNEFE: localidade "SAO DOMINGOS" mas deveria ser "PARQUE SAO DOMINGOS". E o cenfe
+#' tem uns pontos soltos mais perto do centro com esse mesmo bairro. estranho
+#' CNEFE: logradouro "RUA JOAO FERREIRA" mas deveria ser "RUA TOMAS LOPES FERREIRA"
+#'
+# dplyr::filter(lat > -23.547470 & lat < -23.476933 &    # parque sao domingos
+#               lon > -46.780367 & lon < -46.710332 ) |> # parque sao domingos
+#'
+#'
+#' 4) ESCOLA ESTADUAL ALBERTO TORRES
+#' input correto. Erro no cnefe onde a avenida muda de nome de "AVENIDA VITAL BRASIL" (correto)
+#' para "AVENIDA DOUTOR VITAL"
+#'
+#  dplyr::filter(lat > -23.574453 & lat < -23.567316 &    # parque sao domingos
+#                  lon > -46.719479 & lon < -46.704553) |> # parque sao domingos
+#
+#'
+#'5) EE  AQUILINO RIBEIRO
+#' ok: TSE e geocodebr
+#' As coordenadas do Google map estao erradas. Mas as coordenadas do TSE e
+#' geocodebr sao bem proximas! E isso acontece apesar de ter um erro no input.
+#' No input esta "RUA ONOFRE LEITE MEIRELES" e deveria ser 'MEIRELLES' com dois 'L'
+#' geocodebr: deve pegar quando tiver match probabilistico, mas mesmo assim acerta
+#' pelo cep
+#'
+#'
+#'
+#' 6) EE PROF. MARIO ARMINANTE
+#' ok: TSE e geocodebr
+#' as coordenadas do TSE e o geocodebr estao bem proximas (170 metros). Parece
+#' correto mesmo olhando o google street view. As coordenadas do google maps
+#' levam para uma outra instituição chamada 'CEU EMEF MANOEL VIEIRA DE QUEIROZ
+#' FILHO'
+#'
+#'
+#' 7) EE AYRTON SENNA DA SILVA
+#' caso da RUA IPE ROXO. Dado de input parece q tem alguns erros:
+#'  - input tem bairro "COLONIA (ZONA SUL)" q nao condiz com google maps
+#'  - input tem cep "04896-260" q é "errado" e que joga na "RUA DAS ARARAS", que
+#'  é 4 ruas pro lado da 'R IPE ROXO'. O CEP correto da escola seria '04896-360',
+#'  MAS o CNEFE aponta q tem RUA IPE ROXO com esse cep "04896-360" em regioes muito
+#'  diferentes de SP.
+#'
+
+
+
+# rua ipe roxo ---------------
+
+tudo <- geocodebr::listar_dados_cache()[11]
+log_e_cep <- geocodebr::listar_dados_cache()[6]
+log_e_cep_e_localidade <- geocodebr::listar_dados_cache()[7]
+
+
+filtered_cnefe_sp <- arrow::open_dataset( tudo  ) |> # tudo
+  dplyr::filter(estado == 'SP') |>
+  dplyr::filter(municipio == "SAO PAULO") |>
+#  dplyr::filter(logradouro_sem_numero == "RUA IPE ROXO") |>
+  dplyr::filter(cep == "04896-360") |>   # ESSE EH O CEP PROBLEMATICO
+  dplyr::collect()
+
+setDT(filtered_cnefe_sp)[, . (lat=mean(lat), lon=mean(lon)), by= c("logradouro_sem_numero", "cep",'localidade')]
 
 
 a <- sfheaders::sf_point(
@@ -173,20 +298,6 @@ mapview::mapview(a, zcol='localidade')
 
 
 
-# rua ipea roxo ---------------
-tudo <- geocodebr::listar_dados_cache()[11]
-log_e_cep <- geocodebr::listar_dados_cache()[6]
-log_e_cep <- geocodebr::listar_dados_cache()[7]
-
-
-filtered_cnefe_sp <- arrow::open_dataset( tudo ) |>
-  dplyr::filter(estado == 'SP') |>
-  dplyr::filter(municipio == "SAO PAULO") |>
-  dplyr::filter(logradouro_sem_numero == "RUA IPE ROXO") |>
-  dplyr::filter(cep == "04896-360") |>
-  dplyr::collect()
-
-
 filtered_cnefe_sp <- arrow::open_dataset( log_e_cep ) |>
   dplyr::filter(estado == 'SP') |>
   dplyr::filter(municipio == "SAO PAULO") |>
@@ -195,49 +306,8 @@ filtered_cnefe_sp <- arrow::open_dataset( log_e_cep ) |>
   dplyr::collect()
 
 
-setDT(filtered_cnefe_sp)
+setDT(filtered_cnefe_sp)[, . (lat=mean(lat), lon=mean(lon)), by= c("logradouro_sem_numero", "cep")]
 
-filtered_cnefe_sp[, . (lat=mean(lat), lon=mean(lon)), by= c("logradouro_sem_numero", "cep",'localidade'  )]
-
-
-#' notas internas:
-#' 1) criar o probabilistico e ver se corrige
-#'
-#' 2) se tem dois lograd com mesmo cep, pq o left join só retorna um e nao os dois?
-#'  porque na hora de gerar os parquets, a gente tira a media sem a coluna de localidade
-#'  e dai a media dá um resultado bizarro no meio do caminho.
-#'  SE alternativamente a gente fizer pra categoria er02 o merge com o parquet
-#'  que inclui o bairro, daí o left join retorna mais de um resultado. E dai
-#'  poderiamos indicar caso de empate
-#'
-
-#' 1) COLÉGIO EQUIPE
-#' O logradouro está com uma letra errada no dado de input. O nome correto da é
-#' 'Sao Vicente de PaulO', mas o input é de PaulA. TSE e Google maps concordam.
-#' geocodebr erra feio porque ainda nao tem match probabilistico por string.
-#' Se corrigir o nome da rua no input, o geocodebr acerta. Mas uma proxima etapa
-#' é implementar o match probabilistico mesmo.
-#'
-#' 2) E.E. JOSÉ DE SAN MARTIN
-#' Caso parecido com o da  'RUA IPE ROXO'. O CNEFE aponta que existem endereços
-#' no logradouro "RUA DELTA" e com o mesmo CEP "08071-060" em áreas completamente
-#' distantes entre si. Nos bairros "JABAQUARA" e "UNIAO VILA NOVA". Como nessa
-#' categoria o geobr tira a media das coordenadas de todos enderecos com mesmo
-#' lograouro e cep, o resultado sai num lugar no meio do caminho e sem sentido.
-#' To pensando uma solucao aqui q recupera a info do bairro, mesmo quando ele nao
-#' bate com o input do usuario.
-#'
-#'
-#' 6) EE PROF. MARIO ARMINANTE
-#' as coordenadas do TSE e o geocodebr estao bem proximas (170 metros). Parece
-#' correto mesmo olhando o google street view. As coordenadas do google maps
-#' levam para uma outra instituição chamada 'CEU EMEF MANOEL VIEIRA DE QUEIROZ
-#' FILHO'
-#'
-#'
-#'
-#'
-#'
 
 
 # rua delta ---------------

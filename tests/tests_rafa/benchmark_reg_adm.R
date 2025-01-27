@@ -278,7 +278,7 @@ cad <- cad_con |>
          cep,
          bairro) |>
   dplyr::compute() |>
-  dplyr::slice_sample(n = sample_size) |> # sample 20K
+#  dplyr::slice_sample(n = sample_size) |> # sample 20K
   dplyr::collect()
 
 
@@ -292,11 +292,11 @@ cad <- cad_con |>
 # cad[, abbrev_state := enderecobr::padronizar_estados(abbrev_state, formato = 'sigla') ]
 
 
-fields_cad <- geocodebr::setup_address_fields(
+fields_cad <- geocodebr::definir_campos(
   logradouro = 'logradouro',
   numero = 'numero',
   cep = 'cep',
-  bairro = 'bairro',
+  localidade = 'bairro',
   municipio = 'code_muni',
   estado = 'abbrev_state'
 )
@@ -352,15 +352,15 @@ rafa_keep <- bench::system_time( rafaT() )
 
 rafaF <- function(){ message('rafa F')
   message(Sys.time())
-  rais <- geocodebr::geocode(
-    addresses_table = cad,
-    address_fields = fields_cad,
+  cadgeo <- geocodebr::geocode(
+    enderecos  = cad,
+    campos_endereco = fields_cad,
+    resultado_completo = T,
     n_cores = 10, # 7
-    full_results = F,
-    progress = T
+    verboso = F,
+    resultado_sf = F
   )
   message(Sys.time())
-  return(2+2)
   }
 
 rafaT_db <- function(){ message('rafa Tdb')
