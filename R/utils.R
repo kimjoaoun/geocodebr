@@ -230,10 +230,21 @@ get_key_cols <- function(case) {
   return(relevant_cols)
 }
 
+# all_possible_match_types <- c(
+#   "en01", "ei01",
+#   "en02", "ei02",
+#   "en03", "ei03",
+#   "en04", "ei04",
+#   "er01", "er02", "er03", "er04",
+#   #  "pn01", "pn02", "pn03", "pn04",  # we're not working with probabilistic matching yet
+#   #  "pi01", "pi02", "pi03", "pi04",  # we're not working with probabilistic matching yet
+#   #  "pr01", "pr02", "pr03", "pr04",  # we're not working with probabilistic matching yet
+#   "ec01", "ec02", "eb01", "em01"
+# )
 
 all_possible_match_types <- c(
-  "en01", "en02", "en03",
-  "ei01", "ei02", "ei03", "en04", "ei04",
+  "en01", "en02", "en03","en04",
+  "ei01", "ei02", "ei03", "ei04",
   "er01", "er02", "er03", "er04",
   #  "pn01", "pn02", "pn03", "pn04",  # we're not working with probabilistic matching yet
   #  "pi01", "pi02", "pi03", "pi04",  # we're not working with probabilistic matching yet
