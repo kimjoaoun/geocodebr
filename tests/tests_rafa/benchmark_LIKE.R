@@ -268,6 +268,7 @@ rafaF <- function(){ message('rafa F')
   )
 }
 
+identical(df_rafaF$id, input_df$id)
 
 
 table(df_rafa_loop$precision) / nrow(df_rafa_loop)*100
