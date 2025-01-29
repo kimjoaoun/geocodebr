@@ -103,14 +103,11 @@ DBI::dbListTables(con)
 # Perform the LEFT JOIN with match_bm25 scoring
 query_left_join <- glue::glue(
   "SELECT
+      input_db.id,
       input_db.logradouro AS input_logradouro,
-      input_db.numero AS input_numero,
-      input_db.cep AS input_cep,
       cnefe.logradouro AS cnefe_logradouro,
-      cnefe.numero AS cnefe_numero,
-      cnefe.cep AS cnefe_cep,
       cnefe.lat AS cnefe_lat,
-     fts_main_cnefe.match_bm25(input_db.logradouro, cnefe.logradouro) AS score
+     fts_main_cnefe.match_bm25(input_logradouro, cnefe_logradouro) AS score
     FROM
       input_db
     LEFT JOIN
@@ -130,4 +127,81 @@ result
 # View the result
 print(result)
 
+
+
+
+
+
+# solucao sem fts -------------------------------------
+
+#' https://duckdb.org/docs/sql/functions/char.html
+#' damerau_levenshtein
+#' jaccard
+#' jaro_similarity
+#' jaro_winkler_similarity
+#'
+
+# threshold
+query_join <- glue::glue(
+  "WITH similarity_scores AS (
+     SELECT
+       i.id AS input_id,
+       c.cnefe_id,
+       i.municipio AS input_municipio,
+       c.municipio AS cnefe_municipio,
+       i.logradouro AS input_logradouro,
+       c.logradouro AS cnefe_logradouro,
+       jaro_winkler_similarity(i.logradouro, c.logradouro) AS similarity
+     FROM input_db i
+     JOIN cnefe c
+     ON i.municipio = c.municipio
+   )
+   SELECT
+     input_id,
+     cnefe_id,
+     input_municipio,
+     cnefe_municipio,
+     input_logradouro,
+     cnefe_logradouro,
+     similarity
+   FROM similarity_scores
+   WHERE similarity > 0.8 -- Adjust the threshold as needed
+   ORDER BY similarity DESC;"
+)
+
+# return max similariy
+query_max_similarity <- glue::glue(
+  "WITH similarity_scores AS (
+     SELECT
+       i.id AS input_id,
+       c.cnefe_id,
+       i.municipio AS input_municipio,
+       c.municipio AS cnefe_municipio,
+       i.logradouro AS input_logradouro,
+       c.logradouro AS cnefe_logradouro,
+       jaro_winkler_similarity(i.logradouro, c.logradouro) AS similarity,
+       RANK() OVER (PARTITION BY i.id ORDER BY jaro_winkler_similarity(i.logradouro, c.logradouro) DESC) AS rank
+     FROM input_db i
+     JOIN cnefe c
+     ON i.municipio = c.municipio
+   )
+   SELECT
+     input_id,
+     cnefe_id,
+     input_municipio,
+     cnefe_municipio,
+     input_logradouro,
+     cnefe_logradouro,
+     similarity,
+     rank
+   FROM similarity_scores
+   WHERE similarity > 0.8 -- Adjust the threshold as needed
+   AND rank = 1 -- Only keep the best match per input;"
+)
+
+
+
+# Execute the query
+DBI::dbGetQuery(con, query_join)
+DBI::dbGetQuery(con, query_max_similarity)
 
