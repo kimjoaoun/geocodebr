@@ -205,3 +205,11 @@ query_max_similarity <- glue::glue(
 DBI::dbGetQuery(con, query_join)
 DBI::dbGetQuery(con, query_max_similarity)
 
+w1 <- 'teste 1'
+w2 <- 'teste 2'
+
+q <- glue::glue("SELECT jaro_winkler_similarity('{w1}', '{w2}');")
+q <- glue::glue("SELECT jaro_winkler_similarity('{w1}', '{w2}') AS similarity;")
+DBI::dbGetQuery(con, q)
+
+
