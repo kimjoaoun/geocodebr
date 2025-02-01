@@ -42,6 +42,7 @@ match_cases <- function(con,
     collapse = ' AND '
   )
 
+  # cols that cannot be null
   cols_not_null <-  paste(
     glue::glue("{x}.{key_cols} IS NOT NULL"),
     collapse = ' AND '

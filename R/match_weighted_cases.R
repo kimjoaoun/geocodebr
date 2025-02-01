@@ -35,17 +35,18 @@ match_weighted_cases <- function(con,
   # register filtered_cnefe to db
   duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
 
+  # cols that cannot be null
+  cols_not_null <-  paste(
+    glue::glue("{x}.{key_cols} IS NOT NULL"),
+    collapse = ' AND '
+  )
+
   # remove numero from key cols to allow for the matching
   key_cols <- key_cols[key_cols != 'numero']
 
   # Create the JOIN condition by concatenating the key columns
   join_condition <- paste(
     glue::glue("{y}.{key_cols} = {x}.{key_cols}"),
-    collapse = ' AND '
-  )
-
-  cols_not_null <-  paste(
-    glue::glue("{x}.{key_cols} IS NOT NULL"),
     collapse = ' AND '
   )
 
@@ -87,7 +88,7 @@ match_weighted_cases <- function(con,
     FROM {x}
     LEFT JOIN {y}
     ON {join_condition}
-    WHERE {cols_not_null} AND {x}.numero IS NOT NULL AND {y}.numero IS NOT NULL;"
+    WHERE {cols_not_null} AND {y}.numero IS NOT NULL;"
   )
 
   DBI::dbExecute(con, query_match)
