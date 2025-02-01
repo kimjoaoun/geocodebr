@@ -270,7 +270,7 @@ geocode <- function(enderecos,
 
    if( n_casos_empate >= 1){
      cli::cli_warn(
-       "Foram encontrados {n_casos_empate} casos de empate. Esses casos estão marcados com valor igual `TRUE` na coluna 'empate_geocodebr',
+       "Foram encontrados {n_casos_empate} casos de empate. Estes casos foram marcados com valor igual `TRUE` na coluna 'empate_geocodebr',
        e podem ser inspecionados na coluna 'endereco_encontrado'."
        )
      } else {  output_df[, empate_geocodebr := NULL] }
