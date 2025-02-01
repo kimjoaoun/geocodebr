@@ -30,3 +30,51 @@ area
 range_lon <- sd(df$lon) *2
 range_lat <- sd(df$lat) *2
 
+
+
+
+# concave ----------------------------------------------
+
+devtools::load_all(".")
+library(data.table)
+library(dplyr)
+library(sf)
+library(sfheaders)
+library(arrow)
+library(mapview)
+mapview::mapviewOptions(platform = 'leafgl')
+
+tudo <- geocodebr::listar_dados_cache()
+tudo <- tudo[10]
+
+filt <- arrow::open_dataset( tudo ) |>
+  dplyr::filter(estado == 'RJ') |>
+  dplyr::filter(municipio == "RIO DE JANEIRO") |>
+  dplyr::collect()
+
+dt <- filter(filt, cep %in% c("22620-110", "20521-470"))
+
+ccc <- filter(dt, cep=="20521-470")
+
+
+get_concave_area <- function(lat_vec, lon_vec){
+
+  lat_vec <- ccc$lat
+  lon_vec <- ccc$lon
+  temp_matrix <- matrix( c(lat_vec, lon_vec), ncol = 2, byrow = FALSE)
+  temp_sf <- sfheaders::sf_point(temp_matrix, keep = T)
+  sf::st_crs(temp_sf) <- 4674
+
+  poly <- concaveman::concaveman(points = temp_sf)
+  area_m2 <- sf::st_area(poly)
+  area_m2 <-  as.numeric(area_m2) |> round()
+
+  return(area_m2)
+}
+
+mapview(temp_sf) + poly
+
+dt[, .(lat = mean(lat),
+       lon = mean(lon),
+       area_m2 = get_concave_area(lat, lon)), by = cep]
+

@@ -52,7 +52,7 @@ filtered_cnefe_sp <- arrow::open_dataset( geocodebr::listar_dados_cache()[11] ) 
 a <- subset(filtered_cnefe_sp, cep == "04896-360")
 a <- subset(filtered_cnefe_sp, cep == "04896-360")
 
-table(a$logradouro_sem_numero)
+table(a$localidade)
 #> RUA IPE ROXO
 #>          243
 
@@ -81,8 +81,8 @@ df <- data.frame(
   municipio = 'sao paulo',
   logradouro = 'rua ipe roxo',
   numero = 1:5000,
-  bairro = 'vargem grande',
-  cep = NA
+  bairro = NA, #'vargem grande',
+  cep = "04896-360"
   )
 
 sp_muni <- geobr::read_municipality(code_muni = 3550308)
@@ -115,7 +115,7 @@ df_geo$lat
 # teste TSE ---------------
 
 
-df <- fread("teste_geocodebr_1km.csv")
+df <- data.table::fread("teste_geocodebr_1km.csv")
 head(df)
 i <- 7
 dfi <- df[i,]
@@ -217,7 +217,7 @@ mapview::mapview(a, zcol='localidade') + df_geo
 #' Caso parecido com o da  'RUA IPE ROXO'. O CNEFE aponta que existem endereços
 #' no logradouro "RUA DELTA" e com o mesmo CEP "08071-060" em áreas completamente
 #' distantes entre si. Nos bairros "JABAQUARA" e "UNIAO VILA NOVA". Como nessa
-#' categoria o geobr tira a media das coordenadas de todos enderecos com mesmo
+#' categoria o geocodebr tira a media das coordenadas de todos enderecos com mesmo
 #' lograouro e cep, o resultado sai num lugar no meio do caminho e sem sentido.
 #' To pensando uma solucao aqui q recupera a info do bairro, mesmo quando ele nao
 #' bate com o input do usuario.
@@ -279,8 +279,8 @@ log_e_cep_e_localidade <- geocodebr::listar_dados_cache()[7]
 filtered_cnefe_sp <- arrow::open_dataset( tudo  ) |> # tudo
   dplyr::filter(estado == 'SP') |>
   dplyr::filter(municipio == "SAO PAULO") |>
-#  dplyr::filter(logradouro_sem_numero == "RUA IPE ROXO") |>
-  dplyr::filter(cep == "04896-360") |>   # ESSE EH O CEP PROBLEMATICO
+ dplyr::filter(logradouro_sem_numero == "RUA IPE ROXO") |>
+ # dplyr::filter(cep == "04896-360") |>   # ESSE EH O CEP PROBLEMATICO
   dplyr::collect()
 
 setDT(filtered_cnefe_sp)[, . (lat=mean(lat), lon=mean(lon)), by= c("logradouro_sem_numero", "cep",'localidade')]
@@ -335,3 +335,36 @@ filtered_cnefe_sp <- arrow::open_dataset( log_e_cep ) |>
 seDT(filtered_cnefe_sp)
 
 filtered_cnefe_sp[, . (lat=mean(lat), lon=mean(lon)), by= c("logradouro_sem_numero", "cep",'localidade'  )]
+
+
+
+
+
+
+
+# rua nove, mage sp ---------------
+
+
+filtered_cnefe_sp <- arrow::open_dataset( geocodebr::listar_dados_cache()[11] ) |>
+  dplyr::filter(estado == 'RJ') |>
+  dplyr::filter(municipio == "MAGE") |>
+  dplyr::filter(logradouro_sem_numero == "RUA NOVE") |>
+  # dplyr::filter(localidade == "PRAIA DA ESPERANCA") |>
+  dplyr::collect()
+
+a <- subset(filtered_cnefe_sp, cep == "04896-360")
+a <- subset(filtered_cnefe_sp, cep == "04896-360")
+
+table(a$localidade)
+#> RUA IPE ROXO
+#>          243
+
+a <- sfheaders::sf_point(
+  obj = filtered_cnefe_sp,
+  x = 'lon',
+  y = 'lat',
+  keep = TRUE
+)
+sf::st_crs(a) <- 4674
+
+mapview::mapview(a, zcol='localidade')

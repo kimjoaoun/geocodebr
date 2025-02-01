@@ -357,7 +357,7 @@ rafaF <- function(){ message('rafa F')
     campos_endereco = fields_cad,
     resultado_completo = T,
     n_cores = 10, # 7
-    verboso = F,
+    verboso = T,
     resultado_sf = F
   )
   message(Sys.time())

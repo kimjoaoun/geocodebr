@@ -125,7 +125,6 @@ geocode <- function(enderecos,
   # # sort input data
   # input_padrao <- input_padrao[order(estado, municipio, logradouro_sem_numero, numero, cep, localidade)]
 
-
   # downloading cnefe
   cnefe_dir <- download_cnefe(
     verboso = verboso,
@@ -145,17 +144,18 @@ geocode <- function(enderecos,
   additional_cols <- ""
   if (isTRUE(resultado_completo)) {
     additional_cols <- glue::glue(
-    ", endereco_encontrado VARCHAR, logradouro_encontrado VARCHAR,
+    ", logradouro_encontrado VARCHAR,
     numero_encontrado VARCHAR, localidade_encontrada VARCHAR,
     cep_encontrado VARCHAR, municipio_encontrado VARCHAR, estado_encontrado VARCHAR"
     )
   }
 
   query_create_empty_output_db <- glue::glue(
-    "CREATE TABLE output_db (
+    "CREATE OR REPLACE TABLE output_db (
      tempidgeocodebr INTEGER,
      lat NUMERIC(8, 6),
      lon NUMERIC(8, 6),
+     endereco_encontrado VARCHAR,
      tipo_resultado VARCHAR {additional_cols});"
     )
 
@@ -180,7 +180,6 @@ geocode <- function(enderecos,
 
     if (verboso) update_progress_bar(matched_rows, case)
 
-
     if (all(key_cols %in% names(input_padrao))) {
 
       # select match function
@@ -196,6 +195,8 @@ geocode <- function(enderecos,
         resultado_completo = resultado_completo
       )
 
+      # n_rows_left <- DBI::dbGetQuery(con, 'SELECT COUNT(*) FROM input_padrao_db;')$`count_star()`
+      # matched_rows <- n_rows - n_rows_left
       matched_rows <- matched_rows + n_rows_affected
 
       # leave the loop early if we find all addresses before covering all cases
@@ -216,7 +217,7 @@ geocode <- function(enderecos,
 
   x_columns <- names(enderecos)
 
-  output_deterministic <- merge_results(
+  output_df <- merge_results(
     con,
     x='input_db',
     y='output_db',
@@ -225,20 +226,72 @@ geocode <- function(enderecos,
     resultado_completo = resultado_completo
   )
 
+  data.table::setDT(output_df)
+
   # Disconnect from DuckDB when done
   duckdb::dbDisconnect(con)
 
+  # lida com casos de empate
+  if (nrow(output_df) > n_rows) {
+
+    # encontra casos de empate
+    output_df[, empate_geocodebr := ifelse(.N > 1, TRUE, FALSE), by = tempidgeocodebr]
+
+    # calcula distancias entre casos empatados
+    output_df[empate_geocodebr == TRUE,
+              dist_geocodebr := dt_haversine(
+                lat, lon,
+                data.table::shift(lat), data.table::shift(lon)
+                ),
+              by = tempidgeocodebr
+              ]
+
+
+    output_df[empate_geocodebr == TRUE,
+              dist_geocodebr := ifelse(is.na(dist_geocodebr), 0, dist_geocodebr)
+              ]
+
+    # ignora casos com dist menor do q 200 metros
+    output_df <- output_df[ empate_geocodebr==FALSE |
+                            empate_geocodebr==TRUE & dist_geocodebr == 0 |
+                            dist_geocodebr > 200
+                            ]
+
+    # update casos de empate
+    output_df[, empate_geocodebr := ifelse(.N > 1, TRUE, FALSE), by = tempidgeocodebr]
+
+
+    # conta numero de casos empatados
+    ids_empate <- output_df[empate_geocodebr == TRUE, ]$tempidgeocodebr
+    n_casos_empate <- unique(ids_empate) |> length()
+
+   # drop geocodebr temp columns
+   output_df[, dist_geocodebr := NULL]
+
+   if( n_casos_empate >= 1){
+     cli::cli_warn(
+       "Foram encontrados {n_casos_empate} casos de empate. Esses casos estão marcados com valor igual `TRUE` na coluna 'empate_geocodebr',
+       e podem ser inspecionados na coluna 'endereco_encontrado'."
+       )
+     } else {  output_df[, empate_geocodebr := NULL] }
+  }
+
+  # drop geocodebr temp id column
+  output_df[, tempidgeocodebr := NULL]
+
+
   # convert df to simple feature
   if (isTRUE(resultado_sf)) {
-    output_deterministic <- sfheaders::sf_point(
-      obj = output_deterministic,
+    output_sf <- sfheaders::sf_point(
+      obj = output_df,
       x = 'lon',
       y = 'lat',
       keep = TRUE
       )
 
-    sf::st_crs(output_deterministic) <- 4674
+    sf::st_crs(output_sf) <- 4674
+    return(output_sf)
   }
 
-  return(output_deterministic)
+  return(output_df)
 }

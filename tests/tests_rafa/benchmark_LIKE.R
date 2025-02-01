@@ -1,6 +1,11 @@
 #' rua ipe roxo em sp
 
 
+#' ja implementado casos de empate
+#' - avalilar nome de coluna empate_geocodebr
+#' - avalilar tolerancia de 150 metros
+#'
+
 
 #' TO DO
 #'
@@ -81,6 +86,8 @@ input_df <- arrow::read_parquet(data_path)
 # benchmark different approaches ------------------------------------------------------------------
 ncores <- 7
 
+# input_df <- input_df[c(1,84, 284), ]
+# input_df <- input_df[id %in%  dfgeo$id[dfgeo$tipo_resultado=='ei03'] ]
 
 
 campos <- geocodebr::definir_campos(
@@ -92,8 +99,8 @@ campos <- geocodebr::definir_campos(
   estado = 'uf'
 )
 
-rafaF <- function(){ message('rafa F')
-  df_rafaF <- geocodebr::geocode(
+bench::system_time(
+  dfgeo <- geocodebr::geocode(
     enderecos = input_df,
     campos_endereco = campos,
     n_cores = ncores,
@@ -101,27 +108,14 @@ rafaF <- function(){ message('rafa F')
     verboso = T,
     resultado_sf = F
   )
-}
+)
 
-setDT(df_rafaF)
-df_rafaF[, empate := ifelse(.N>1,1,0), by = id]
-a <- df_rafaF[empate==1]
+setDT(dfgeo)
+dfgeo[, empate := ifelse(.N>1,1,0), by = id]
+a <- dfgeo[empate==1]
 table(a$precisao)
 
-rafaT <- function(){ message('rafa F')
-  df_rafaT <- geocodebr::geocode(
-    enderecos = input_df,
-    campos_endereco = campos,
-    n_cores = ncores,
-    resultado_completo = T,
-    verboso = T
-  )
-}
 
-setDT(df_rafaT)
-df_rafaT[, empate := ifelse(.N>1,1,0), by = id]
-a <- df_rafaT[empate==1]
-table(a$precisao)
 
 dt.haversine <- function(lat_from, lon_from, lat_to, lon_to, r = 6378137){
   radians <- pi/180
@@ -137,17 +131,16 @@ dt.haversine <- function(lat_from, lon_from, lat_to, lon_to, r = 6378137){
 a <- a[order(id)]
 
 a[, dist := round(dt.haversine(lat, lon, shift(lat), shift(lon))), by=id]
+a[, dist := fifelse(is.na(dist), 0, dist)]
 
+unique(a$id) |> length()
+# 132 casos olhand para niveis 2, 3, e 4
 
+summary(a$dist)
 
-mb <- microbenchmark::microbenchmark(
-  rafa_drop = rafaF(),
-  dani_drop = dani_arrowF(),
-  rafa_keep = rafaT(),
-  dani_keep = dani_arrowT(),
-  times  = 1
-)
-mb
+# dist menor do q 100 metros, fica com 1o
+#
+a2 <- filter(a, dist == 0 | dist > 100)
 
 library(profvis)
 profvis({
@@ -169,16 +162,7 @@ profvis({
 
 
 
-bm <- bench::mark(
-  rafa_drop = rafaF(),
-  rafa_drop_db = rafaF_db(),
-  rafa_keep = rafaT(),
-  rafa_keep_db = rafaT_db(),
-  dani_df = dani_arrow(),
-  check = F,
-  iterations  = 5
-)
-bm
+
 
 # 20 K
 #     expression      min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory     time
@@ -264,7 +248,7 @@ rafaF <- function(){ message('rafa F')
     campos_endereco = campos,
     n_cores = 7,
     resultado_completo = T,
-    verboso = F
+    verboso = T
   )
 }
 

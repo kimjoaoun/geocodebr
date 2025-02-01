@@ -29,7 +29,7 @@ utils::globalVariables(
   c(
     "year", "temp_local_file", "lon_min", "lon_max", "lat_min", "lat_max", ".",
     "lon_diff", "lat_diff", "lon", "lat", "estado", "municipio",
-    "tempidgeocodebr", "input_padrao",
+    "tempidgeocodebr", "input_padrao", "dist_geocodebr", "empate_geocodebr",
 
     # due to reverse geocoding draft
     "cep", "lat_cnefe", "localidade", "logradouro_sem_numero", "lon_cnefe",

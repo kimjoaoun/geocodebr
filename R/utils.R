@@ -142,9 +142,6 @@ merge_results <- function(con,
     )
   }
 
-  # drop temp id column
-  select_columns <- select_columns[select_columns!='tempidgeocodebr']
-
   # Create the SELECT clause dynamically
   select_x <- paste0(x, '.', c(select_columns), collapse = ', ')
 
@@ -234,27 +231,13 @@ get_key_cols <- function(case) {
   return(relevant_cols)
 }
 
-# all_possible_match_types <- c(
-#   "en01", "ei01",
-#   "en02", "ei02",
-#   "en03", "ei03",
-#   "en04", "ei04",
-#   "er01", "er02", "er03", "er04",
-#   #  "pn01", "pn02", "pn03", "pn04",  # we're not working with probabilistic matching yet
-#   #  "pi01", "pi02", "pi03", "pi04",  # we're not working with probabilistic matching yet
-#   #  "pr01", "pr02", "pr03", "pr04",  # we're not working with probabilistic matching yet
-#   "ec01", "ec02", "eb01", "em01"
-# )
 
 all_possible_match_types <- c(
-  "en01", "ei01",
-  "en02", "ei02",
-  "en03", "ei03",
-  "en04", "ei04",
-  "er01", "er02", "er03", "er04",
-  #  "pn01", "pn02", "pn03", "pn04",  # we're not working with probabilistic matching yet
-  #  "pi01", "pi02", "pi03", "pi04",  # we're not working with probabilistic matching yet
-  #  "pr01", "pr02", "pr03", "pr04",  # we're not working with probabilistic matching yet
+  "en01", "ei01",                 # "pn01", "pi01", # we're not working with probabilistic matching yet
+  "en02", "ei02",                 # "pn02", "pi02", # we're not working with probabilistic matching yet
+  "en03", "ei03",                 # "pn03", "pi03", # we're not working with probabilistic matching yet
+  "en04", "ei04",                 # "pn04", "pi04", # we're not working with probabilistic matching yet
+  "er01", "er02", "er03", "er04", #  "pr01", "pr02", "pr03", "pr04",  # we're not working with probabilistic matching yet
   "ec01", "ec02", "eb01", "em01"
 )
 
@@ -315,4 +298,18 @@ assert_and_assign_address_fields <- function(address_fields, addresses_table) {
   complete_fields_list <- append(as.list(address_fields), missing_fields_list)
 
   return(complete_fields_list)
+}
+
+
+# calculate distances between pairs of coodinates
+dt_haversine <- function(lat_from, lon_from, lat_to, lon_to, r = 6378137){
+  radians <- pi/180
+  lat_to <- lat_to * radians
+  lat_from <- lat_from * radians
+  lon_to <- lon_to * radians
+  lon_from <- lon_from * radians
+  dLat <- (lat_to - lat_from)
+  dLon <- (lon_to - lon_from)
+  a <- (sin(dLat/2)^2) + (cos(lat_from) * cos(lat_to)) * (sin(dLon/2)^2)
+  return(2 * atan2(sqrt(a), sqrt(1 - a)) * r)
 }
