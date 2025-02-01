@@ -1,4 +1,4 @@
-match_type = case = "pn01"
+match_type = case = "pi01"
 x = 'input_padrao_db'
 y = 'filtered_cnefe'
 output_tb = "output_db"
@@ -6,24 +6,28 @@ key_cols <- c("estado", "municipio", "logradouro_sem_numero", "numero", "cep", "
 match_type = case
 resultado_completo = F # isso funciona. Falta funcionar quando TRUE
 
-match_cases_probabilistic <- function(
-    con,
-    x,
-    y,
-    output_tb,
-    key_cols,
-    match_type,
-    resultado_completo
-    ){
 
+match_weighted_cases_probabilistic <- function(con,
+                                 x,
+                                 y,
+                                 output_tb,
+                                 key_cols,
+                                 match_type,
+                                 resultado_completo){
 
-  # read correspondind parquet file
+  # read corresponding parquet file
   table_name <- paste(key_cols, collapse = "_")
   table_name <- gsub('estado_municipio', 'municipio', table_name)
   table_name <- gsub('logradouro_sem_numero', 'logradouro', table_name)
 
+  # master table
+  if (match_type %like% 'pn02|pi02|pn03|pi03|pn04|pi04') {
+    table_name <- "municipio_logradouro_numero_cep_localidade"
+  }
+
   # build path to local file
   path_to_parquet <- paste0(listar_pasta_cache(), "/", table_name, ".parquet")
+
 
   # determine geographical scope of the search
   input_states <- DBI::dbGetQuery(con, "SELECT DISTINCT estado FROM input_padrao_db;")$estado
@@ -37,7 +41,6 @@ match_cases_probabilistic <- function(
     dplyr::filter(municipio %in% input_municipio) |>
     dplyr::compute()
 
-
   # register filtered_cnefe to db
   duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
 
@@ -47,9 +50,9 @@ match_cases_probabilistic <- function(
     collapse = ' AND '
   )
 
-  # remove logradouro
+  # remove numero and logradourot from key cols to allow for the matching
+  key_cols <- key_cols[key_cols != 'numero']
   key_cols <- key_cols[key_cols != 'logradouro_sem_numero']
-
 
   # Create the JOIN condition by concatenating the key columns
   join_condition <- paste(
@@ -79,22 +82,23 @@ match_cases_probabilistic <- function(
     additional_cols <- gsub('logradouro_sem_numero_encontrado', 'logradouro_encontrado', additional_cols)
     additional_cols <- gsub('localidade_encontrado', 'localidade_encontrada', additional_cols)
     additional_cols <- paste0(", ", additional_cols)
+
   }
 
   # min cutoff for string match
-  min_cutoff <- ifelse(match_type == 'pn04', 0.9, 0.7)
+  min_cutoff <- ifelse(match_type == 'pi04', 0.9, 0.7)
 
   # 1st step: match  --------------------------------------------------------
 
-  # match query
   query_match <- glue::glue(
     "CREATE OR REPLACE TEMPORARY VIEW temp_db AS
      WITH ranked_data AS (
       SELECT
-      {x}.tempidgeocodebr, {y}.lat, {y}.lon,
+      {x}.tempidgeocodebr, {x}.numero, {y}.numero AS numero_cnefe,
+      {y}.lat, {y}.lon,
       {x}.logradouro_sem_numero AS logradouro_sem_numero,
       {y}.logradouro_sem_numero AS logradouro_sem_numero_cnefe,
-      {y}.endereco_completo AS endereco_encontrado,
+      REGEXP_REPLACE( {y}.endereco_completo, ', \\d+ -', CONCAT(', ', {x}.numero, ' (aprox) -')) AS endereco_encontrado,
       jaro_winkler_similarity({x}.logradouro_sem_numero, {y}.logradouro_sem_numero) AS similarity,
       RANK() OVER (PARTITION BY {x}.tempidgeocodebr ORDER BY similarity DESC) AS rank
       {additional_cols}
@@ -107,37 +111,54 @@ match_cases_probabilistic <- function(
       FROM ranked_data
       WHERE similarity > {min_cutoff}
       AND rank = 1;"
-      )
+  )
 
   DBI::dbExecute(con, query_match)
   # a <- DBI::dbReadTable(con, 'temp_db')
 
 
 
-  # 2nd step: update output table --------------------------------------------------------
+  # 2nd step: aggregate --------------------------------------------------------
+
+  # summarize query
+  query_aggregate <- glue::glue(
+    "INSERT INTO output_db (tempidgeocodebr, lat, lon, tipo_resultado, endereco_encontrado)
+      SELECT tempidgeocodebr,
+      SUM((1/ABS(numero - numero_cnefe) * lat)) / SUM(1/ABS(numero - numero_cnefe)) AS lat,
+      SUM((1/ABS(numero - numero_cnefe) * lon)) / SUM(1/ABS(numero - numero_cnefe)) AS lon,
+      '{match_type}' AS tipo_resultado,
+      FIRST(endereco_encontrado) AS endereco_encontrado
+      FROM temp_db
+      GROUP BY tempidgeocodebr, endereco_encontrado;"
+  )
+
+
 
   if (isTRUE(resultado_completo)) {
+
     additional_cols <- paste0(
-      glue::glue("temp_db.{key_cols}_encontrado"),
+      glue::glue("FIRST({key_cols}_encontrado)"),
       collapse = ', ')
 
     additional_cols <- gsub('logradouro_sem_numero_encontrado', 'logradouro_encontrado', additional_cols)
     additional_cols <- gsub('localidade_encontrado', 'localidade_encontrada', additional_cols)
     additional_cols <- paste0(", ", additional_cols)
+
+    query_aggregate <- glue::glue(
+      "INSERT INTO output_db (tempidgeocodebr, lat, lon, tipo_resultado, endereco_encontrado {colunas_encontradas})
+        SELECT tempidgeocodebr,
+        SUM((1/ABS(numero - numero_cnefe) * lat)) / SUM(1/ABS(numero - numero_cnefe)) AS lat,
+        SUM((1/ABS(numero - numero_cnefe) * lon)) / SUM(1/ABS(numero - numero_cnefe)) AS lon,
+        '{match_type}' AS tipo_resultado,
+        FIRST(endereco_encontrado) AS endereco_encontrado
+        {additional_cols}
+      FROM temp_db
+      GROUP BY tempidgeocodebr, endereco_encontrado;"
+    )
   }
 
-  query_update_db <- glue::glue(
-    "INSERT INTO output_db (tempidgeocodebr, lat, lon, tipo_resultado, endereco_encontrado {colunas_encontradas})
-      SELECT temp_db.tempidgeocodebr,
-             temp_db.lat,
-             temp_db.lon,
-             '{match_type}' AS tipo_resultado,
-             temp_db.endereco_encontrado {additional_cols}
-      FROM temp_db
-      WHERE temp_db.lon IS NOT NULL;"
-  )
-
-  DBI::dbExecute(con, query_update_db)
+  DBI::dbExecute(con, query_aggregate)
+  # b <- DBI::dbReadTable(con, 'output_db')
 
 
   duckdb::duckdb_unregister_arrow(con, "filtered_cnefe")
