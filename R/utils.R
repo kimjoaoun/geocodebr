@@ -13,8 +13,8 @@ arrow_open_dataset <- function(filename){
     arrow::open_dataset(filename),
     error = function(e){
       msg <- paste(
-        "File cached locally seems to be corrupted. Please download it again using 'cache = FALSE'.",
-        sprintf("Alternatively, you can remove the corrupted file with 'geocodebr::geocodebr_cache(delete_file = \"%s\")'", basename(filename)),
+        "Arquivo local possivelmente corrompido. ",
+        "Apague os arquivos do cache com 'geocodebr::deletar_pasta_cache()' e tente novamente.",
         sep = "\n"
       )
       stop(msg)

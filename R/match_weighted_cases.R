@@ -27,7 +27,7 @@ match_weighted_cases <- function(con,
   # Load CNEFE data and write to DuckDB
   # filter cnefe to include only states and municipalities
   # present in the input table, reducing the search scope
-  filtered_cnefe <- arrow::open_dataset( path_to_parquet ) |>
+  filtered_cnefe <- arrow_open_dataset( path_to_parquet ) |>
     dplyr::filter(estado %in% input_states) |>
     dplyr::filter(municipio %in% input_municipio) |>
     dplyr::compute()
