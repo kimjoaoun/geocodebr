@@ -57,6 +57,7 @@
 #' df <- geocodebr::geocode(
 #'   enderecos = input_df,
 #'   campos_endereco = fields,
+#'   resolver_empates = TRUE,
 #'   verboso = FALSE
 #'   )
 #'

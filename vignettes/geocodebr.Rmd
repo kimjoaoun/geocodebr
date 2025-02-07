@@ -81,7 +81,7 @@ ends_geo <- geocode(
   enderecos = ends, 
   campos_endereco = campos, 
   resultado_completo = FALSE,
-  resolver_empates = FALSE,
+  resolver_empates = TRUE,
   resultado_sf = FALSE,
   verboso = FALSE
   )
