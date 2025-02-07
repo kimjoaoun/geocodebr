@@ -1,4 +1,4 @@
-match_weighted_cases <- function(
+match_cases_probabilistic <- function(
     con = con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe',
@@ -25,6 +25,7 @@ match_weighted_cases <- function(
     dplyr::filter(municipio %in% input_municipio) |>
     dplyr::compute()
 
+
   # register filtered_cnefe to db
   duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
 
@@ -34,8 +35,9 @@ match_weighted_cases <- function(
     collapse = ' AND '
   )
 
-  # remove numero from key cols to allow for the matching
-  key_cols <- key_cols[key_cols != 'numero']
+  # remove logradouro
+  key_cols <- key_cols[key_cols != 'logradouro']
+
 
   # Create the JOIN condition by concatenating the key columns
   join_condition <- paste(
@@ -63,23 +65,35 @@ match_weighted_cases <- function(
 
     additional_cols <- gsub('localidade_encontrado', 'localidade_encontrada', additional_cols)
     additional_cols <- paste0(", ", additional_cols)
-
   }
 
+  # min cutoff for string match
+  min_cutoff <- ifelse(match_type %in% c('pn01', 'pi01', 'pr01'), .85, .9)
 
   # 1st step: match  --------------------------------------------------------
 
   # match query
   query_match <- glue::glue(
     "CREATE OR REPLACE TEMPORARY VIEW temp_db AS
-    SELECT {x}.tempidgeocodebr, {x}.numero, {y}.numero AS numero_cnefe,
-    {y}.lat, {y}.lon,
-    REGEXP_REPLACE( {y}.endereco_completo, ', \\d+ -', CONCAT(', ', {x}.numero, ' (aprox) -')) AS endereco_encontrado,
-    {y}.n_casos AS contagem_cnefe {additional_cols}
+     WITH ranked_data AS (
+      SELECT
+      {x}.tempidgeocodebr, {y}.lat, {y}.lon,
+      {x}.logradouro AS logradouro,
+      {y}.logradouro AS logradouro_cnefe,
+      {y}.endereco_completo AS endereco_encontrado,
+      {y}.n_casos AS contagem_cnefe,
+      jaro_similarity({x}.logradouro, {y}.logradouro) AS similarity,
+      RANK() OVER (PARTITION BY {x}.tempidgeocodebr, endereco_encontrado ORDER BY similarity DESC) AS rank
+      {additional_cols}
     FROM {x}
     LEFT JOIN {y}
-    ON {join_condition}
-    WHERE {cols_not_null} AND {y}.numero IS NOT NULL;"
+      ON {join_condition}
+      WHERE {cols_not_null} AND {y}.lon IS NOT NULL
+      )
+    SELECT *
+      FROM ranked_data
+      WHERE similarity > {min_cutoff}
+      AND rank = 1;"
   )
 
   DBI::dbExecute(con, query_match)
@@ -87,46 +101,34 @@ match_weighted_cases <- function(
 
 
 
-  # 2nd step: aggregate --------------------------------------------------------
-
-  # summarize query
-  query_aggregate <- glue::glue(
-    "INSERT INTO output_db (tempidgeocodebr, lat, lon, tipo_resultado, endereco_encontrado, contagem_cnefe)
-      SELECT tempidgeocodebr,
-      SUM((1/ABS(numero - numero_cnefe) * lat)) / SUM(1/ABS(numero - numero_cnefe)) AS lat,
-      SUM((1/ABS(numero - numero_cnefe) * lon)) / SUM(1/ABS(numero - numero_cnefe)) AS lon,
-      '{match_type}' AS tipo_resultado,
-      FIRST(endereco_encontrado) AS endereco_encontrado, FIRST(contagem_cnefe) AS contagem_cnefe
-      FROM temp_db
-      GROUP BY tempidgeocodebr, endereco_encontrado;"
-  )
-
-
+  # 2nd step: update output table --------------------------------------------------------
 
   if (isTRUE(resultado_completo)) {
 
+    colunas_encontradas <- paste0(colunas_encontradas, ", similaridade_logradouro")
+
+
     additional_cols <- paste0(
-      glue::glue("FIRST({key_cols}_encontrado)"),
+      glue::glue("temp_db.{key_cols}_encontrado"),
       collapse = ', ')
 
     additional_cols <- gsub('localidade_encontrado', 'localidade_encontrada', additional_cols)
-    additional_cols <- paste0(", ", additional_cols)
-
-    query_aggregate <- glue::glue(
-      "INSERT INTO output_db (tempidgeocodebr, lat, lon, tipo_resultado, endereco_encontrado, contagem_cnefe {colunas_encontradas})
-        SELECT tempidgeocodebr,
-        SUM((1/ABS(numero - numero_cnefe) * lat)) / SUM(1/ABS(numero - numero_cnefe)) AS lat,
-        SUM((1/ABS(numero - numero_cnefe) * lon)) / SUM(1/ABS(numero - numero_cnefe)) AS lon,
-        '{match_type}' AS tipo_resultado,
-        FIRST(endereco_encontrado) AS endereco_encontrado,
-        FIRST(contagem_cnefe) AS contagem_cnefe {additional_cols}
-      FROM temp_db
-      GROUP BY tempidgeocodebr, endereco_encontrado;"
-    )
+    additional_cols <- paste0(", ", additional_cols, ", temp_db.similarity AS similaridade_logradouro")
   }
 
-  DBI::dbExecute(con, query_aggregate)
-  # b <- DBI::dbReadTable(con, 'output_db')
+  query_update_db <- glue::glue(
+    "INSERT INTO output_db (tempidgeocodebr, lat, lon, tipo_resultado, endereco_encontrado, contagem_cnefe {colunas_encontradas})
+      SELECT temp_db.tempidgeocodebr,
+             temp_db.lat,
+             temp_db.lon,
+             '{match_type}' AS tipo_resultado,
+             temp_db.endereco_encontrado,
+             temp_db.contagem_cnefe {additional_cols}
+      FROM temp_db
+      WHERE temp_db.lon IS NOT NULL;"
+  )
+
+  DBI::dbExecute(con, query_update_db)
 
 
   duckdb::duckdb_unregister_arrow(con, "filtered_cnefe")

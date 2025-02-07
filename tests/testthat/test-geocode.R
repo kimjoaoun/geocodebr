@@ -13,6 +13,7 @@ campos <- definir_campos(
 tester <- function(enderecos = input_df,
                    campos_endereco = campos,
                    resultado_completo = FALSE,
+                   resolver_empates = FALSE,
                    resultado_sf = FALSE,
                    verboso = FALSE,
                    cache = TRUE,
@@ -21,6 +22,7 @@ tester <- function(enderecos = input_df,
     enderecos,
     campos_endereco,
     resultado_completo,
+    resolver_empates,
     resultado_sf,
     verboso,
     cache,
@@ -38,11 +40,24 @@ test_that("expected output", {
   # full results
   full_output <- tester(resultado_completo = TRUE)
   testthat::expect_true('endereco_encontrado' %in% names(full_output))
+
+  # output in sf format
+  sf_output <- tester(resultado_sf = T)
+  testthat::expect_true(is(sf_output , 'sf'))
 })
 
 
+test_that("test empates", {
 
+  # com empates
+  testthat::expect_warning( std_output <- tester(resolver_empates = FALSE) )
+  testthat::expect_true(nrow(std_output) > nrow(input_df))
 
+  # resolvendo empates
+  testthat::expect_warning( std_output <- tester(resolver_empates = TRUE) )
+  testthat::expect_true(nrow(std_output) == nrow(input_df))
+
+})
 
 test_that("errors with incorrect input", {
   expect_error(tester(unclass(input_df)))

@@ -205,17 +205,26 @@ query_max_similarity <- glue::glue(
 DBI::dbGetQuery(con, query_join)
 DBI::dbGetQuery(con, query_max_similarity)
 
-w1 <-     'PROFESSOR ALFREDO GONCALVES FILGUEIRA'
-w2 <- 'RUA PROFESSOR ALFREDO GONCALVES FIGUEIRA'
+w1 <-     'RUA PRESIDENTE JOAO GOULART'
+w2 <- 'RUA PADRE ITALO COELHO'
+
+
+w1 <- 'RUA JOAO HILARIO DA SILVA'
+w2 <- 'RUA CARLOS MOTTA DA SILVA'
+
+
+w1 <- 'RUA UM'
+w2 <- 'RUA DOIS'
+
 
 # q <- glue::glue("SELECT jaro_winkler_similarity('{w1}', '{w2}');")
-q <- glue::glue("SELECT jaro_winkler_similarity('{w1}', '{w2}') AS similarity;")
-q <- glue::glue("SELECT jaro_winkler_similarity('{w1}', '{w2}') AS similarity;")
+q <- glue::glue("SELECT jaccard('{w1}', '{w2}') AS similarity;")
 DBI::dbGetQuery(con, q)
 
 
 
-#' damerau_levenshtein
 #' jaccard
 #' jaro_similarity
 #' jaro_winkler_similarity
+#' DICE https://stackoverflow.com/questions/51610033/getting-similar-strings-in-pl-sql-with-a-good-performance
+#'    MDS usa valores iguais ou superiores a 0,6

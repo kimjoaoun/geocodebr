@@ -80,7 +80,7 @@ input_df <- arrow::read_parquet(data_path)
 #   localidade = 'bairro',
 #   municipio = 'municipio',
 #   estado = 'uf')
-
+# resolver_empates = F
 
 
 # benchmark different approaches ------------------------------------------------------------------
@@ -99,16 +99,45 @@ campos <- geocodebr::definir_campos(
   estado = 'uf'
 )
 
+# test probabilistic
+# input_df <- input_df[c(7, 32, 34, 71, 173, 1348)]  # pn02 pi02 pn03 pi03 pr01 pr02
+
 bench::system_time(
-  dfgeo <- geocodebr::geocode(
+  dfgeo2 <- geocodebr::geocode(
     enderecos = input_df,
     campos_endereco = campos,
     n_cores = ncores,
     resultado_completo = T,
     verboso = T,
-    resultado_sf = F
+    resultado_sf = F,
+    resolver_empates = T
   )
 )
+
+empates <- subset(dfgeo, empate==T)
+a <- table(empates$id) |> as.data.frame()
+table(empates$tipo_resultado)
+
+case <- subset(empates, id ==9477)
+case <- subset(empates, endereco_encontrado %like% 'BLOCO')
+mapview::mapview(case)
+
+
+round(table(dfgeo$precisao) / nrow(dfgeo) *100, 1)
+round(table(dfgeo2$precisao) / nrow(dfgeo) *100, 1)
+
+# tempo:
+# com 32.75s    855 empates
+# sem 13.7s     655 empates
+
+# precisao:
+#       cep        localidade        logradouro         municipio            numero numero_aproximado
+# com   2.5               0.3              14.8               0.6              45.8              36.0
+# sem  31.4               2.3               7.2               0.6              33.3              26.2
+
+temp <- left_join( select(dfgeo2, id, tipo_resultado), select(dfgeo, id, tipo_resultado), by = 'id'  )
+t <- table(temp$tipo_resultado.x, temp$tipo_resultado.y) |> as.data.frame()
+
 
 setDT(dfgeo)
 dfgeo[, empate := ifelse(.N>1,1,0), by = id]

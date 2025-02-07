@@ -67,11 +67,23 @@ df <- geocodebr::geocode(
   enderecos = input_df,
   campos_endereco = campos,
   resultado_completo = FALSE,
+  resolver_empates = FALSE,
+  resultado_sf = FALSE,
   verboso = FALSE,
   cache = TRUE,
   n_cores = 1
   )
 ```
+
+Cabe destacar aqui o papel de três argumentos da função `geocode()`: -
+`resultado_completo`: serve para indicar se o usuário quer que o output
+contenha colunas extras, como o endereço encontrado, bairro encontrado
+etc. - `resolver_empates`: serve para indicar se o usuário quer que a
+função resolva automaticamente casos de empate, i.e. casos que o
+endereço de input do usuário pode ser referir a diferentes localidades
+na cidade (e.g. logradouros diferentes com mesmo nome mas em bairros
+distintos) - `resultado_sf`: quando `TRUE`, o output retornado como um
+objeto espacial de classe `sf` simple feature.
 
 Os resultados do **{geocodebr}** são classificados em seis categorias
 gerais de `precisao`, dependendo do nível de exatidão com que cada

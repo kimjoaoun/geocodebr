@@ -1,20 +1,18 @@
-match_cases <- function(con,
-                         x,
-                         y,
-                         output_tb,
-                         key_cols,
-                         match_type,
-                         resultado_completo ){
+match_cases <- function(
+    con = con,
+    x = 'input_padrao_db',
+    y = 'filtered_cnefe',
+    output_tb = "output_db",
+    key_cols = key_cols,
+    match_type = match_type,
+    resultado_completo){
 
   # read corresponding parquet file
   table_name <- paste(key_cols, collapse = "_")
   table_name <- gsub('estado_municipio', 'municipio', table_name)
-  table_name <- gsub('logradouro_sem_numero', 'logradouro', table_name)
 
-  # master table
-  if (match_type %like% 'en02|ei02|en03|ei03|en04|ei04') {
-    table_name <- "municipio_logradouro_numero_cep_localidade"
-  }
+  # get corresponding parquet table
+  table_name <- get_reference_table(key_cols, match_type)
 
   # build path to local file
   path_to_parquet <- paste0(listar_pasta_cache(), "/", table_name, ".parquet")
@@ -34,7 +32,6 @@ match_cases <- function(con,
 
   # register filtered_cnefe to db
   duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
-
 
   # Create the JOIN condition by concatenating the key columns
   join_condition <- paste(
@@ -58,7 +55,6 @@ match_cases <- function(con,
       glue::glue("{key_cols}_encontrado"),
       collapse = ', ')
 
-    colunas_encontradas <- gsub('logradouro_sem_numero_encontrado', 'logradouro_encontrado', colunas_encontradas)
     colunas_encontradas <- gsub('localidade_encontrado', 'localidade_encontrada', colunas_encontradas)
     colunas_encontradas <- paste0(", ", colunas_encontradas)
 
@@ -66,7 +62,6 @@ match_cases <- function(con,
       glue::glue("filtered_cnefe.{key_cols} AS {key_cols}_encontrado"),
       collapse = ', ')
 
-    additional_cols <- gsub('logradouro_sem_numero_encontrado', 'logradouro_encontrado', additional_cols)
     additional_cols <- gsub('localidade_encontrado', 'localidade_encontrada', additional_cols)
     additional_cols <- paste0(", ", additional_cols)
 
@@ -74,9 +69,10 @@ match_cases <- function(con,
 
   # summarize query
   query_match <- glue::glue(
-    "INSERT INTO output_db (tempidgeocodebr, lat, lon, tipo_resultado, endereco_encontrado {colunas_encontradas})
+    "INSERT INTO output_db (tempidgeocodebr, lat, lon, tipo_resultado, endereco_encontrado, contagem_cnefe {colunas_encontradas})
       SELECT {x}.tempidgeocodebr, filtered_cnefe.lat, filtered_cnefe.lon,
-             '{match_type}' AS tipo_resultado, filtered_cnefe.endereco_completo AS endereco_encontrado {additional_cols}
+             '{match_type}' AS tipo_resultado, filtered_cnefe.endereco_completo AS endereco_encontrado,
+             filtered_cnefe.n_casos AS contagem_cnefe {additional_cols}
       FROM {x}
       LEFT JOIN filtered_cnefe
       ON {join_condition}

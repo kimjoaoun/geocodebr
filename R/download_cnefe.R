@@ -19,18 +19,18 @@ download_cnefe <- function(verboso = TRUE, cache = TRUE) {
   checkmate::assert_logical(cache, any.missing = FALSE, len = 1)
 
   all_files <- c(
-    "municipio_logradouro_numero_localidade.parquet",  # 4 largest files
+    "municipio_logradouro_numero_localidade.parquet",  # 4 largest files       ok 3
     "municipio.parquet",
     "municipio_cep.parquet",
     "municipio_cep_localidade.parquet",
-    "municipio_logradouro_numero_cep_localidade.parquet", # 4 largest files
+    "municipio_logradouro_numero_cep_localidade.parquet", # 4 largest files    ok 1
     "municipio_localidade.parquet",
-    "municipio_logradouro.parquet",
-    "municipio_logradouro_numero_cep.parquet", # 4 largest files
-    "municipio_logradouro_cep.parquet",
-    "municipio_logradouro_cep_localidade.parquet",
-    "municipio_logradouro_numero.parquet", # 4 largest files
-    "municipio_logradouro_localidade.parquet"
+    # "municipio_logradouro.parquet",
+    # "municipio_logradouro_numero_cep.parquet", # 4 largest files
+    # "municipio_logradouro_cep.parquet",
+    "municipio_logradouro_cep_localidade.parquet",                          #  ok 1
+    # "municipio_logradouro_numero.parquet", # 4 largest files
+    "municipio_logradouro_localidade.parquet"                               #  ok 3
   )
 
   data_urls <- glue::glue(

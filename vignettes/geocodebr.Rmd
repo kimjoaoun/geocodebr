@@ -56,7 +56,7 @@ utilizamos um pequeno conjunto de dados que contém endereços com problemas
 comuns, como informações ausentes e campos digitados incorretamente, para
 demonstrar o uso da função:
 
-**Nota:** A `geocode()` requer que os dados do CNEFE estejam armazenados
+**Nota:** A função `geocode()` requer que os dados do CNEFE estejam armazenados
 localmente. No total, esses dados somam cerca de 5,5 GB, o que pode fazer com
 que a primeira execução da função demore, já que é necessário baixar os dados
 para a sua máquina. Esses dados, no entanto, são salvos de forma persistente,
@@ -76,7 +76,15 @@ campos <- definir_campos(
   localidade = "Bairro"
 )
 
-ends_geo <- geocode(ends, campos_endereco = campos, verboso = FALSE)
+
+ends_geo <- geocode(
+  enderecos = ends, 
+  campos_endereco = campos, 
+  resultado_completo = FALSE,
+  resolver_empates = FALSE,
+  resultado_sf = FALSE,
+  verboso = FALSE
+  )
 
 head(ends_geo)
 ```
@@ -90,6 +98,14 @@ simplesmente passar um vetor de caracteres no formato `c(logradouro =
 "nm_logradouro", numero = "Numero", ...)`. A `definir_campos()`, no entanto,
 realiza alguns testes nas colunas e na tabela, garantindo que o *input* passado
 esteja corretamente formatado.
+
+
+Cabe também destacar aqui o papel de três argumentos da função `geocode()`:
+- `resultado_completo`: serve para indicar se o usuário quer que o output contenha colunas extras, como o endereço encontrado, bairro encontrado etc.
+- `resolver_empates`: serve para indicar se o usuário quer que a função resolva automaticamente casos de empate, i.e. casos que o endereço de input do usuário pode ser referir a diferentes localidades na cidade (e.g. logradouros diferentes com mesmo nome mas em bairros distintos)
+- `resultado_sf`: quando `TRUE`, o output retornado como um objeto espacial de classe `sf` simple feature.
+
+
 
 As coordendas espaciais do resultado usam o sistema de referência SIRGAS2000,
 padrão adotado pelo IBGE em todo o Brasil. Cada par de coordenadas encontrado

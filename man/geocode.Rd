@@ -8,6 +8,7 @@ geocode(
   enderecos,
   campos_endereco = definir_campos(),
   resultado_completo = FALSE,
+  resolver_empates = FALSE,
   resultado_sf = FALSE,
   verboso = TRUE,
   cache = TRUE,
@@ -28,6 +29,13 @@ obrigatórios. Note que o campo  \code{"localidade"} é equivalente a 'bairro'.}
 
 \item{resultado_completo}{Lógico. Indica se o output deve incluir colunas
 adicionais, como o endereço encontrado de referência. Por padrão, é \code{FALSE}.}
+
+\item{resolver_empates}{Lógico. Alguns resultados da geolocalização podem
+indicar diferentes coordenadas possíveis (e.g. duas ruas diferentes com
+o mesmo nome em uma mesma cidade). Esses casos são trados como 'empate'
+e o parâmetro \code{resolver_empates} indica se a função deve resolver esses
+empates automaticamente. Por padrão, é \code{FALSE}, e a função retorna
+apenas o caso mais provável.}
 
 \item{resultado_sf}{Lógico. Indica se o resultado deve ser um objeto espacial
 da classe \code{sf}. Por padrão, é \code{FALSE}, e o resultado é um \code{data.frame} com

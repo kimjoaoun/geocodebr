@@ -368,3 +368,57 @@ a <- sfheaders::sf_point(
 sf::st_crs(a) <- 4674
 
 mapview::mapview(a, zcol='localidade')
+
+
+
+
+
+
+
+# rua padre vieira em sao goncalo ---------------------------------------------------------------------------
+# numero cresce e depois diminui
+# mesmo numero em ceps diferentes em potas opostas da rua
+
+cidade <- arrow::open_dataset( tudo ) |>
+  dplyr::filter(estado == 'RJ') |>
+  dplyr::filter(municipio == "SAO GONCALO") |>
+  dplyr::collect()
+
+
+cidade_case <- cidade |>
+  dplyr::filter(logradouro_sem_numero == "AVENIDA PADRE VIEIRA") |>
+  # dplyr::filter(cep == "23065-110")
+  dplyr::filter(localidade =="JARDIM CATARINA")
+
+
+unique(cidade_case$localidade)
+unique(cidade_case$logradouro_sem_numero)
+unique(cidade_case$cep)
+'27253-360'
+
+# direto via cnefe
+
+
+cnef <- ipeadatalake::ler_cnefe(ano = 2022, as_data_frame = F) |>
+  filter(code_muni==3304904) |> collect()
+
+
+cnef_case <- cnef |>
+  filter(desc_localidade == 'JARDIM CATARINA') |>
+  filter( nom_tipo_seglogr == 'AVENIDA' &
+            nom_titulo_seglogr == 'PADRE' &
+            nom_seglogr =='VIEIRA' &
+            num_adress %in% 1:5)
+
+
+cidade_case_sf <- sfheaders::sf_point(
+  obj = cnef_case,
+  x = 'lon',
+  y = 'lat',
+  keep = TRUE
+)
+sf::st_crs(cidade_case_sf) <- 4674
+
+mapview::mapview(cidade_case_sf, zcol='num_adress')
+
+

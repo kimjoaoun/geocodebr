@@ -132,13 +132,11 @@ merge_results <- function(con,
                           resultado_completo){
 
 
-  select_columns_y <- c('lat', 'lon', 'tipo_resultado', 'precisao')
+  select_columns_y <- c('lat', 'lon', 'tipo_resultado', 'precisao', 'endereco_encontrado', 'contagem_cnefe')
 
   if (isTRUE(resultado_completo)) {
-  select_columns_y <- c(
-    'lat', 'lon', 'tipo_resultado', 'precisao', 'endereco_encontrado',
-    'numero_encontrado' , 'cep_encontrado', 'localidade_encontrada',
-    'municipio_encontrado' , 'estado_encontrado'
+  select_columns_y <- c(select_columns_y, 'numero_encontrado' , 'cep_encontrado',
+                        'localidade_encontrada', 'municipio_encontrado' , 'estado_encontrado' # , 'similaridade_logradouro'
     )
   }
 
@@ -202,22 +200,22 @@ create_index <- function(con, tb, cols, operation, overwrite=TRUE){
 
 
 get_key_cols <- function(case) {
-  relevant_cols <- if (case %in% c('en01', 'ei01', 'pn01') ) {
-    c("estado", "municipio", "logradouro_sem_numero", "numero", "cep", "localidade")
-  } else if (case %in% c('en02', 'ei02', 'pn02')) {
-    c("estado", "municipio", "logradouro_sem_numero", "numero", "cep")
-  } else if (case %in% c('en03', 'ei03', 'pn03')) {
-    c("estado", "municipio", "logradouro_sem_numero", "numero", "localidade")
-  } else if (case %in% c('en04', 'ei04', 'pn04')) {
-    c("estado", "municipio", "logradouro_sem_numero", "numero")
-  } else if (case %in% c('er01', 'pr01', 'pi01')) {
-    c("estado", "municipio", "logradouro_sem_numero", "cep", "localidade")
-  } else if (case %in% c('er02', 'pr02', 'pi02')) {
-    c("estado", "municipio", "logradouro_sem_numero", "cep")
-  } else if (case %in% c('er03', 'pr03', 'pi03')) {
-    c("estado", "municipio", "logradouro_sem_numero", "localidade")
-  } else if (case %in% c('er04', 'pr04', 'pi04')) {
-    c("estado", "municipio", "logradouro_sem_numero")
+  relevant_cols <- if (case %in% c('en01', 'ei01', 'pn01', 'pi01') ) {
+    c("estado", "municipio", "logradouro", "numero", "cep", "localidade")
+  } else if (case %in% c('en02', 'ei02', 'pn02', 'pi02')) {
+    c("estado", "municipio", "logradouro", "numero", "cep")
+  } else if (case %in% c('en03', 'ei03', 'pn03', 'pi03')) {
+    c("estado", "municipio", "logradouro", "numero", "localidade")
+  } else if (case %in% c('en04', 'ei04', 'pn04', 'pi04')) {
+    c("estado", "municipio", "logradouro", "numero")
+  } else if (case %in% c('er01', 'pr01')) {
+    c("estado", "municipio", "logradouro", "cep", "localidade")
+  } else if (case %in% c('er02', 'pr02')) {
+    c("estado", "municipio", "logradouro", "cep")
+  } else if (case %in% c('er03', 'pr03')) {
+    c("estado", "municipio", "logradouro", "localidade")
+  } else if (case %in% c('er04', 'pr04')) {
+    c("estado", "municipio", "logradouro")
   } else if (case == 'ec01') {
     c("estado", "municipio", "cep", "localidade")
   } else if (case == 'ec02') {
@@ -233,40 +231,49 @@ get_key_cols <- function(case) {
 
 
 all_possible_match_types <- c(
-  "en01", "ei01",                 # "pn01", "pi01", # we're not working with probabilistic matching yet
-  "en02", "ei02",                 # "pn02", "pi02", # we're not working with probabilistic matching yet
-  "en03", "ei03",                 # "pn03", "pi03", # we're not working with probabilistic matching yet
-  "en04", "ei04",                 # "pn04", "pi04", # we're not working with probabilistic matching yet
-  "er01", "er02", "er03", "er04", #  "pr01", "pr02", "pr03", "pr04",  # we're not working with probabilistic matching yet
+  "en01", "ei01", # "pn01", "pi01",
+  "en02", "ei02", # "pn02", "pi02",
+  "en03", "ei03", # "pn03", "pi03",
+  "en04", "ei04", # #"pn04", "pi04", # too costly
+  "er01",         # "pr01",
+  "er02",         # "pr02",
+  "er03",         # "pr03",
+  "er04",         # # pr04",  # too costly
   "ec01", "ec02", "eb01", "em01"
-)
-
-number_interpolation_types <- c(
-  "ei01", "ei02", "ei03", "ei04",
-  "pi01", "pi02", "pi03", "pi04"
 )
 
 number_exact_types <- c(
-  "en01", "en02", "en03", "en04",
+  "en01", "en02", "en03", "en04"
+  )
+
+number_interpolation_types <- c(
+  "ei01", "ei02", "ei03", "ei04"
+  )
+
+probabilistic_exact_types <- c(
   "pn01", "pn02", "pn03", "pn04"
-)
 
-possible_match_types_no_number <- c(
+  )
+
+probabilistic_interpolation_types <- c(
+  "pi01", "pi02", "pi03", "pi04"
+  )
+
+exact_types_no_number <- c(
   "er01", "er02", "er03", "er04",
-  "pr01", "pr02", "pr03", "pr04",
+  "ec01", "ec02", "eb01", "em01"
+  )
+
+probabilistic_types_no_number <- c(
+  "pr01", "pr02", "pr03", "pr04"
+  )
+
+exact_types__no_logradouro <- c(
   "ec01", "ec02", "eb01", "em01"
 )
 
-possible_match_types_no_logradouro <- c(
-  "ec01", "ec02", "eb01", "em01"
-)
 
 
-probabilistic_logradouro_match_types <- c(
-  "pn01", "pn02", "pn03", "pn04",  # we're not working with probabilistic matching yet
-  "pi01", "pi02", "pi03", "pi04",  # we're not working with probabilistic matching yet
-  "pr01", "pr02", "pr03", "pr04"  # we're not working with probabilistic matching yet
-)
 
 
 
@@ -313,3 +320,33 @@ dt_haversine <- function(lat_from, lon_from, lat_to, lon_to, r = 6378137){
   a <- (sin(dLat/2)^2) + (cos(lat_from) * cos(lat_to)) * (sin(dLon/2)^2)
   return(2 * atan2(sqrt(a), sqrt(1 - a)) * r)
 }
+
+
+
+get_reference_table <- function(key_cols, match_type){
+
+  # key_cols = get_key_cols('ei03')
+
+  # read corresponding parquet file
+  table_name <- paste(key_cols, collapse = "_")
+  table_name <- gsub('estado_municipio', 'municipio', table_name)
+
+  # reference table
+  if (match_type %like% 'en02|pn02|ei02|pi02|en03|pn03') {
+    table_name <- "municipio_logradouro_numero_cep_localidade"
+  }
+
+  if (match_type %like% 'ei03|pi03|en04|ei04') {
+    table_name <- "municipio_logradouro_numero_localidade"
+  }
+
+  if (match_type %like% 'er02|pr02|er03|pr03') {
+    table_name <- "municipio_logradouro_cep_localidade"
+  }
+
+  if (match_type %like% 'er04') {
+    table_name <- "municipio_logradouro_localidade"
+  }
+
+  return(table_name)
+  }
