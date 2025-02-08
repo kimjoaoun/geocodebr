@@ -72,21 +72,20 @@ utilizam o sistema de referência geodésico "SIRGAS2000", CRS(4674).
 Precisão dos resultados:
 
 Os resultados do \strong{{geocodebr}} são classificados em seis amplas categorias de \code{precisao}:
-\itemize{
+\enumerate{
 \item "numero"
-\item "numero_interpolado"
-\item "rua"
+\item "numero_aproximado"
+\item "logradouro"
 \item "cep"
 \item "localidade"
 \item "municipio"
-\item \code{NA} (não encontrado)
 }
 
 Cada nível de precisão pode ser desagregado em tipos de correspondência mais
 refinados.
 }
 \section{Tipos de resultados}{
-A coluna \code{match_type} fornece informações mais detalhadas sobre como
+A coluna \code{tipo_resultado} fornece informações mais detalhadas sobre como
 exatamente cada endereço de entrada foi encontrado no CNEFE. Em cada
 categoria,  o \strong{{geocodebr}} calcula a média da latitude e longitude dos
 endereços incluídos no CNEFE que correspondem ao endereço de entrada, com
@@ -103,77 +102,62 @@ médias de todos os endereços no CNEFE ao longo daquela rua e que se encontram
 na mesma localidade/bairro. Assim, as coordenadas de resultado tendem a ser o
 ponto médio do trecho daquela rua que passa dentro daquela localidade/bairro.
 
-A lista completa dos níveis de precisão (\code{precisao}), suas categorias de tipo
-de correspondência (\code{tipo_resultado}) e os campos de endereço considerados em
-cada categoria estão descritos abaixo:
+A coluna \code{tipo_resultado} fornece informações mais detalhadas sobre os campos de
+endereço utilizados no cálculo das coordenadas de cada endereço de entrada. Cada
+categoria é nomeada a partir de um código de quatro caracteres:
 \itemize{
-\item precisao: \strong{"numero"}
-\itemize{
-\item tipo_resultado:
-\item en01: logradouro, numero, cep e localidade
-\item en02: logradouro, numero e cep
-\item en03: logradouro, numero e localidade
-\item en04: logradouro e numero
-\item pn01: logradouro, numero, cep e localidade
-\item pn02: logradouro, numero e cep
-\item pn03: logradouro, numero e localidade
-\item pn04: logradouro e numero
-}
-\item precisao: \strong{"numero_aproximado"}
-\itemize{
-\item tipo_resultado:
-\item ei01: logradouro, numero, cep e localidade
-\item ei02: logradouro, numero e cep
-\item ei03: logradouro, numero e localidade
-\item ei04: logradouro e numero
-\item pi01: logradouro, numero, cep e localidade
-\item pi02: logradouro, numero e cep
-\item pi03: logradouro, numero e localidade
-\item pi04: logradouro e numero
-}
-\item precisao: \strong{"logradouro"} (quando o número de entrada está faltando 'S/N')
-\itemize{
-\item tipo_resultado:
-\itemize{
-\item er01: logradouro, cep e localidade
-\item er02: logradouro e cep
-\item er03: logradouro e localidade
-\item er04: logradouro
-\item pr01: logradouro, cep e localidade
-\item pr02: logradouro e cep
-\item pr03: logradouro e localidade
-\item pr04: logradouro
-}
-}
-\item precisao: \strong{"cep"}
-\itemize{
-\item tipo_resultado:
-\itemize{
-\item ec01: municipio, cep, localidade
-\item ec02: municipio, cep
-}
-}
-\item precisao: \strong{"localidade"}
-\itemize{
-\item tipo_resultado:
-\itemize{
-\item eb01: municipio, localidade
-}
-}
-\item precisao: \strong{"municipio"}
-\itemize{
-\item tipo_resultado:
-\itemize{
-\item em01: municipio
-}
-}
+\item o primeiro caracter, sempre \code{d} ou \code{p}, determina se a correspondência foi
+feita de forma determinística (\code{d}) ou probabilística (\code{p}) - a segunda opção
+ainda não foi implementada no pacote, mas é planejada em versões futuras;
+\item o segundo faz menção à categoria de \code{precisao} na qual o resultado foi
+classificado (\code{n} para \code{"numero"}, \code{a} para \code{"numero_aproximado"}, \code{r} para
+\code{"logradouro"}, \code{c} para \code{"cep"}, \code{b} para \code{"localidade"} e \code{m} para \code{"municipio"});
+\item o terceiro e o quarto caracteres designam a classificação de cada categoria
+dentro de seu grupo - via de regra, quanto menor o número formado por esses
+caracteres, mais precisa são as coordenadas calculadas.
 }
 
-\emph{\strong{Nota:}} As categorias de \code{match_type} que começam com 'p' utilizam
-correspondência probabilística do campo logradouro, enquanto os tipos que
-começam com 'e' utilizam apenas correspondência determinística. \strong{As
-categorias de \code{tipo_resultado} que usam correspondência probabilística ainda
-não estão implementadas no pacote geocodebr}.
+As categorias de \code{tipo_resultado} são listadas abaixo, junto às categorias de
+\code{precisao} a qual elas estão associadas:
+\itemize{
+\item precisao \code{"numero"}
+\item \code{dn01} - logradouro, numero, cep e localidade
+\item \code{dn02} - logradouro, numero e cep
+\item \code{dn03} - logradouro, numero e localidade
+\item \code{dn04} - logradouro e numero
+\item \code{pn01} - logradouro, numero, cep e localidade
+\item \code{pn02} - logradouro, numero e cep
+\item \code{pn03} - logradouro, numero e localidade
+\item \code{pn04} - logradouro e numero
+\item precisao \code{"numero_aproximado"}
+\item \code{da01} - logradouro, numero, cep e localidade
+\item \code{da02} - logradouro, numero e cep
+\item \code{da03} - logradouro, numero e localidade
+\item \code{da04} - logradouro e numero
+\item \code{pa01} - logradouro, numero, cep e localidade
+\item \code{pa02} - logradouro, numero e cep
+\item \code{pa03} - logradouro, numero e localidade
+\item \code{pa04} - logradouro e numero
+\item precisao \code{"logradouro"} (quando o número de entrada está faltando 'S/N')
+\item \code{dl01} - logradouro, cep e localidade
+\item \code{dl02} - logradouro e cep
+\item \code{dl03} - logradouro e localidade
+\item \code{dl04} - logradouro
+\item \code{pl01} - logradouro, cep e localidade
+\item \code{pl02} - logradouro e cep
+\item \code{pl03} - logradouro e localidade
+\item \code{pl04} - logradouro
+\item precisao \code{"cep"}
+\item \code{dc01} - municipio, cep, localidade
+\item \code{dc02} - municipio, cep
+\item precisao \code{"localidade"}
+\item \code{db01} - municipio, localidade
+\item precisao \code{"municipio"}
+\item \code{dm01} - municipio
+}
+
+Endereços não encontrados são retornados com latitude, longitude, precisão e
+tipo de resultado \code{NA}.
 }
 
 \examples{

@@ -14,6 +14,10 @@ message_standardizing_addresses <- function() {
   geocodebr_message(c("i" = "Padronizando endere\u00e7os de entrada"))
 }
 
+message_baixando_cnefe <- function() {
+  geocodebr_message(c("i" = "Baixandos dados do CNEFE"))
+}
+
 message_looking_for_matches <- function() {
   geocodebr_message(c("i" = "Geolocalizando endere\u00e7os"))
 }

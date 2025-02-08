@@ -76,6 +76,7 @@ geocode <- function(enderecos,
   # check input
   checkmate::assert_data_frame(enderecos)
   checkmate::assert_logical(resultado_completo, any.missing = FALSE, len = 1)
+  checkmate::assert_logical(resolver_empates, any.missing = FALSE, len = 1)
   checkmate::assert_logical(resultado_sf, any.missing = FALSE, len = 1)
   checkmate::assert_logical(verboso, any.missing = FALSE, len = 1)
   checkmate::assert_logical(cache, any.missing = FALSE, len = 1)
@@ -238,7 +239,8 @@ geocode <- function(enderecos,
   # Disconnect from DuckDB when done
   duckdb::dbDisconnect(con)
 
-  # lida com casos de empate
+  # casos de empate -----------------------------------------------
+
   if (nrow(output_df) > n_rows) {
 
     # encontra casos de empate
@@ -253,7 +255,6 @@ geocode <- function(enderecos,
               by = tempidgeocodebr
               ]
 
-
     output_df[empate == TRUE,
               dist_geocodebr := ifelse(is.na(dist_geocodebr), 0, dist_geocodebr)
               ]
@@ -266,7 +267,6 @@ geocode <- function(enderecos,
 
     # update casos de empate
     output_df[, empate := ifelse(.N > 1, TRUE, FALSE), by = tempidgeocodebr]
-
 
     # conta numero de casos empatados
     ids_empate <- output_df[empate == TRUE, ]$tempidgeocodebr
@@ -291,10 +291,14 @@ geocode <- function(enderecos,
     output_df <- output_df[output_df[, .I[1], by = tempidgeocodebr]$V1]
     output_df[, c('empate', 'contagem_cnefe') := NULL]
 
-    cli::cli_warn(
-       "Foram encontrados e resolvidos {n_casos_empate} casos de empate."
-     )
+    if (verboso) {
+      plural <- ifelse(n_casos_empate==1, 'caso', 'casos')
+      message(glue::glue(
+         "Foram encontrados e resolvidos {n_casos_empate} {plural} de empate."
+       ))
+    }
    }
+
   }
 
   # drop geocodebr temp id column

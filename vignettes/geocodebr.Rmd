@@ -47,26 +47,29 @@ remotes::install_github("ipeaGIT/geocodebr")
 
 ## Utilização
 
-A principal função do pacote é a `geocode()`, que recebe uma tabela
+A principal função do pacote é a `geocode()`, que recebe uma tabela 
 (`data.frame`) de endereços como entrada e retorna a mesma tabela geolocalizada
-como saída. Por padrão, a tabela de *output* é acrescida de colunas com a
-latitude e longitude encontradas para cada endereço correspondido, bem como de
-colunas indicando o nível de precisão dos resultados. No exemplo abaixo,
-utilizamos um pequeno conjunto de dados que contém endereços com problemas
-comuns, como informações ausentes e campos digitados incorretamente, para
-demonstrar o uso da função:
+como saída. Para demonstrar o pacote, utilizamos no exemplo abaixo pequeno 
+conjunto de dados que contém endereços com problemas comuns, como informações 
+ausentes e campos digitados incorretamente. 
 
-**Nota:** A função `geocode()` requer que os dados do CNEFE estejam armazenados
-localmente. No total, esses dados somam cerca de 5,5 GB, o que pode fazer com
-que a primeira execução da função demore, já que é necessário baixar os dados
-para a sua máquina. Esses dados, no entanto, são salvos de forma persistente,
-logo não é preciso baixá-los mais do que uma vez.
+A geolocalização desses dados com **{geocodebr}** pode ser feita em apenas dois 
+passos:
+
+1. O primeiro passo é usar a função `definir_campos()` para indicar os nomes das 
+colunas no seu `data.frame` que correspondem a cada campo dos endereços. No 
+exemplo abaixo, nós indicamos que coluna que contém a informação de logradouro se 
+chama `"nm_logradouro"`, que a coluna de número se chama `"Numero"`, etc. 
+
+obs. Note que as colunas indicando o `"estado"` e `"município"` são obrigatórias.
 
 ```{r}
 library(geocodebr)
 
+# leitura de amostra de dados
 ends <- read.csv(system.file("extdata/small_sample.csv", package = "geocodebr"))
 
+# definição dos campos de endereço
 campos <- definir_campos(
   estado = "nm_uf",
   municipio = "nm_municipio",
@@ -75,8 +78,20 @@ campos <- definir_campos(
   cep = "Cep",
   localidade = "Bairro"
 )
+```
 
 
+2. O segundo passo é usar a função `geocode()` para encontrar as coordenadas 
+geográficas dos dados de input.
+
+**Nota:** A função `geocode()` requer que os dados do CNEFE estejam armazenados
+localmente. No total, esses dados somam cerca de 3 GB, o que pode fazer com
+que a primeira execução da função demore, já que é necessário baixar os dados
+para a sua máquina. Esses dados, no entanto, são salvos de forma persistente,
+logo eles são baixados uma única vez.
+
+```{r}
+# geolicalização
 ends_geo <- geocode(
   enderecos = ends, 
   campos_endereco = campos, 
@@ -89,29 +104,20 @@ ends_geo <- geocode(
 head(ends_geo)
 ```
 
-Note que no exemplo acima nós também utilizamos a função `definir_campos()`, que
-facilita o processo de especificação da correspondência entre as colunas da
-tabela e os campos esperados de cada endereço. Com ela, nós definimos que a
-coluna que contém a informação de logradouro se chama `"nm_logradouro"`, que a
-coluna de número se chama `"Numero"`, etc. Essa função é opcional, e poderíamos
-simplesmente passar um vetor de caracteres no formato `c(logradouro =
-"nm_logradouro", numero = "Numero", ...)`. A `definir_campos()`, no entanto,
-realiza alguns testes nas colunas e na tabela, garantindo que o *input* passado
-esteja corretamente formatado.
 
+Por padrão, a tabela de *output* é igual à tabela de input do usuário acrescida de colunas com a latitude e longitude encontradas, bem como de colunas indicando o nível de precisão dos resultados e o endereço encontrado. Quando `resultado_completo = TRUE`, o output é acrescido de algumas colunas extras.
 
-Cabe também destacar aqui o papel de três argumentos da função `geocode()`:
-- `resultado_completo`: serve para indicar se o usuário quer que o output contenha colunas extras, como o endereço encontrado, bairro encontrado etc.
+Cabe também destacar aqui outros dois argumentos da função `geocode()`:
+
 - `resolver_empates`: serve para indicar se o usuário quer que a função resolva automaticamente casos de empate, i.e. casos que o endereço de input do usuário pode ser referir a diferentes localidades na cidade (e.g. logradouros diferentes com mesmo nome mas em bairros distintos)
-- `resultado_sf`: quando `TRUE`, o output retornado como um objeto espacial de classe `sf` simple feature.
-
-
+- `resultado_sf`: quando `TRUE`, o output é retornado como um objeto espacial de classe `sf` simple feature.
 
 As coordendas espaciais do resultado usam o sistema de referência SIRGAS2000,
 padrão adotado pelo IBGE em todo o Brasil. Cada par de coordenadas encontrado
 pode ser classificado conforme o seu grau de precisão (coluna `precisao`) e os
 campos do endereço utilizados para encontrá-lo (`tipo_resultado`). A seção a
 seguir apresenta mais informações sobre essas colunas.
+
 
 ### Grau de precisão dos resultados
 
@@ -141,28 +147,28 @@ precisão possível - ou seja, ela só vai procurar endereços com precisão
 de precisão `"numero"`. As coordenadas calculadas podem ser classificadas em
 seis diferentes categorias de precisão:
 
-- `"numero"` - calculadas a partir de endereços que compartilham o mesmo
+1. `"numero"` - calculadas a partir de endereços que compartilham o mesmo
 logradouro e número;
-- `"numero_aproximado"` - calculadas a partir de endereços que compartilham o
+2. `"numero_aproximado"` - calculadas a partir de endereços que compartilham o
 mesmo logradouro, mas número de *input* não encontra correspondência exata no
 CNEFE e sua localização é calculada a partir de uma interpolação espacial;
-- `"logradouro"` - calculadas a partir de endereços que compartilham o mesmo
+3. `"logradouro"` - calculadas a partir de endereços que compartilham o mesmo
 logradouro (número de *input* está ausente ou é S/N);
-- `"cep"` - calculadas a partir de endereços que compartilham o mesmo CEP;
-- `"localidade"` - calculadas a partir de endereços que compartilham a mesma
+4. `"cep"` - calculadas a partir de endereços que compartilham o mesmo CEP;
+5. `"localidade"` - calculadas a partir de endereços que compartilham a mesma
 localidade;
-- `"municipio"` - calculadas a partir de endereços que compartilham o mesmo
+6. `"municipio"` - calculadas a partir de endereços que compartilham o mesmo
 município.
 
 A coluna `tipo_resultado` fornece informações mais detalhadas sobre os campos de
 endereço utilizados no cálculo das coordenadas de cada endereço de entrada. Cada
 categoria é nomeada a partir de um código de quatro caracteres:
 
-- o primeiro, sempre `e` ou `p`, determina se a correspondência foi feita de
-forma determinística (`e`) ou probabilística (`p`) - a segunda opção ainda não
+- o primeiro, sempre `d` ou `p`, determina se a correspondência foi feita de
+forma determinística (`d`) ou probabilística (`p`) - a segunda opção ainda não
 foi implementada no pacote, mas é planejada em versões futuras;
 - o segundo faz menção à categoria de `precisao` na qual o resultado foi
-classificado (`n` para `"numero"`, `i` para `"numero_aproximado"`, `r` para
+classificado (`n` para `"numero"`, `a` para `"numero_aproximado"`, `l` para
 `"logradouro"`, `c` para `"cep"`, `b` para `"localidade"` e `m` para
 `"municipio"`);
 - o terceiro e o quarto designam a classificação de cada categoria dentro de seu
@@ -173,49 +179,50 @@ As categorias de `tipo_resultado` são listadas abaixo, junto às categorias de
 `precisao` a qual elas estão associadas:
 
 - precisao `"numero"`
-  - `en01` - logradouro, numero, cep e localidade
-  - `en02` - logradouro, numero e cep
-  - `en03` - logradouro, numero e localidade
-  - `en04` - logradouro e numero
+  - `dn01` - logradouro, numero, cep e localidade
+  - `dn02` - logradouro, numero e cep
+  - `dn03` - logradouro, numero e localidade
+  - `dn04` - logradouro e numero
   - `pn01` - logradouro, numero, cep e localidade
   - `pn02` - logradouro, numero e cep
   - `pn03` - logradouro, numero e localidade
   - `pn04` - logradouro e numero
 
 - precisao `"numero_aproximado"`
-  - `ei01` - logradouro, numero, cep e localidade
-  - `ei02` - logradouro, numero e cep
-  - `ei03` - logradouro, numero e localidade
-  - `ei04` - logradouro e numero
-  - `pi01` - logradouro, numero, cep e localidade
-  - `pi02` - logradouro, numero e cep
-  - `pi03` - logradouro, numero e localidade
-  - `pi04` - logradouro e numero
+  - `da01` - logradouro, numero, cep e localidade
+  - `da02` - logradouro, numero e cep
+  - `da03` - logradouro, numero e localidade
+  - `da04` - logradouro e numero
+  - `pa01` - logradouro, numero, cep e localidade
+  - `pa02` - logradouro, numero e cep
+  - `pa03` - logradouro, numero e localidade
+  - `pa04` - logradouro e numero
 
 - precisao `"logradouro"` (quando o número de entrada está faltando 'S/N')
-  - `er01` - logradouro, cep e localidade
-  - `er02` - logradouro e cep
-  - `er03` - logradouro e localidade
-  - `er04` - logradouro
-  - `pr01` - logradouro, cep e localidade
-  - `pr02` - logradouro e cep
-  - `pr03` - logradouro e localidade
-  - `pr04` - logradouro
+  - `dl01` - logradouro, cep e localidade
+  - `dl02` - logradouro e cep
+  - `dl03` - logradouro e localidade
+  - `dl04` - logradouro
+  - `pl01` - logradouro, cep e localidade
+  - `pl02` - logradouro e cep
+  - `pl03` - logradouro e localidade
+  - `pl04` - logradouro
 
 - precisao `"cep"`
-  - `ec01` - municipio, cep, localidade
-  - `ec02` - municipio, cep
+  - `dc01` - municipio, cep, localidade
+  - `dc02` - municipio, cep
 
 - precisao `"localidade"`
-  - `eb01` - municipio, localidade
+  - `db01` - municipio, localidade
 
 - precisao `"municipio"`
-  - `em01` - municipio
+  - `dm01` - municipio
 
 Endereços não encontrados são retornados com latitude, longitude, precisão e tipo de resultado `NA`.
 
 
 ***Nota:*** As categorias de `tipo_resultado` que começam com 'p' utilizam correspondência probabilística do campo logradouro, enquanto os tipos que começam com 'e' utilizam apenas correspondência determinística. **As categorias de `tipo_resultado` que usam correspondência probabilística ainda não estão implementados no pacote geocodebr**.
+
 
 ### Cache de dados
 

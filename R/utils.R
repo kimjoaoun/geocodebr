@@ -105,15 +105,15 @@ add_precision_col <- function(con, update_tb = NULL){
   query_precision <- glue::glue("
   UPDATE {update_tb}
   SET precisao = CASE
-  WHEN tipo_resultado IN ('en01', 'en02', 'en03', 'en04',
+  WHEN tipo_resultado IN ('dn01', 'dn02', 'dn03', 'dn04',
                           'pn01', 'pn02', 'pn03', 'pn04') THEN 'numero'
-  WHEN tipo_resultado IN ('ei01', 'ei02', 'ei03', 'ei04',
-                          'pi01', 'pi02', 'pi03', 'pi04') THEN 'numero_aproximado'
-  WHEN tipo_resultado IN ('er01', 'er02', 'er03', 'er04',
-                          'pr01', 'pr02', 'pr03', 'pr04') THEN 'logradouro'
-  WHEN tipo_resultado IN ('ec01', 'ec02') THEN 'cep'
-  WHEN tipo_resultado = 'eb01' THEN 'localidade'
-  WHEN tipo_resultado = 'em01' THEN 'municipio'
+  WHEN tipo_resultado IN ('da01', 'da02', 'da03', 'da04',
+                          'pa01', 'pa02', 'pa03', 'pa04') THEN 'numero_aproximado'
+  WHEN tipo_resultado IN ('dl01', 'dl02', 'dl03', 'dl04',
+                          'pl01', 'pl02', 'pl03', 'pl04') THEN 'logradouro'
+  WHEN tipo_resultado IN ('dc01', 'dc02') THEN 'cep'
+  WHEN tipo_resultado = 'db01' THEN 'localidade'
+  WHEN tipo_resultado = 'dm01' THEN 'municipio'
   ELSE NULL
   END;")
 
@@ -200,29 +200,29 @@ create_index <- function(con, tb, cols, operation, overwrite=TRUE){
 
 
 get_key_cols <- function(case) {
-  relevant_cols <- if (case %in% c('en01', 'ei01', 'pn01', 'pi01') ) {
+  relevant_cols <- if (case %in% c('dn01', 'da01', 'pn01', 'pa01') ) {
     c("estado", "municipio", "logradouro", "numero", "cep", "localidade")
-  } else if (case %in% c('en02', 'ei02', 'pn02', 'pi02')) {
+  } else if (case %in% c('dn02', 'da02', 'pn02', 'pa02')) {
     c("estado", "municipio", "logradouro", "numero", "cep")
-  } else if (case %in% c('en03', 'ei03', 'pn03', 'pi03')) {
+  } else if (case %in% c('dn03', 'da03', 'pn03', 'pa03')) {
     c("estado", "municipio", "logradouro", "numero", "localidade")
-  } else if (case %in% c('en04', 'ei04', 'pn04', 'pi04')) {
+  } else if (case %in% c('dn04', 'da04', 'pn04', 'pa04')) {
     c("estado", "municipio", "logradouro", "numero")
-  } else if (case %in% c('er01', 'pr01')) {
+  } else if (case %in% c('dl01', 'pl01')) {
     c("estado", "municipio", "logradouro", "cep", "localidade")
-  } else if (case %in% c('er02', 'pr02')) {
+  } else if (case %in% c('dl02', 'pl02')) {
     c("estado", "municipio", "logradouro", "cep")
-  } else if (case %in% c('er03', 'pr03')) {
+  } else if (case %in% c('dl03', 'pl03')) {
     c("estado", "municipio", "logradouro", "localidade")
-  } else if (case %in% c('er04', 'pr04')) {
+  } else if (case %in% c('dl04', 'pl04')) {
     c("estado", "municipio", "logradouro")
-  } else if (case == 'ec01') {
+  } else if (case == 'dc01') {
     c("estado", "municipio", "cep", "localidade")
-  } else if (case == 'ec02') {
+  } else if (case == 'dc02') {
     c("estado", "municipio", "cep")
-  } else if (case == 'eb01') {
+  } else if (case == 'db01') {
     c("estado", "municipio", "localidade")
-  } else if (case == 'em01') {
+  } else if (case == 'dm01') {
     c("estado", "municipio")
   }
 
@@ -231,23 +231,23 @@ get_key_cols <- function(case) {
 
 
 all_possible_match_types <- c(
-  "en01", "ei01", # "pn01", "pi01",
-  "en02", "ei02", # "pn02", "pi02",
-  "en03", "ei03", # "pn03", "pi03",
-  "en04", "ei04", # #"pn04", "pi04", # too costly
-  "er01",         # "pr01",
-  "er02",         # "pr02",
-  "er03",         # "pr03",
-  "er04",         # # pr04",  # too costly
-  "ec01", "ec02", "eb01", "em01"
+  "dn01", "da01", # "pn01", "pa01",
+  "dn02", "da02", # "pn02", "pa02",
+  "dn03", "da03", # "pn03", "pa03",
+  "dn04", "da04", # #"pn04", "pa04", # too costly
+  "dl01",         # "pl01",
+  "dl02",         # "pl02",
+  "dl03",         # "pl03",
+  "dl04",         # # pl04",  # too costly
+  "dc01", "dc02", "db01", "dm01"
 )
 
 number_exact_types <- c(
-  "en01", "en02", "en03", "en04"
+  "dn01", "dn02", "dn03", "dn04"
   )
 
 number_interpolation_types <- c(
-  "ei01", "ei02", "ei03", "ei04"
+  "da01", "da02", "da03", "da04"
   )
 
 probabilistic_exact_types <- c(
@@ -256,20 +256,20 @@ probabilistic_exact_types <- c(
   )
 
 probabilistic_interpolation_types <- c(
-  "pi01", "pi02", "pi03", "pi04"
+  "pa01", "pa02", "pa03", "pa04"
   )
 
 exact_types_no_number <- c(
-  "er01", "er02", "er03", "er04",
-  "ec01", "ec02", "eb01", "em01"
+  "dl01", "dl02", "dl03", "dl04",
+  "dc01", "dc02", "db01", "dm01"
   )
 
 probabilistic_types_no_number <- c(
-  "pr01", "pr02", "pr03", "pr04"
+  "pl01", "pl02", "pl03", "pl04"
   )
 
 exact_types__no_logradouro <- c(
-  "ec01", "ec02", "eb01", "em01"
+  "dc01", "dc02", "db01", "dm01"
 )
 
 
@@ -325,26 +325,26 @@ dt_haversine <- function(lat_from, lon_from, lat_to, lon_to, r = 6378137){
 
 get_reference_table <- function(key_cols, match_type){
 
-  # key_cols = get_key_cols('ei03')
+  # key_cols = get_key_cols('da03')
 
   # read corresponding parquet file
   table_name <- paste(key_cols, collapse = "_")
   table_name <- gsub('estado_municipio', 'municipio', table_name)
 
   # reference table
-  if (match_type %like% 'en02|pn02|ei02|pi02|en03|pn03') {
+  if (match_type %like% 'dn02|pn02|da02|pa02|dn03|pn03') {
     table_name <- "municipio_logradouro_numero_cep_localidade"
   }
 
-  if (match_type %like% 'ei03|pi03|en04|ei04') {
+  if (match_type %like% 'da03|pa03|dn04|da04') {
     table_name <- "municipio_logradouro_numero_localidade"
   }
 
-  if (match_type %like% 'er02|pr02|er03|pr03') {
+  if (match_type %like% 'dl02|pl02|dl03|pl03') {
     table_name <- "municipio_logradouro_cep_localidade"
   }
 
-  if (match_type %like% 'er04') {
+  if (match_type %like% 'dl04') {
     table_name <- "municipio_logradouro_localidade"
   }
 

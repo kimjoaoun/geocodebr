@@ -31,18 +31,18 @@ tester <- function(enderecos = input_df,
 }
 
 test_that("expected output", {
-  std_output <- tester()
+  testthat::expect_warning(std_output <- tester())
 
   # find expected match cases
   match_types_found <- unique(std_output$tipo_resultado)
   testthat::expect_true(length(match_types_found) == 16)
 
   # full results
-  full_output <- tester(resultado_completo = TRUE)
+  testthat::expect_warning(full_output <- tester(resultado_completo = TRUE))
   testthat::expect_true('endereco_encontrado' %in% names(full_output))
 
   # output in sf format
-  sf_output <- tester(resultado_sf = T)
+  testthat::expect_warning(sf_output <- tester(resultado_sf = T))
   testthat::expect_true(is(sf_output , 'sf'))
 })
 
@@ -54,10 +54,22 @@ test_that("test empates", {
   testthat::expect_true(nrow(std_output) > nrow(input_df))
 
   # resolvendo empates
-  testthat::expect_warning( std_output <- tester(resolver_empates = TRUE) )
+  testthat::expect_message( std_output <- tester(verboso = TRUE, resolver_empates = TRUE) )
   testthat::expect_true(nrow(std_output) == nrow(input_df))
 
 })
+
+test_that("test no messages", {
+
+  testthat::expect_no_message( std_output <- tester(verboso = FALSE,
+                                                    resolver_empates = FALSE)
+                               )
+
+  testthat::expect_no_message( std_output <- tester(verboso = FALSE,
+                                                    resolver_empates = TRUE)
+                             )
+})
+
 
 test_that("errors with incorrect input", {
   expect_error(tester(unclass(input_df)))
@@ -69,6 +81,10 @@ test_that("errors with incorrect input", {
   expect_error(tester(resultado_completo = 1))
   expect_error(tester(resultado_completo = NA))
   expect_error(tester(resultado_completo = c(TRUE, TRUE)))
+
+  expect_error(tester(resolver_empates = 1))
+  expect_error(tester(resolver_empates = NA))
+  expect_error(tester(resolver_empates = c(TRUE, TRUE)))
 
   expect_error(tester(resultado_sf = 1))
   expect_error(tester(resultado_sf = NA))

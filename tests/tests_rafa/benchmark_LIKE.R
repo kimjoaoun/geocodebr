@@ -272,11 +272,12 @@ campos <- geocodebr::definir_campos(
 # resultado_completo=T
 
 rafaF <- function(){ message('rafa F')
-  df_rafaF <- geocodebr::geocode(
+  df_rafaF2 <- geocodebr::geocode(
     enderecos = input_df,
     campos_endereco = campos,
     n_cores = 7,
     resultado_completo = T,
+    resolver_empates = T,
     verboso = T
   )
 }

@@ -1,14 +1,13 @@
-#' Download the CNEFE data set
+#' Faz download dos dados do CNEGE
 #'
-#' Downloads an enriched version of the CNEFE (National Registry of Addresses
-#' for Statistical Purposes, in portuguese) data set, purposefully built to be
-#' used with this package.
+#' Faz o download de uma versão pre-processada e enriquecida do CNEFE (Cadastro
+#' Nacional de Endereços para Fins Estatísticos) que foi criada para o uso deste
+#' pacote.
 #'
-#' @param verboso A logical. Whether to display a download progress bar.
-#'   Defaults to `TRUE`.
+#' @template verboso
 #' @template cache
 #'
-#' @return Invisibly returns the path to the directory where the data was saved.
+#' @return Retorna o caminho para o diretório onde os dados foram salvos.
 #'
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 #' download_cnefe(verboso = FALSE)
@@ -20,10 +19,10 @@ download_cnefe <- function(verboso = TRUE, cache = TRUE) {
 
   all_files <- c(
     "municipio_logradouro_numero_localidade.parquet",  # 4 largest files       ok 3
+    "municipio_logradouro_numero_cep_localidade.parquet", # 4 largest files    ok 1
     "municipio.parquet",
     "municipio_cep.parquet",
     "municipio_cep_localidade.parquet",
-    "municipio_logradouro_numero_cep_localidade.parquet", # 4 largest files    ok 1
     "municipio_localidade.parquet",
     # "municipio_logradouro.parquet",
     # "municipio_logradouro_numero_cep.parquet", # 4 largest files
@@ -96,11 +95,13 @@ perform_requests_in_parallel <- function(requests, dest_files, verboso) {
   # related help page:
   # https://testthat.r-lib.org/reference/local_mocked_bindings.html
 
+  if (verboso) { message_baixando_cnefe() }
+
   httr2::req_perform_parallel(
     requests,
     paths = dest_files,
     on_error = "continue",
-    progress = ifelse(verboso == TRUE, "Baixandos dados do CNEFE", FALSE)
+    progress = ifelse(verboso == TRUE, '', FALSE)
   )
 }
 

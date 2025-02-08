@@ -2,13 +2,14 @@
 % Please edit documentation in R/download_cnefe.R
 \name{download_cnefe}
 \alias{download_cnefe}
-\title{Download the CNEFE data set}
+\title{Faz download dos dados do CNEGE}
 \usage{
 download_cnefe(verboso = TRUE, cache = TRUE)
 }
 \arguments{
-\item{verboso}{A logical. Whether to display a download progress bar.
-Defaults to \code{TRUE}.}
+\item{verboso}{Um valor lógico. Indica se barras de progresso e mensagens
+devem ser exibidas durante o download dos dados do CNEFE e a geocodificação
+dos endereços. O padrão é \code{TRUE}.}
 
 \item{cache}{Um valor lógico. Indica se os dados do CNEFE devem ser salvos ou
 lidos do cache, reduzindo o tempo de processamento em chamadas futuras. O
@@ -16,12 +17,12 @@ padrão é \code{TRUE}. Quando \code{FALSE}, os dados do CNEFE são baixados par
 diretório temporário.}
 }
 \value{
-Invisibly returns the path to the directory where the data was saved.
+Retorna o caminho para o diretório onde os dados foram salvos.
 }
 \description{
-Downloads an enriched version of the CNEFE (National Registry of Addresses
-for Statistical Purposes, in portuguese) data set, purposefully built to be
-used with this package.
+Faz o download de uma versão pre-processada e enriquecida do CNEFE (Cadastro
+Nacional de Endereços para Fins Estatísticos) que foi criada para o uso deste
+pacote.
 }
 \examples{
 \dontshow{if (identical(tolower(Sys.getenv("NOT_CRAN")), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
