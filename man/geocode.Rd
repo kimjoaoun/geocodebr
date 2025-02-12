@@ -121,6 +121,7 @@ As categorias de \code{tipo_resultado} são listadas abaixo, junto às categoria
 \code{precisao} a qual elas estão associadas:
 \itemize{
 \item precisao \code{"numero"}
+\itemize{
 \item \code{dn01} - logradouro, numero, cep e localidade
 \item \code{dn02} - logradouro, numero e cep
 \item \code{dn03} - logradouro, numero e localidade
@@ -129,7 +130,9 @@ As categorias de \code{tipo_resultado} são listadas abaixo, junto às categoria
 \item \code{pn02} - logradouro, numero e cep
 \item \code{pn03} - logradouro, numero e localidade
 \item \code{pn04} - logradouro e numero
+}
 \item precisao \code{"numero_aproximado"}
+\itemize{
 \item \code{da01} - logradouro, numero, cep e localidade
 \item \code{da02} - logradouro, numero e cep
 \item \code{da03} - logradouro, numero e localidade
@@ -138,7 +141,9 @@ As categorias de \code{tipo_resultado} são listadas abaixo, junto às categoria
 \item \code{pa02} - logradouro, numero e cep
 \item \code{pa03} - logradouro, numero e localidade
 \item \code{pa04} - logradouro e numero
+}
 \item precisao \code{"logradouro"} (quando o número de entrada está faltando 'S/N')
+\itemize{
 \item \code{dl01} - logradouro, cep e localidade
 \item \code{dl02} - logradouro e cep
 \item \code{dl03} - logradouro e localidade
@@ -147,13 +152,20 @@ As categorias de \code{tipo_resultado} são listadas abaixo, junto às categoria
 \item \code{pl02} - logradouro e cep
 \item \code{pl03} - logradouro e localidade
 \item \code{pl04} - logradouro
+}
 \item precisao \code{"cep"}
+\itemize{
 \item \code{dc01} - municipio, cep, localidade
 \item \code{dc02} - municipio, cep
+}
 \item precisao \code{"localidade"}
+\itemize{
 \item \code{db01} - municipio, localidade
+}
 \item precisao \code{"municipio"}
+\itemize{
 \item \code{dm01} - municipio
+}
 }
 
 Endereços não encontrados são retornados com latitude, longitude, precisão e
@@ -162,6 +174,7 @@ tipo de resultado \code{NA}.
 
 \examples{
 \dontshow{if (identical(tolower(Sys.getenv("NOT_CRAN")), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+library(geocodebr)
 
 # ler amostra de dados
 data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")

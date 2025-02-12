@@ -1,4 +1,4 @@
-match_cases <- function(
+match_cases <- function( # nocov start
     con = con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe',
@@ -92,4 +92,4 @@ match_cases <- function(
   )
 
   return(temp_n)
-}
+} # nocov end

@@ -13,7 +13,7 @@ experimental](https://lifecycle.r-lib.org/articles/figures/lifecycle-experimenta
 
 O **{geocodebr}** é um pacote computacional para geolicalização de
 endereços Brasileiros. O pacote oferece uma maneira simples e eficiente
-de geolicalizar endereços para encontrar suas coordenadas geográficas. O
+de geolocalizar endereços para encontrar suas coordenadas geográficas. O
 pacote é baseado em conjuntos de dados espaciais abertos de endereços
 brasileiros, utilizando principalmente o Cadastro Nacional de Endereços
 para Fins Estatísticos (CNEFE). O CNEFE é
@@ -90,10 +90,6 @@ endereço de input foi encontrado nos dados do CNEFE. Para mais
 informações, consulte a documentação da função ou a **vignette de
 geocode**.
 
-### Geocode reverso: de coordenadas espaciais para endereços
-
-*em breve*
-
 ## Projetos relacionados
 
 Existem diversos pacotes de geolocalização disponíveis, muitos dos quais
@@ -107,20 +103,18 @@ permitindo geocodificar milhões de endereços em apenas alguns minutos,
 sem a necessidade de infraestrutura computacional avançada ou de alto
 desempenho.
 
-- [{arcgisgeocode}](https://cran.r-project.org/web/packages/arcgisgeocode/index.html)
-  and
-  [{arcgeocoder}](https://cran.r-project.org/web/packages/arcgeocoder/index.html):
+- [{arcgisgeocode}](https://cran.r-project.org/package=arcgisgeocode)
+  and [{arcgeocoder}](https://cran.r-project.org/package=arcgeocoder):
   utiliza serviço de geocode do ArcGIS
-- [{nominatimlite}](https://cran.r-project.org/web/packages/nominatimlite/index.html):
+- [{nominatimlite}](https://cran.r-project.org/package=nominatimlite):
   baseado dados do OSM
-- [{photon}](https://cran.r-project.org/web/packages/photon/index.html):
-  baseado dados do OSM
-- [{tidygeocoder}](https://cran.r-project.org/web/packages/tidygeocoder/index.html):
-  API para diversos servicos de geolocalização
-- [{googleway}](https://cran.r-project.org/web/packages/googleway/index.html)
-  and
-  [{mapsapi}](https://cran.r-project.org/web/packages/mapsapi/index.html):
-  interface para API do Google Maps
+- [{photon}](https://cran.r-project.org/package=photon): baseado dados
+  do OSM
+- [{tidygeocoder}](https://cran.r-project.org/package=tidygeocoder): API
+  para diversos servicos de geolocalização
+- [{googleway}](https://cran.r-project.org/package=googleway) and
+  [{mapsapi}](https://cran.r-project.org/package=mapsapi): interface
+  para API do Google Maps
 
 ## Nota <a href="https://www.ipea.gov.br"><img src="man/figures/ipea_logo.png" alt="IPEA" align="right" width="300"/></a>
 

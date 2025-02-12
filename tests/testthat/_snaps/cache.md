@@ -1,7 +1,7 @@
 # messages are formatted correctly
 
     Code
-      definir_pasta_cache()
+      definir_pasta_cache(path = NULL)
     Message <geocodebr_cache_dir>
       i Definido como pasta de cache '<path_to_default_dir>'.
 

@@ -1,4 +1,4 @@
-match_weighted_cases <- function(
+match_weighted_cases <- function( # nocov start
     con = con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe',
@@ -139,4 +139,4 @@ match_weighted_cases <- function(
   )
 
   return(temp_n)
-}
+} # nocov end

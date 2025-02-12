@@ -14,6 +14,26 @@ tester <- function(logradouro = NULL,
   )
 }
 
+test_that("definir_campos expected behavior", {
+
+  testthat::expect_vector(
+    test <- tester(
+    logradouro = 'nm_logradouro',
+    numero = 'Numero',
+    cep = 'Cep',
+    localidade = 'Bairro',
+    municipio = 'nm_municipio',
+    estado = 'nm_uf')
+  )
+
+  testthat::expect_true(
+    all(names(test) == c("logradouro","numero", "cep",
+                         "localidade", "municipio", "estado"))
+  )
+
+
+})
+
 test_that("errors with incorrect input", {
   expect_error(tester(logradouro = 1))
   expect_error(tester(logradouro = c("aaa", "bbb")))

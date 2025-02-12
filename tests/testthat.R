@@ -10,3 +10,5 @@ library(testthat)
 library(geocodebr)
 
 test_check("geocodebr")
+
+Sys.setenv(OMP_THREAD_LIMIT = 2)

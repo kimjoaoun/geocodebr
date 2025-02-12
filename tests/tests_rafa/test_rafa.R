@@ -125,7 +125,10 @@ Sys.setenv(NOT_CRAN = "true")
 
 
 # each function separately
-t1 <- covr::function_coverage(fun=read_mortality, test_file("tests/testthat/test_read_mortality.R"))
+t1 <- covr::function_coverage(fun=geocode, test_file("tests/testthat/test-geocode.R"))
+t1 <- covr::function_coverage(fun=definir_campos, test_file("tests/testthat/test-definir_campos.R"))
+t1 <- covr::function_coverage(fun=download_cnefe, test_file("tests/testthat/test-download_cnefe.R"))
+t1 <- covr::function_coverage(fun=listar_dados_cache, test_file("tests/testthat/test_cache.R"))
 
 t1
 
@@ -140,7 +143,7 @@ Sys.setenv(NOT_CRAN = "true")
 cov <- covr::package_coverage(path = ".", type = "tests", clean = FALSE)
 cov
 
-rep <- covr::report()
+rep <- covr::report(t1)
 
 x <- as.data.frame(cov)
 covr::codecov( coverage = cov, token ='aaaaa' )
@@ -173,6 +176,12 @@ testthat::test_local()
 # LOCAL
 Sys.setenv(NOT_CRAN = "true")
 devtools::check(pkg = ".",  cran = FALSE, env_vars = c(NOT_CRAN = "true"))
+
+# detecat probla de cpu < 2
+devtools::check(remote = TRUE, manual = TRUE)
+
+devtools::check(remote = TRUE, manual = TRUE, env_vars = c(NOT_CRAN = "false"))
+
 
 # CRAN
 Sys.setenv(NOT_CRAN = "false")
@@ -261,3 +270,30 @@ for_sf <- left_join(fort_wa, rent, by = c('code_weighting'='V0011'))
 ggplot() +
   geom_sf(data=for_sf, aes(fill = avgrent), color=NA)
 
+
+
+
+
+
+# had CPU time 3 times elapsed time ----
+# https://stackoverflow.com/questions/77323811/r-package-to-cran-had-cpu-time-5-times-elapsed-time
+
+# Flavor: r-devel-linux-x86_64-debian-gcc
+# Check: tests, Result: NOTE
+# Running 'testthat.R' [161s/53s]
+# Running R code in 'testthat.R' had CPU time 3 times elapsed time
+
+library(testthat)
+Sys.setenv(NOT_CRAN = "true")
+
+files = list.files("tests/testthat", "test-", full.names = TRUE)
+
+for (file in files[3]) {
+
+  time = system.time(test_file(file))
+  ratio = time[1] / time[3]
+  if (ratio > 2) {
+    print(time)
+    stopf("Test file %s had CPU time %f times elapsed time", file, ratio)
+  }
+}

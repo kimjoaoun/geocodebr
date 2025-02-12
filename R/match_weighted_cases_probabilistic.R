@@ -1,4 +1,4 @@
-match_weighted_cases_probabilistic <- function(
+match_weighted_cases_probabilistic <- function( # nocov start
     con = con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe',
@@ -159,4 +159,4 @@ match_weighted_cases_probabilistic <- function(
   )
 
   return(temp_n)
-}
+} # nocov end

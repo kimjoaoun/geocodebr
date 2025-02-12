@@ -124,7 +124,7 @@ mapview::mapview(case)
 
 
 round(table(dfgeo$precisao) / nrow(dfgeo) *100, 1)
-round(table(dfgeo2$precisao) / nrow(dfgeo) *100, 1)
+round(table(dfgeo2$precisao) / nrow(dfgeo2) *100, 1)
 
 # tempo:
 # com 32.75s    855 empates

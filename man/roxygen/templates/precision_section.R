@@ -48,45 +48,45 @@
 #' As categorias de `tipo_resultado` são listadas abaixo, junto às categorias de
 #' `precisao` a qual elas estão associadas:
 #'
-#'   - precisao `"numero"`
-#' - `dn01` - logradouro, numero, cep e localidade
-#' - `dn02` - logradouro, numero e cep
-#' - `dn03` - logradouro, numero e localidade
-#' - `dn04` - logradouro e numero
-#' - `pn01` - logradouro, numero, cep e localidade
-#' - `pn02` - logradouro, numero e cep
-#' - `pn03` - logradouro, numero e localidade
-#' - `pn04` - logradouro e numero
+#' - precisao `"numero"`
+#'   - `dn01` - logradouro, numero, cep e localidade
+#'   - `dn02` - logradouro, numero e cep
+#'   - `dn03` - logradouro, numero e localidade
+#'   - `dn04` - logradouro e numero
+#'   - `pn01` - logradouro, numero, cep e localidade
+#'   - `pn02` - logradouro, numero e cep
+#'   - `pn03` - logradouro, numero e localidade
+#'   - `pn04` - logradouro e numero
 #'
 #' - precisao `"numero_aproximado"`
-#' - `da01` - logradouro, numero, cep e localidade
-#' - `da02` - logradouro, numero e cep
-#' - `da03` - logradouro, numero e localidade
-#' - `da04` - logradouro e numero
-#' - `pa01` - logradouro, numero, cep e localidade
-#' - `pa02` - logradouro, numero e cep
-#' - `pa03` - logradouro, numero e localidade
-#' - `pa04` - logradouro e numero
+#'   - `da01` - logradouro, numero, cep e localidade
+#'   - `da02` - logradouro, numero e cep
+#'   - `da03` - logradouro, numero e localidade
+#'   - `da04` - logradouro e numero
+#'   - `pa01` - logradouro, numero, cep e localidade
+#'   - `pa02` - logradouro, numero e cep
+#'   - `pa03` - logradouro, numero e localidade
+#'   - `pa04` - logradouro e numero
 #'
 #' - precisao `"logradouro"` (quando o número de entrada está faltando 'S/N')
-#' - `dl01` - logradouro, cep e localidade
-#' - `dl02` - logradouro e cep
-#' - `dl03` - logradouro e localidade
-#' - `dl04` - logradouro
-#' - `pl01` - logradouro, cep e localidade
-#' - `pl02` - logradouro e cep
-#' - `pl03` - logradouro e localidade
-#' - `pl04` - logradouro
+#'   - `dl01` - logradouro, cep e localidade
+#'   - `dl02` - logradouro e cep
+#'   - `dl03` - logradouro e localidade
+#'   - `dl04` - logradouro
+#'   - `pl01` - logradouro, cep e localidade
+#'   - `pl02` - logradouro e cep
+#'   - `pl03` - logradouro e localidade
+#'   - `pl04` - logradouro
 #'
 #' - precisao `"cep"`
-#' - `dc01` - municipio, cep, localidade
-#' - `dc02` - municipio, cep
+#'   - `dc01` - municipio, cep, localidade
+#'   - `dc02` - municipio, cep
 #'
 #' - precisao `"localidade"`
-#' - `db01` - municipio, localidade
+#'   - `db01` - municipio, localidade
 #'
 #' - precisao `"municipio"`
-#' - `dm01` - municipio
+#'   - `dm01` - municipio
 #'
 #' Endereços não encontrados são retornados com latitude, longitude, precisão e
 #' tipo de resultado `NA`.

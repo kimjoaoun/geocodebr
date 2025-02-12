@@ -4,8 +4,8 @@
 #' é persistente entre sessões do R.
 #'
 #' @param path Uma string. O caminho para o diretório usado para armazenar os
-#'   dados em cache.  Se `NULL` (o padrão), o pacote usará um diretório
-#'   versionado salvo dentro do diretório retornado por [tools::R_user_dir()].
+#'   dados em cache.  Se `NULL`, o pacote usará um diretório versionado salvo
+#'   dentro do diretório retornado por [tools::R_user_dir()].
 #'
 #' @return Retorna de forma invisível o caminho do diretório de cache.
 #'
@@ -13,10 +13,10 @@
 #' definir_pasta_cache(tempdir())
 #'
 #' # retoma pasta padrão do pacote
-#' definir_pasta_cache(NULL)
+#' definir_pasta_cache( path = NULL)
 #'
 #' @export
-definir_pasta_cache <- function(path = NULL) {
+definir_pasta_cache <- function(path) {
   checkmate::assert_string(path, null.ok = TRUE)
 
   if (is.null(path)) {

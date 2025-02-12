@@ -36,3 +36,5 @@ utils::globalVariables(
     "numero", "xmax", "xmin", "ymax", "ymin"
   )
 )
+
+

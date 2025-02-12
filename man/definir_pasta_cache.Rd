@@ -4,12 +4,12 @@
 \alias{definir_pasta_cache}
 \title{Define um diretório de cache para o geocodebr}
 \usage{
-definir_pasta_cache(path = NULL)
+definir_pasta_cache(path)
 }
 \arguments{
 \item{path}{Uma string. O caminho para o diretório usado para armazenar os
-dados em cache.  Se \code{NULL} (o padrão), o pacote usará um diretório
-versionado salvo dentro do diretório retornado por \code{\link[tools:userdir]{tools::R_user_dir()}}.}
+dados em cache.  Se \code{NULL}, o pacote usará um diretório versionado salvo
+dentro do diretório retornado por \code{\link[tools:userdir]{tools::R_user_dir()}}.}
 }
 \value{
 Retorna de forma invisível o caminho do diretório de cache.
@@ -22,6 +22,6 @@ Define um diretório de cache para os dados do geocodebr. Essa configuração
 definir_pasta_cache(tempdir())
 
 # retoma pasta padrão do pacote
-definir_pasta_cache(NULL)
+definir_pasta_cache( path = NULL)
 
 }

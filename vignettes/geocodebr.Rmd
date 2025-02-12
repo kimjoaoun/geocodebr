@@ -17,6 +17,9 @@ knitr::opts_chunk$set(
   eval = identical(tolower(Sys.getenv("NOT_CRAN")), "true"),
   out.width = "100%"
 )
+
+# CRAN OMP THREAD LIMIT to avoid CRAN NOTE
+Sys.setenv(OMP_THREAD_LIMIT = 2)
 ```
 
 Geolocalização refere-se ao ato de encontrar um ponto no espaço, geralmente

@@ -1,3 +1,8 @@
+# skip tests because they take too much time
+skip_if(Sys.getenv("TEST_ONE") != "")
+testthat::skip_on_cran()
+testthat::skip_if_not_installed("arrow")
+
 # definir_pasta_cache -----------------------------------------------------------
 
 tester <- function(path = NULL) definir_pasta_cache(path)
@@ -5,6 +10,8 @@ tester <- function(path = NULL) definir_pasta_cache(path)
 test_that("errors with incorrect input", {
   expect_error(tester(1))
   expect_error(tester(c("aaa", "bbb")))
+  expect_error(tester(path))
+
 })
 
 test_that("behaves correctly", {
@@ -21,7 +28,7 @@ test_that("behaves correctly", {
 
   # by default uses a versioned dir inside the default R cache dir
 
-  fn_result <- suppressMessages(definir_pasta_cache())
+  fn_result <- suppressMessages(definir_pasta_cache(path = NULL))
   expect_type(fn_result, "character")
   expect_identical(fn_result, as.character(default_cache_dir))
   expect_identical(readLines(cache_config_file), unclass(default_cache_dir))
@@ -41,7 +48,7 @@ test_that("messages are formatted correctly", {
   }
 
   expect_snapshot(
-    definir_pasta_cache(),
+    definir_pasta_cache(path = NULL),
     transform = function(x) sub(default_cache_dir, "<path_to_default_dir>", x),
     cnd_class = TRUE
   )

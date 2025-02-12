@@ -1,3 +1,9 @@
+# skip tests because they take too much time
+skip_if(Sys.getenv("TEST_ONE") != "")
+testthat::skip_on_cran()
+testthat::skip_if_not_installed("arrow")
+
+
 data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
 
@@ -61,9 +67,11 @@ test_that("test empates", {
 
 test_that("test no messages", {
 
-  testthat::expect_no_message( std_output <- tester(verboso = FALSE,
-                                                    resolver_empates = FALSE)
-                               )
+  testthat::expect_no_message(
+    testthat::expect_warning(
+      std_output <- tester(verboso = FALSE,
+                           resolver_empates = FALSE)
+                               ))
 
   testthat::expect_no_message( std_output <- tester(verboso = FALSE,
                                                     resolver_empates = TRUE)

@@ -40,6 +40,7 @@
 #' @template precision_section
 #'
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
+#' library(geocodebr)
 #'
 #' # ler amostra de dados
 #' data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
