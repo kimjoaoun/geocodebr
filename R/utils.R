@@ -231,14 +231,14 @@ get_key_cols <- function(case) {
 
 
 all_possible_match_types <- c(
-  "dn01", "da01", # "pn01", "pa01",
-  "dn02", "da02", # "pn02", "pa02",
-  "dn03", "da03", # "pn03", "pa03",
-  "dn04", "da04", # #"pn04", "pa04", # too costly
-  "dl01",         # "pl01",
-  "dl02",         # "pl02",
-  "dl03",         # "pl03",
-  "dl04",         # # pl04",  # too costly
+  "dn01", "da01", "pn01", "pa01",
+  "dn02", "da02", "pn02", "pa02",
+  "dn03", "da03", "pn03", "pa03",
+  "dn04", "da04", #"pn04", "pa04", # too costly
+  "dl01",         "pl01",
+  "dl02",         "pl02",
+  "dl03",         "pl03",
+  "dl04",         # pl04",  # too costly
   "dc01", "dc02", "db01", "dm01"
 )
 
@@ -350,3 +350,13 @@ get_reference_table <- function(key_cols, match_type){
 
   return(table_name)
   }
+
+
+# min cutoff for string match
+# min cutoff for probabilistic string match of logradouros
+get_prob_match_cutoff <- function(match_type){
+  min_cutoff <- ifelse(match_type %in% c('pn01', 'pa01', 'pl01'), 0.8,  0.9)
+  return(min_cutoff)
+  }
+
+

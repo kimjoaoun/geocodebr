@@ -68,7 +68,7 @@ match_cases_probabilistic <- function( # nocov start
   }
 
   # min cutoff for string match
-  min_cutoff <- ifelse(match_type %in% c('pn01', 'pi01', 'pr01'), .85, .9)
+  min_cutoff <- get_prob_match_cutoff(match_type)
 
   # 1st step: match  --------------------------------------------------------
 
