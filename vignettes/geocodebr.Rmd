@@ -40,8 +40,7 @@ A versão estável do pacote pode ser baixada do CRAN com o comando a seguir:
 install.packages("geocodebr")
 ```
 
-Caso prefira, a versão em desenvolvimento também pode ser usada. Para isso, use
-o seguinte comando:
+Caso prefira, a versão em desenvolvimento:
 
 ```{r, eval = FALSE}
 # install.packages("remotes")
