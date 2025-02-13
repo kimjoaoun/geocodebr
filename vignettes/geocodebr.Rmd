@@ -111,7 +111,14 @@ Por padrão, a tabela de *output* é igual à tabela de input do usuário acresc
 
 Cabe também destacar aqui outros dois argumentos da função `geocode()`:
 
-- `resolver_empates`: serve para indicar se o usuário quer que a função resolva automaticamente casos de empate, i.e. casos que o endereço de input do usuário pode ser referir a diferentes localidades na cidade (e.g. logradouros diferentes com mesmo nome mas em bairros distintos)
+- `resolver_empates`: serve para indicar se o usuário quer que a função resolva automaticamente casos de empate, i.e. casos que o endereço de input do usuário 
+pode se referir a diferentes localidades na cidade (e.g. logradouros diferentes 
+com mesmo nome mas em bairros distintos). Quando `TRUE`, a função resolve os 
+empates selecioando os endereços com maior número de visitas do CNEFE. Quando 
+`FALSE`, a função retorna todos os resultados indicando os casos empatados na 
+coluna 'empate' para que o usuário possa inspecionar cada caso coluna 'endereco_encontrado'.
+
+
 - `resultado_sf`: quando `TRUE`, o output é retornado como um objeto espacial de classe `sf` simple feature.
 
 As coordendas espaciais do resultado usam o sistema de referência SIRGAS2000,

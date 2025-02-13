@@ -87,7 +87,7 @@ Cabe também destacar aqui outros dois argumentos da função `geocode()`:
 
 - `resolver_empates`: serve para indicar se o usuário quer que a função
   resolva automaticamente casos de empate, i.e. casos que o endereço de
-  input do usuário pode ser referir a diferentes localidades na cidade
+  input do usuário pode se referir a diferentes localidades na cidade
   (e.g. logradouros diferentes com mesmo nome mas em bairros distintos)
 - `resultado_sf`: quando `TRUE`, o output é retornado como um objeto
   espacial de classe `sf` simple feature.
