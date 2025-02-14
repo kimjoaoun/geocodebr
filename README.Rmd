@@ -33,9 +33,8 @@ O **{geocodebr}** é um pacote computacional para geolicalização de endereços
 A última versão estável pode ser baixada do CRAN com o comando a seguir:
 
 ```r
-
 # from CRAN
-install.packages("r5r")
+install.packages("geocodebr")
 ```
 
 Caso prefira, a versão em desenvolvimento:
