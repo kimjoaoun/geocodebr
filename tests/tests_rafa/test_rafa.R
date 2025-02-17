@@ -112,7 +112,11 @@ interview_manual(year = 1970)
 
 
 
+# github actions ------------------------
 
+usethis::use_github_action("test-coverage")
+usethis::use_github_action("check-standard")
+usethis::use_github_action("pkgdown")
 
 # Coverage ------------------------
 # usethis::use_coverage()

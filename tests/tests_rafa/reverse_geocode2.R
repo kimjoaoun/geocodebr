@@ -27,149 +27,149 @@
 #' #   progress = TRUE
 #' #   )
 #'
-reverse_geocode_join <- function(input_table,
-                            n_cores = 1,
-                            progress = TRUE,
-                            cache = TRUE
-                            ){
+reverse_geocode_join <- function(coordenadas,
+                                 dist_max = 1000,
+                                 verboso = TRUE,
+                                 cache = TRUE,
+                                 n_cores = 1){
 
   # check input
-  checkmate::assert_data_frame(input_table)
-  checkmate::assert_logical(progress)
-  checkmate::assert_number(n_cores, null.ok = TRUE)
+  checkmate::assert_logical(verboso)
+  checkmate::assert_number(n_cores)
   checkmate::assert_logical(cache)
-  checkmate::assert_names(
-    names(input_table),
-    must.include = c("id","lon","lat"),
-    .var.name = "input_table"
-  )
+  checkmate::assert_class(coordenadas, 'sf')
+
+  epsg <- sf::st_crs(coordenadas)$epsg
+  if (epsg != 4674) { stop('Dados de input precisam estar com projeção geográfica SIRGAS 2000, EPSG 4674')}
+
 
   # prep input -------------------------------------------------------
 
-  # 1 degree of latitude is always 111111.1 meters
-  # 1 degree of longitude is  111111.1 * cos(lat)
+  # converte para data.frame
+  coords <- sfheaders::sf_to_df(coordenadas, fill = TRUE)
+  data.table::setDT(coords)
+  coords[, c('sfg_id', 'point_id') := NULL]
+  data.table::setnames(coords, old = c('x', 'y'), new = c('lon', 'lat'))
 
-  # create a small range around coordinates
-  margin <- 0.001 # 0.0001
+  # create temp id
+  coords[, tempidgeocodebr := 1:nrow(coords) ]
 
-  data.table::setDT(input_table)
-  input_table[, c("lon_min", "lon_max", "lat_min", "lat_max") :=
-                .(lon - margin, lon + margin, lat - margin, lat + margin)]
+  # convert max_dist to degrees
+  # 1 degree of latitude is always 111320 meters
+  margin_lat <- dist_max / 111320
 
-  bbox_lon_min <- min(input_table$lon_min)
-  bbox_lon_max <- max(input_table$lon_max)
-  bbox_lat_min <- min(input_table$lat_min)
-  bbox_lat_max <- max(input_table$lat_max)
+  # 1 degree of longitude is 111320 * cos(lat)
+  coords[, c("lat_min", "lat_max") := .(lat - margin_lat, lat + margin_lat)]
+
+  coords[, c("lon_min", "lon_max") := .(lon - dist_max / 111320 * cos(lat),
+                                        lon + dist_max / 111320 * cos(lat))
+  ]
+
+  # get bounding box around input points
+  # using a range of max dist around input points
+  bbox_lat_min <- min(coords$lat_min)
+  bbox_lat_max <- max(coords$lat_max)
+  bbox_lon_min <- min(coords$lon_min)
+  bbox_lon_max <- max(coords$lon_max)
+
 
   # check if input falls within Brazil
   bbox_brazil <- data.frame(
     xmin = -73.99044997,
-    ymin = -33.752081270872,
+    ymin = -33.75208127,
     xmax = -28.83594354,
-    ymax = 5.27184108017288)
+    ymax =   5.27184108
+  )
 
-  error_msg <- 'Input coordinates outside the bounding box of Brazil.'
-  if(bbox_lon_min < bbox_brazil$xmin){stop(error_msg)}
-  if(bbox_lon_max > bbox_brazil$xmax){stop(error_msg)}
-  if(bbox_lat_min < bbox_brazil$ymin){stop(error_msg)}
-  if(bbox_lat_max > bbox_brazil$ymax){stop(error_msg)}
+  error_msg <- 'Coordenadas de input localizadas fora do bounding box do Brasil.'
+  if(bbox_lon_min < bbox_brazil$xmin |
+     bbox_lon_max > bbox_brazil$xmax |
+     bbox_lat_min < bbox_brazil$ymin |
+     bbox_lat_max > bbox_brazil$ymax) { stop(error_msg) }
+
 
   # download cnefe  -------------------------------------------------------
 
-  download_cnefe(state = "all", progress = progress, cache = cache)
+  # downloading cnefe
+  cnefe_dir <- download_cnefe(
+    verboso = verboso,
+    cache = cache
+  )
 
 
-  # create db connection -------------------------------------------------------
-  con <- create_geocodebr_db(n_cores = n_cores)
+  # limita escopo de busca aos estados  -------------------------------------------------------
 
-  # Narrow search scope in cnefe to bounding box
-  filtered_cnefe_coords <- arrow::open_dataset(get_cache_dir()) |>
-    dplyr::filter(lon > bbox_lon_min &
-                  lon < bbox_lon_max &
-                  lat > bbox_lat_min &
-                  lat < bbox_lat_max) |>
+  # determine potential states
+  bbox_states <- readRDS(system.file("extdata/states_bbox.rds", package = "geocodebr"))
+  potential_states <- dplyr::filter(
+    bbox_states,
+    xmin >= bbox_lon_min |
+      xmax <= bbox_lon_max |
+      ymin >= bbox_lat_min |
+      ymax <= bbox_lat_max)$abbrev_state
+
+  # Load CNEFE data and filter it to include only states
+  # present in the input table, reducing the search scope
+  # Narrow search global scope of cnefe to bounding box
+  path_to_parquet <- paste0(listar_pasta_cache(), "/municipio_logradouro_numero_cep_localidade.parquet")
+  filtered_cnefe <- arrow_open_dataset( path_to_parquet ) |>
+    dplyr::filter(estado %in% potential_states) |>
+    dplyr::filter(lon >= bbox_lon_min &
+                    lon <= bbox_lon_max &
+                    lat >= bbox_lat_min &
+                    lat <= bbox_lat_max) |>
     dplyr::compute()
 
-  duckdb::duckdb_register_arrow(con, "filtered_cnefe_coords",
-                                filtered_cnefe_coords)
 
+  # creating a temporary db and register the input table data
+  con <- create_geocodebr_db(n_cores = n_cores)
+
+  # register filtered_cnefe to db
+  duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
 
   # Convert input data frame to DuckDB table
-  duckdb::dbWriteTable(con, "input_table_db", input_table,
+  duckdb::dbWriteTable(con, "input_table_db", coords,
                        temporary = TRUE)
+
+
 
 
   # Find cases nearby -------------------------------------------------------
 
   query_join_cases_nearby <- glue::glue(
-    "CREATE TABLE cases_nearby AS
-    SELECT *
-    FROM input_table_db
-    LEFT JOIN filtered_cnefe_coords
-    ON input_table_db.lat_min < filtered_cnefe_coords.lat
-    AND input_table_db.lat_max > filtered_cnefe_coords.lat
-    AND input_table_db.lon_min < filtered_cnefe_coords.lon
-    AND input_table_db.lon_max > filtered_cnefe_coords.lon"
+    "SELECT
+        input_table_db.*,
+        filtered_cnefe.endereco_completo,
+        filtered_cnefe.estado,
+        filtered_cnefe.municipio,
+        filtered_cnefe.logradouro,
+        filtered_cnefe.numero,
+        filtered_cnefe.cep,
+        filtered_cnefe.localidade,
+        filtered_cnefe.lat AS lat_cnefe,
+        filtered_cnefe.lon AS lon_cnefe
+      FROM input_table_db
+      LEFT JOIN filtered_cnefe
+        ON input_table_db.lat_min <  filtered_cnefe.lat
+        AND input_table_db.lat_max > filtered_cnefe.lat
+        AND input_table_db.lon_min < filtered_cnefe.lon
+        AND input_table_db.lon_max > filtered_cnefe.lon;"
   )
 
-  temp_n <- DBI::dbExecute(con, query_join_cases_nearby)
-
-
-  # find closest points -------------------------------------------------------
-
-  query_coordinates_diff <- glue::glue(
-  "ALTER TABLE cases_nearby ADD COLUMN lon_diff DOUBLE;
-   ALTER TABLE cases_nearby ADD COLUMN lat_diff DOUBLE;
-
-   UPDATE cases_nearby
-   SET lon_diff = ABS(lon - lon_1),
-       lat_diff = ABS(lat - lat_1);"
-   )
-
-  DBI::dbExecute(con, query_coordinates_diff)
-
-
-  # return closets -------------------------------------------------------
-
-  query_return_closest <- glue::glue(
-  "WITH ranked_rows AS (
-    SELECT
-    *,
-    ROW_NUMBER() OVER (
-      PARTITION BY id
-      ORDER BY lon_diff ASC, lat_diff ASC
-    ) AS rn
-    FROM cases_nearby
-  )
-  SELECT *
-    FROM ranked_rows
-  WHERE rn = 1;"
-  )
-
-  output <- DBI::dbGetQuery(con, query_return_closest)
-
-
+  output <- DBI::dbGetQuery(con, query_join_cases_nearby)
 
 
   # organize output -------------------------------------------------
 
   data.table::setDT(output)
-  output[, c('lon_min', 'lon_max', 'lat_min', 'lat_max',
-             'lon_diff', 'lat_diff', 'rn') := NULL]
+  output[, c('lon_min', 'lon_max', 'lat_min', 'lat_max') := NULL]
 
-  data.table::setnames(
-      x = output,
-      old = c('lon_1', 'lat_1'),
-      new = c('lon_cnefe', 'lat_cnefe')
-    )
+  # find the closest point
+  output[, distancia_metros := dt_haversine(lat,lon , lat_cnefe, lon_cnefe)]
+  output <- output[output[, .I[distancia_metros == min(distancia_metros)], by = tempidgeocodebr]$V1]
 
-
-
-
-
-  # Disconnect from DuckDB when done
-  duckdb::duckdb_unregister_arrow(con, 'filtered_cnefe_coords')
-  duckdb::dbDisconnect(con, shutdown=TRUE)
+  duckdb::duckdb_unregister_arrow(con, "filtered_cnefe")
+  duckdb::dbDisconnect(con)
 
   return(output)
 }
@@ -204,149 +204,155 @@ reverse_geocode_join <- function(input_table,
 #' #   progress = TRUE
 #' #   )
 #'
-reverse_geocode_filter <- function(input_table,
-                             n_cores = 1,
-                             progress = TRUE,
-                             cache = TRUE
-                             ){
+reverse_geocode_filter <- function(coordenadas,
+                                 dist_max = 1000,
+                                 verboso = TRUE,
+                                 cache = TRUE,
+                                 n_cores = 1){
 
   # check input
-  checkmate::assert_data_frame(input_table)
-  checkmate::assert_logical(progress)
-  checkmate::assert_number(n_cores, null.ok = TRUE)
+  checkmate::assert_logical(verboso)
+  checkmate::assert_number(n_cores)
   checkmate::assert_logical(cache)
-  checkmate::assert_names(
-    names(input_table),
-    must.include = c("id","lon","lat"),
-    .var.name = "input_table"
-  )
+  checkmate::assert_class(coordenadas, 'sf')
+
+  epsg <- sf::st_crs(coordenadas)$epsg
+  if (epsg != 4674) { stop('Dados de input precisam estar com projeção geográfica SIRGAS 2000, EPSG 4674')}
+
 
   # prep input -------------------------------------------------------
 
-  # 1 degree of latitude is always 111111.1 meters
-  # 1 degree of longitude is  111111.1 * cos(lat)
+  # converte para data.frame
+  coords <- sfheaders::sf_to_df(coordenadas, fill = TRUE)
+  data.table::setDT(coords)
+  coords[, c('sfg_id', 'point_id') := NULL]
+  data.table::setnames(coords, old = c('x', 'y'), new = c('lon', 'lat'))
 
-  # create a small range around coordinates
-  margin <- 0.001 # 0.0001
+  # create temp id
+  coords[, tempidgeocodebr := 1:nrow(coords) ]
 
-  data.table::setDT(input_table)
-  input_table[, c("lon_min", "lon_max", "lat_min", "lat_max") :=
-                .(lon - margin, lon + margin, lat - margin, lat + margin)]
+  # convert max_dist to degrees
+  # 1 degree of latitude is always 111320 meters
+  margin_lat <- dist_max / 111320
 
-  bbox_lon_min <- min(input_table$lon_min)
-  bbox_lon_max <- max(input_table$lon_max)
-  bbox_lat_min <- min(input_table$lat_min)
-  bbox_lat_max <- max(input_table$lat_max)
+  # 1 degree of longitude is 111320 * cos(lat)
+  coords[, c("lat_min", "lat_max") := .(lat - margin_lat, lat + margin_lat)]
+
+  coords[, c("lon_min", "lon_max") := .(lon - dist_max / 111320 * cos(lat),
+                                        lon + dist_max / 111320 * cos(lat))
+  ]
+
+  # get bounding box around input points
+  # using a range of max dist around input points
+  bbox_lat_min <- min(coords$lat_min)
+  bbox_lat_max <- max(coords$lat_max)
+  bbox_lon_min <- min(coords$lon_min)
+  bbox_lon_max <- max(coords$lon_max)
+
 
   # check if input falls within Brazil
   bbox_brazil <- data.frame(
     xmin = -73.99044997,
-    ymin = -33.752081270872,
+    ymin = -33.75208127,
     xmax = -28.83594354,
-    ymax = 5.27184108017288)
+    ymax =   5.27184108
+  )
 
-  error_msg <- 'Input coordinates outside the bounding box of Brazil.'
-  if(bbox_lon_min < bbox_brazil$xmin){stop(error_msg)}
-  if(bbox_lon_max > bbox_brazil$xmax){stop(error_msg)}
-  if(bbox_lat_min < bbox_brazil$ymin){stop(error_msg)}
-  if(bbox_lat_max > bbox_brazil$ymax){stop(error_msg)}
+  error_msg <- 'Coordenadas de input localizadas fora do bounding box do Brasil.'
+  if(bbox_lon_min < bbox_brazil$xmin |
+     bbox_lon_max > bbox_brazil$xmax |
+     bbox_lat_min < bbox_brazil$ymin |
+     bbox_lat_max > bbox_brazil$ymax) { stop(error_msg) }
+
 
   # download cnefe  -------------------------------------------------------
 
-  download_cnefe(state = "all", progress = progress, cache = cache)
+  # downloading cnefe
+  cnefe_dir <- download_cnefe(
+    verboso = verboso,
+    cache = cache
+  )
 
 
-  # create db connection -------------------------------------------------------
-  con <- create_geocodebr_db(n_cores = n_cores)
+  # limita escopo de busca aos estados  -------------------------------------------------------
 
-  # Narrow search scope in cnefe to bounding box
-  filtered_cnefe_coords <- arrow::open_dataset(get_cache_dir()) |>
-    dplyr::filter(lon > bbox_lon_min &
-                    lon < bbox_lon_max &
-                    lat > bbox_lat_min &
-                    lat < bbox_lat_max) |>
+  # determine potential states
+  bbox_states <- readRDS(system.file("extdata/states_bbox.rds", package = "geocodebr"))
+  potential_states <- dplyr::filter(
+    bbox_states,
+    xmin >= bbox_lon_min |
+      xmax <= bbox_lon_max |
+      ymin >= bbox_lat_min |
+      ymax <= bbox_lat_max)$abbrev_state
+
+  # Load CNEFE data and filter it to include only states
+  # present in the input table, reducing the search scope
+  # Narrow search global scope of cnefe to bounding box
+  path_to_parquet <- paste0(listar_pasta_cache(), "/municipio_logradouro_numero_cep_localidade.parquet")
+  filtered_cnefe <- arrow_open_dataset( path_to_parquet ) |>
+    dplyr::filter(estado %in% potential_states) |>
+    dplyr::filter(lon >= bbox_lon_min &
+                    lon <= bbox_lon_max &
+                    lat >= bbox_lat_min &
+                    lat <= bbox_lat_max) |>
     dplyr::compute()
 
-  duckdb::duckdb_register_arrow(con, "filtered_cnefe_coords",
-                                filtered_cnefe_coords)
 
+  # creating a temporary db and register the input table data
+  con <- create_geocodebr_db(n_cores = n_cores)
+
+  # register filtered_cnefe to db
+  duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
 
   # Convert input data frame to DuckDB table
-  duckdb::dbWriteTable(con, "input_table_db", input_table,
+  duckdb::dbWriteTable(con, "input_table_db", coords,
                        temporary = TRUE)
+
+
 
 
   # Find cases nearby -------------------------------------------------------
 
-  query_filter_cases_nearby <- glue::glue("
-    CREATE TABLE cases_nearby AS
-    SELECT
-      input_table_db.id, input_table_db.lat, input_table_db.lon,
-      filtered_cnefe_coords.municipio,
-      filtered_cnefe_coords.logradouro_sem_numero as logradouro,
-      filtered_cnefe_coords.numero,
-      filtered_cnefe_coords.cep,
-      filtered_cnefe_coords.localidade as bairro,
-      filtered_cnefe_coords.lat as lat_cnefe,
-      filtered_cnefe_coords.lon as lon_cnefe
-    FROM
-        input_table_db, filtered_cnefe_coords
-    WHERE
-        input_table_db.lat_min < filtered_cnefe_coords.lat
-        AND input_table_db.lat_max > filtered_cnefe_coords.lat
-        AND input_table_db.lon_min < filtered_cnefe_coords.lon
-        AND input_table_db.lon_max > filtered_cnefe_coords.lon"
-                   )
-
-  temp_n <- DBI::dbExecute(con, query_filter_cases_nearby)
-
-  # find closest points -------------------------------------------------------
-
-  query_coordinates_diff <- glue::glue(
-    "ALTER TABLE cases_nearby ADD COLUMN lon_diff DOUBLE;
-   ALTER TABLE cases_nearby ADD COLUMN lat_diff DOUBLE;
-
-   UPDATE cases_nearby
-   SET lon_diff = ABS(lon - lon_cnefe),
-       lat_diff = ABS(lat - lat_cnefe);"
+  query_filter_cases_nearby <- glue::glue(
+    "SELECT
+        input_table_db.*,
+        filtered_cnefe.endereco_completo,
+        filtered_cnefe.estado,
+        filtered_cnefe.municipio,
+        filtered_cnefe.logradouro,
+        filtered_cnefe.numero,
+        filtered_cnefe.cep,
+        filtered_cnefe.localidade,
+        filtered_cnefe.lat AS lat_cnefe,
+        filtered_cnefe.lon AS lon_cnefe
+      FROM
+        input_table_db, filtered_cnefe
+      WHERE
+        input_table_db.lat_min <  filtered_cnefe.lat
+        AND input_table_db.lat_max > filtered_cnefe.lat
+        AND input_table_db.lon_min < filtered_cnefe.lon
+        AND input_table_db.lon_max > filtered_cnefe.lon;"
   )
 
-  DBI::dbExecute(con, query_coordinates_diff)
-
-
-  # return closets -------------------------------------------------------
-
-  query_return_closest <- glue::glue(
-    "WITH ranked_rows AS (
-    SELECT
-    *,
-    ROW_NUMBER() OVER (
-      PARTITION BY id
-      ORDER BY lon_diff ASC, lat_diff ASC
-    ) AS rn
-    FROM cases_nearby
-  )
-  SELECT *
-    FROM ranked_rows
-  WHERE rn = 1;"
-  )
-
-  output <- DBI::dbGetQuery(con, query_return_closest)
-
-
+  output <- DBI::dbGetQuery(con, query_filter_cases_nearby)
 
 
   # organize output -------------------------------------------------
 
   data.table::setDT(output)
-  output[, c('lon_diff', 'lat_diff', 'rn') := NULL]
+  output[, c('lon_min', 'lon_max', 'lat_min', 'lat_max') := NULL]
 
-  # Disconnect from DuckDB when done
-  duckdb::duckdb_unregister_arrow(con, 'filtered_cnefe_coords')
-  duckdb::dbDisconnect(con, shutdown=TRUE)
+  # find the closest point
+  output[, distancia_metros := dt_haversine(lat,lon , lat_cnefe, lon_cnefe)]
+  output <- output[output[, .I[distancia_metros == min(distancia_metros)], by = tempidgeocodebr]$V1]
+
+  duckdb::duckdb_unregister_arrow(con, "filtered_cnefe")
+  duckdb::dbDisconnect(con)
 
   return(output)
 }
+
+
 
 
 
@@ -377,174 +383,558 @@ reverse_geocode_filter <- function(input_table,
 #' #   progress = TRUE
 #' #   )
 #'
-reverse_geocode_arrow <- function(input_table,
-                            n_cores = 1,
-                            progress = TRUE,
-                            cache = TRUE
-                            ){
+reverse_geocode_arrow <- function(coordenadas,
+                                      dist_max = 1000,
+                                      verboso = TRUE,
+                                      cache = TRUE,
+                                      n_cores = 1){
 
   # check input
-  checkmate::assert_data_frame(input_table)
-  checkmate::assert_logical(progress)
-  checkmate::assert_number(n_cores, null.ok = TRUE)
+  checkmate::assert_logical(verboso)
+  checkmate::assert_number(n_cores)
   checkmate::assert_logical(cache)
-  checkmate::assert_names(
-    names(input_table),
-    must.include = c("id","lon","lat"),
-    .var.name = "input_table"
-  )
+  checkmate::assert_class(coordenadas, 'sf')
+
+  epsg <- sf::st_crs(coordenadas)$epsg
+  if (epsg != 4674) { stop('Dados de input precisam estar com projeção geográfica SIRGAS 2000, EPSG 4674')}
+
 
   # prep input -------------------------------------------------------
 
-  # 1 degree of latitude is always 111111.1 meters
-  # 1 degree of longitude is  111111.1 * cos(lat)
+  # converte para data.frame
+  coords <- sfheaders::sf_to_df(coordenadas, fill = TRUE)
+  data.table::setDT(coords)
+  coords[, c('sfg_id', 'point_id') := NULL]
+  data.table::setnames(coords, old = c('x', 'y'), new = c('lon', 'lat'))
 
-  # create a small range around coordinates
-  margin <- 0.001 # aprox 111 meters of latitude
+  # create temp id
+  coords[, tempidgeocodebr := 1:nrow(coords) ]
 
-  data.table::setDT(input_table)
-  input_table[, c("lon_min", "lon_max", "lat_min", "lat_max") :=
-                .(lon - margin, lon + margin, lat - margin, lat + margin)]
+  # convert max_dist to degrees
+  # 1 degree of latitude is always 111320 meters
+  margin_lat <- dist_max / 111320
 
-  bbox_lon_min <- min(input_table$lon_min)
-  bbox_lon_max <- max(input_table$lon_max)
-  bbox_lat_min <- min(input_table$lat_min)
-  bbox_lat_max <- max(input_table$lat_max)
+  # 1 degree of longitude is 111320 * cos(lat)
+  coords[, c("lat_min", "lat_max") := .(lat - margin_lat, lat + margin_lat)]
+
+  coords[, c("lon_min", "lon_max") := .(lon - dist_max / 111320 * cos(lat),
+                                        lon + dist_max / 111320 * cos(lat))
+  ]
+
+  # get bounding box around input points
+  # using a range of max dist around input points
+  bbox_lat_min <- min(coords$lat_min)
+  bbox_lat_max <- max(coords$lat_max)
+  bbox_lon_min <- min(coords$lon_min)
+  bbox_lon_max <- max(coords$lon_max)
+
 
   # check if input falls within Brazil
   bbox_brazil <- data.frame(
     xmin = -73.99044997,
-    ymin = -33.752081270872,
+    ymin = -33.75208127,
     xmax = -28.83594354,
-    ymax = 5.27184108017288)
+    ymax =   5.27184108
+  )
 
-  error_msg <- 'Input coordinates outside the bounding box of Brazil.'
+  error_msg <- 'Coordenadas de input localizadas fora do bounding box do Brasil.'
   if(bbox_lon_min < bbox_brazil$xmin |
      bbox_lon_max > bbox_brazil$xmax |
      bbox_lat_min < bbox_brazil$ymin |
-     bbox_lat_max > bbox_brazil$ymax) {stop(error_msg)}
+     bbox_lat_max > bbox_brazil$ymax) { stop(error_msg) }
+
 
   # download cnefe  -------------------------------------------------------
 
+  # downloading cnefe
+  cnefe_dir <- download_cnefe(
+    verboso = verboso,
+    cache = cache
+  )
+
+
+  # limita escopo de busca aos estados  -------------------------------------------------------
+
   # determine potential states
-  bbox_states <- data.table::fread(system.file("extdata/states_bbox.csv", package = "geocodebr"))
+  bbox_states <- readRDS(system.file("extdata/states_bbox.rds", package = "geocodebr"))
   potential_states <- dplyr::filter(
     bbox_states,
-    xmin > bbox_lon_min &
-      xmax < bbox_lon_max &
-      ymin > bbox_lat_min &
-      ymax < bbox_lat_max)$abbrev_state
+    xmin >= bbox_lon_min |
+      xmax <= bbox_lon_max |
+      ymin >= bbox_lat_min |
+      ymax <= bbox_lat_max)$abbrev_state
 
-
-  download_cnefe(state = potential_states, progress = progress)
-
-
-
-  # Narrow search scope in cnefe to bounding box
-
-  filtered_cnefe_coords <- arrow::open_dataset(get_cache_dir()) |>
-    dplyr::select(
-      municipio,
-      logradouro = logradouro_sem_numero,
-      numero,
-      cep,
-      bairro = localidade,
-      lat_cnefe = lat,
-      lon_cnefe = lon
-    ) |>
-    dplyr::filter(lon_cnefe > bbox_lon_min &
-                    lon_cnefe < bbox_lon_max &
-                    lat_cnefe > bbox_lat_min &
-                    lat_cnefe < bbox_lat_max) |>
+  # Load CNEFE data and filter it to include only states
+  # present in the input table, reducing the search scope
+  path_to_parquet <- paste0(listar_pasta_cache(), "/municipio_logradouro_numero_cep_localidade.parquet")
+  filtered_cnefe <- arrow_open_dataset( path_to_parquet ) |>
+    dplyr::filter(estado %in% potential_states) |>
+    dplyr::filter(lon >= bbox_lon_min &
+                    lon <= bbox_lon_max &
+                    lat >= bbox_lat_min &
+                    lat <= bbox_lat_max) |>
     dplyr::compute()
 
-  # # create db connection -------------------------------------------------------
-  # con <- create_geocodebr_db(n_cores = n_cores)
-    #
-    # duckdb::duckdb_register_arrow(con, "filtered_cnefe_coords",
-    #                             filtered_cnefe_coords)
+
+  # Narrow search global scope of cnefe to bounding box
+  filtered_cnefe_coords <- filtered_cnefe |>
+    dplyr::select(
+      endereco_completo,
+      estado,
+      municipio,
+      logradouro,
+      numero,
+      cep,
+      localidade,
+      lat_cnefe = lat,
+      lon_cnefe = lon
+      )
 
 
 
   # find each row in the input data -------------------------------------------------------
 
   # function to reverse geocode one row of the data
-  reverse_geocode_single_row <- function(row_number, input_table, filtered_cnefe_coords){
+  reverse_geocode_single_row <- function(
+    row_number,
+    coords,
+    filtered_cnefe_coords,
+    dist_max){
 
     # row_number = 3
 
     # subset row
-    temp_df <- input_table[row_number,]
+    temp_df <- coords[row_number,]
 
-    lon_min <- temp_df$lon_min
-    lon_max <- temp_df$lon_max
-    lat_min <- temp_df$lat_min
-    lat_max <- temp_df$lat_max
-    lon_inp <- temp_df$lon
-    lat_inp <- temp_df$lat
+    lat_min <- temp_df$lat
+    lat_max <- temp_df$lat
+    lon_min <- temp_df$lon
+    lon_max <- temp_df$lon
 
-
-    cnefe_nearby <- dplyr::filter(
-        filtered_cnefe_coords,
-        lon_cnefe > lon_min &
-        lon_cnefe < lon_max &
-        lat_cnefe > lat_min &
-        lat_cnefe < lat_max) |>
+    cnefe_nearby <- filtered_cnefe_coords |>
+      dplyr::filter(
+        lon_cnefe >= lon_min &
+          lon_cnefe <= lon_max &
+          lat_cnefe >= lat_min &
+          lat_cnefe <= lat_max) |>
       dplyr::collect()
 
+    cnefe_nearest <- cbind(temp_df, cnefe_nearby)
 
-    # find closest points
-    data.table::setDT(cnefe_nearby)
-    cnefe_nearby[, lon_diff := abs(lon_inp - lon_cnefe)]
-    cnefe_nearby[, lat_diff := abs(lat_inp - lat_cnefe)]
+    # find the closest point
+    if (any(!is.na(cnefe_nearest$lat_cnefe))) {
+      cnefe_nearest[, distancia_metros := dt_haversine(lat,lon , lat_cnefe, lon_cnefe)]
+      cnefe_nearest <- cnefe_nearest[cnefe_nearest[, .I[distancia_metros == min(distancia_metros)], by = tempidgeocodebr]$V1]
+      cnefe_nearest <- cnefe_nearest[cnefe_nearest[, .I[1], by = tempidgeocodebr]$V1]
+    }
 
-    cnefe_nearest <- cnefe_nearby[, .SD[which.min(lat_diff)]]
-    cnefe_nearest <- cnefe_nearest[, .SD[which.min(lon_diff)]]
-
-    # organize output
-    cnefe_nearest[, c('lon_diff', 'lat_diff') := NULL]
-    temp_df[, c('lon_min', 'lon_max', 'lat_min', 'lat_max') := NULL]
-
-    temp_output <- cbind(temp_df, cnefe_nearest)
-
-    return(temp_output)
+    return(cnefe_nearest)
   }
 
   # apply function to all rows in the input table
+
   #if(n_cores==1){
-    output <- pbapply::pblapply(
-    X = 1:nrow(input_table),
+  output <- pbapply::pblapply(
+    X = 1:nrow(coords),
     FUN = reverse_geocode_single_row,
-    input_table = input_table,
-    filtered_cnefe_coords = filtered_cnefe_coords
-    )
-  #}
+    coords = coords,
+    filtered_cnefe_coords = filtered_cnefe_coords,
+    dist_max = dist_max
+  )
 
-  # if(n_cores>1){
-  #
-  #   # Set up the cluster with 7 cores
-  #   cl <- parallel::makeCluster(n_cores)
-  #
-  #   # Export necessary functions to the cluster (if needed)
-  #   parallel::clusterExport(cl, list("reverse_geocode_single_row",
-  #                          "input_table", "filtered_cnefe_coords"))
-  #
-  #
-  #   # Use pbapply with parallel processing
-  #   output2 <- pbapply::pblapply(
-  #     X = 1:nrow(input_table),
-  #     FUN = reverse_geocode_single_row,
-  #     input_table = input_table,
-  #     filtered_cnefe_coords = filtered_cnefe_coords,
-  #     cl = cl
-  #   )
-  #
-  #   # Stop the cluster after computation
-  #   parallel::stopCluster(cl)
-  # }
 
-  output <- data.table::rbindlist(output)
+  output <- data.table::rbindlist(output, fill = TRUE)
+
+  # # find the closest point
+  # output[, distancia_metros := dt_haversine(lat,lon , lat_cnefe, lon_cnefe)]
+  # output <- output[output[, .I[distancia_metros == min(distancia_metros)], by = tempidgeocodebr]$V1]
+  # output <- output[output[, .I[1], by = tempidgeocodebr]$V1]
+
 
   return(output)
 }
 
+
+
+
+reverse_geocode_hybrid <- function(coordenadas,
+                                   dist_max = 1000,
+                                   verboso = TRUE,
+                                   cache = TRUE,
+                                   n_cores = 1){
+
+  # check input
+  checkmate::assert_logical(verboso)
+  checkmate::assert_number(n_cores)
+  checkmate::assert_logical(cache)
+  checkmate::assert_class(coordenadas, 'sf')
+
+  epsg <- sf::st_crs(coordenadas)$epsg
+  if (epsg != 4674) { stop('Dados de input precisam estar com projeção geográfica SIRGAS 2000, EPSG 4674')}
+
+
+  # prep input -------------------------------------------------------
+
+  # converte para data.frame
+  coords <- sfheaders::sf_to_df(coordenadas, fill = TRUE)
+  data.table::setDT(coords)
+  coords[, c('sfg_id', 'point_id') := NULL]
+  data.table::setnames(coords, old = c('x', 'y'), new = c('lon', 'lat'))
+
+  # create temp id
+  coords[, tempidgeocodebr := 1:nrow(coords) ]
+
+  # convert max_dist to degrees
+  # 1 degree of latitude is always 111320 meters
+  margin_lat <- dist_max / 111320
+
+  # 1 degree of longitude is 111320 * cos(lat)
+  coords[, c("lat_min", "lat_max") := .(lat - margin_lat, lat + margin_lat)]
+
+  coords[, c("lon_min", "lon_max") := .(lon - dist_max / 111320 * cos(lat),
+                                        lon + dist_max / 111320 * cos(lat))
+  ]
+
+  # get bounding box around input points
+  # using a range of max dist around input points
+  bbox_lat_min <- min(coords$lat_min)
+  bbox_lat_max <- max(coords$lat_max)
+  bbox_lon_min <- min(coords$lon_min)
+  bbox_lon_max <- max(coords$lon_max)
+
+
+  # check if input falls within Brazil
+  bbox_brazil <- data.frame(
+    xmin = -73.99044997,
+    ymin = -33.75208127,
+    xmax = -28.83594354,
+    ymax =   5.27184108
+  )
+
+  error_msg <- 'Coordenadas de input localizadas fora do bounding box do Brasil.'
+  if(bbox_lon_min < bbox_brazil$xmin |
+     bbox_lon_max > bbox_brazil$xmax |
+     bbox_lat_min < bbox_brazil$ymin |
+     bbox_lat_max > bbox_brazil$ymax) { stop(error_msg) }
+
+
+  # download cnefe  -------------------------------------------------------
+
+  # downloading cnefe
+  cnefe_dir <- download_cnefe(
+    verboso = verboso,
+    cache = cache
+  )
+
+
+  # limita escopo de busca aos estados  -------------------------------------------------------
+
+  # determine potential states
+  bbox_states <- readRDS(system.file("extdata/states_bbox.rds", package = "geocodebr"))
+  potential_states <- dplyr::filter(
+    bbox_states,
+    xmin >= bbox_lon_min |
+      xmax <= bbox_lon_max |
+      ymin >= bbox_lat_min |
+      ymax <= bbox_lat_max)$abbrev_state
+
+  # Load CNEFE data and filter it to include only states
+  # present in the input table, reducing the search scope
+  # Narrow search global scope of cnefe to bounding box
+  path_to_parquet <- paste0(listar_pasta_cache(), "/municipio_logradouro_numero_cep_localidade.parquet")
+  filtered_cnefe <- arrow_open_dataset( path_to_parquet ) |>
+    dplyr::filter(estado %in% potential_states) |>
+    dplyr::filter(lon >= bbox_lon_min &
+                    lon <= bbox_lon_max &
+                    lat >= bbox_lat_min &
+                    lat <= bbox_lat_max) |>
+    dplyr::compute()
+
+
+  # creating a temporary db and register the input table data
+  con <- create_geocodebr_db(n_cores = n_cores)
+
+  # register filtered_cnefe to db
+  duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
+
+
+  # find each row in the input data -------------------------------------------------------
+
+  # function to reverse geocode one row of the data
+  reverse_geocode_single_row <- function(
+    con,
+    row_number,
+    coords,
+    dist_max){
+
+    # row_number = 3
+
+    # subset row
+    temp_df <- coords[row_number,]
+
+    lat_min <- temp_df$lat
+    lat_max <- temp_df$lat
+    lon_min <- temp_df$lon
+    lon_max <- temp_df$lon
+
+
+    # get cnefe points nearby
+    query_get_nearby <- glue::glue(
+      "SELECT filtered_cnefe.endereco_completo,
+            filtered_cnefe.endereco_completo,
+            filtered_cnefe.estado,
+            filtered_cnefe.municipio,
+            filtered_cnefe.logradouro,
+            filtered_cnefe.numero,
+            filtered_cnefe.cep,
+            filtered_cnefe.localidade,
+            filtered_cnefe.lat AS lat_cnefe,
+            filtered_cnefe.lon AS lon_cnefe
+      FROM filtered_cnefe
+        WHERE lon BETWEEN {lon_min} AND {lon_max}
+          AND lat BETWEEN {lat_min} AND {lat_max};"
+      )
+
+    cnefe_nearby <- DBI::dbGetQuery(con, query_get_nearby)
+
+    cnefe_nearest <- cbind(temp_df, cnefe_nearby)
+
+    # find the closest point
+    if (any(!is.na(cnefe_nearest$lat_cnefe))) {
+      cnefe_nearest[, distancia_metros := dt_haversine(lat,lon , lat_cnefe, lon_cnefe)]
+      cnefe_nearest <- cnefe_nearest[cnefe_nearest[, .I[distancia_metros == min(distancia_metros)], by = tempidgeocodebr]$V1]
+      cnefe_nearest <- cnefe_nearest[cnefe_nearest[, .I[1], by = tempidgeocodebr]$V1]
+    }
+
+    return(cnefe_nearest)
+  }
+
+  # apply function to all rows in the input table
+
+  #if(n_cores==1){
+  output <- pbapply::pblapply(
+    X = 1:nrow(coords),
+    FUN = reverse_geocode_single_row,
+    coords = coords,
+    con = con,
+    dist_max = dist_max
+  )
+
+
+  output <- data.table::rbindlist(output, fill = TRUE)
+
+  # # find the closest point
+  # output[, distancia_metros := dt_haversine(lat,lon , lat_cnefe, lon_cnefe)]
+  # output <- output[output[, .I[distancia_metros == min(distancia_metros)], by = tempidgeocodebr]$V1]
+  # output <- output[output[, .I[1], by = tempidgeocodebr]$V1]
+
+  duckdb::duckdb_unregister_arrow(con, "filtered_cnefe")
+  duckdb::dbDisconnect(con)
+
+  return(output)
+}
+
+
+
+
+
+
+
+reverse_geocode_filter_loop <- function(coordenadas,
+                                   dist_max = 1000,
+                                   verboso = TRUE,
+                                   cache = TRUE,
+                                   n_cores = 1){
+
+  # check input
+  checkmate::assert_logical(verboso)
+  checkmate::assert_number(n_cores)
+  checkmate::assert_number(dist_max, lower = 1000, finite = TRUE)
+  checkmate::assert_logical(cache)
+  checkmate::assert_class(coordenadas, 'sf')
+
+  epsg <- sf::st_crs(coordenadas)$epsg
+  if (epsg != 4674) { stop('Dados de input precisam estar com projeção geográfica SIRGAS 2000, EPSG 4674')}
+
+
+  # prep input -------------------------------------------------------
+
+  # converte para data.frame
+  coords <- sfheaders::sf_to_df(coordenadas, fill = TRUE)
+  data.table::setDT(coords)
+  coords[, c('sfg_id', 'point_id') := NULL]
+  data.table::setnames(coords, old = c('x', 'y'), new = c('lon', 'lat'))
+
+  # create temp id
+  coords[, tempidgeocodebr := 1:nrow(coords) ]
+
+  # convert max_dist to degrees
+  # 1 degree of latitude is always 111320 meters
+  margin_lat <- dist_max / 111320
+
+  # 1 degree of longitude is 111320 * cos(lat)
+  coords[, c("lat_min", "lat_max") := .(lat - margin_lat, lat + margin_lat)]
+
+  coords[, c("lon_min", "lon_max") := .(lon - dist_max / 111320 * cos(lat),
+                                        lon + dist_max / 111320 * cos(lat))
+         ]
+
+  # get bounding box around input points
+  # using a range of max dist around input points
+  bbox_lat_min <- min(coords$lat_min)
+  bbox_lat_max <- max(coords$lat_max)
+  bbox_lon_min <- min(coords$lon_min)
+  bbox_lon_max <- max(coords$lon_max)
+
+
+  # check if input falls within Brazil
+  bbox_brazil <- data.frame(
+    xmin = -73.99044997,
+    ymin = -33.75208127,
+    xmax = -28.83594354,
+    ymax =   5.27184108
+  )
+
+  error_msg <- 'Coordenadas de input localizadas fora do bounding box do Brasil.'
+  if(bbox_lon_min < bbox_brazil$xmin |
+     bbox_lon_max > bbox_brazil$xmax |
+     bbox_lat_min < bbox_brazil$ymin |
+     bbox_lat_max > bbox_brazil$ymax) { stop(error_msg) }
+
+
+  # download cnefe  -------------------------------------------------------
+
+  # downloading cnefe
+  cnefe_dir <- download_cnefe(
+    verboso = verboso,
+    cache = cache
+  )
+
+
+  # limita escopo de busca aos estados  -------------------------------------------------------
+
+  # determine potential states
+  bbox_states <- readRDS(system.file("extdata/states_bbox.rds", package = "geocodebr"))
+  potential_states <- dplyr::filter(
+    bbox_states,
+    xmin >= bbox_lon_min |
+      xmax <= bbox_lon_max |
+      ymin >= bbox_lat_min |
+      ymax <= bbox_lat_max)$abbrev_state
+
+  # Load CNEFE data and filter it to include only states
+  # present in the input table, reducing the search scope
+  # Narrow search global scope of cnefe to bounding box
+  path_to_parquet <- paste0(listar_pasta_cache(), "/municipio_logradouro_numero_cep_localidade.parquet")
+  filtered_cnefe <- arrow_open_dataset( path_to_parquet ) |>
+    dplyr::filter(estado %in% potential_states) |>
+    dplyr::filter(lon >= bbox_lon_min &
+                    lon <= bbox_lon_max &
+                    lat >= bbox_lat_min &
+                    lat <= bbox_lat_max) |>
+    dplyr::compute()
+
+
+  # creating a temporary db and register the input table data
+  con <- create_geocodebr_db(n_cores = n_cores)
+
+  # register filtered_cnefe to db
+  duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
+
+
+  # Convert input data frame to DuckDB table
+  duckdb::dbWriteTable(con, "input_table_db", coords,
+                       temporary = TRUE, overwrite = TRUE)
+
+  # create output db
+  query_create_empty_output_db <- glue::glue(
+    "CREATE OR REPLACE TABLE output_db (
+     tempidgeocodebr INTEGER,
+     lat_cnefe NUMERIC(9, 7),
+     lon_cnefe NUMERIC(9, 7),
+     endereco_completo VARCHAR,
+     estado VARCHAR,
+     municipio VARCHAR,
+     logradouro VARCHAR,
+     numero VARCHAR,
+     cep VARCHAR,
+     localidade VARCHAR);"
+    )
+
+  DBI::dbExecute(con, query_create_empty_output_db)
+
+
+
+  # START SEARCH -----------------------------------------------
+
+  # start progress bar
+  if (verboso) {
+    prog <- create_progress_bar(coords)
+    message_looking_for_matches()
+  }
+
+  n_rows <- nrow(coords)
+  matched_rows <- 0
+
+  # define raios de busca
+  n_thresholds <- ifelse(dist_max < 5000, 2, 4)
+  increments <- round(dist_max/n_thresholds)
+  dist_thresholds <- c(seq(200, dist_max, increments), dist_max)
+
+
+  # start matching
+  for (dist in dist_thresholds ) {
+
+    if (verboso) update_progress_bar(matched_rows, dist)
+
+
+      n_rows_affected <- serch_nearby_addresses(
+        con = con,
+        dist = dist
+      )
+
+      # update progress bar
+      matched_rows <- matched_rows + n_rows_affected
+
+      # leave the loop early if we find all addresses before covering all cases
+      if (matched_rows == n_rows) break
+  }
+
+  if (verboso) finish_progress_bar(matched_rows)
+
+
+
+  # output with all original columns
+  duckdb::dbWriteTable(con, "input_db", coords,
+                       temporary = TRUE, overwrite=TRUE)
+
+
+  query <- glue::glue(
+    "SELECT *
+      FROM input_db
+      LEFT JOIN output_db
+      ON input_db.tempidgeocodebr = output_db.tempidgeocodebr;"
+    )
+
+  # Execute the query and fetch the merged data
+  output <- DBI::dbGetQuery(con, query)
+
+  # organize output -------------------------------------------------
+
+  data.table::setDT(output)
+  output[, c('lon_min', 'lon_max', 'lat_min', 'lat_max') := NULL]
+
+  # find the closest point
+  output[, distancia_metros := dt_haversine(lat,lon , lat_cnefe, lon_cnefe)]
+  output[is.na(distancia_metros), distancia_metros := Inf]
+  output <- output[output[, .I[distancia_metros == min(distancia_metros)], by = tempidgeocodebr]$V1]
+  output[, distancia_metros := data.table::fifelse(distancia_metros == Inf, NA, distancia_metros)]
+  output[, distancia_metros := as.integer(distancia_metros)]
+  output <- output[order(tempidgeocodebr)]
+  # summary(output$distancia_metros)
+
+  duckdb::duckdb_unregister_arrow(con, "filtered_cnefe")
+  duckdb::dbDisconnect(con)
+
+  return(output)
+}
