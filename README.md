@@ -5,7 +5,8 @@
 
 [![CRAN
 status](https://www.r-pkg.org/badges/version/geocodebr)](https://CRAN.R-project.org/package=geocodebr)
-<!-- [![CRAN/METACRAN Total downloads](https://cranlogs.r-pkg.org/badges/grand-total/geocodebr?color=blue)](https://CRAN.R-project.org/package=geocodebr) -->
+[![CRAN/METACRAN Total
+downloads](https://cranlogs.r-pkg.org/badges/grand-total/geocodebr?color=blue)](https://CRAN.R-project.org/package=geocodebr)
 [![check](https://github.com/ipeaGIT/geocodebr/workflows/check/badge.svg)](https://github.com/ipeaGIT/geocodebr/actions)
 [![Codecov test
 coverage](https://codecov.io/gh/ipeaGIT/geocodebr/branch/main/graph/badge.svg)](https://app.codecov.io/gh/ipeaGIT/geocodebr?branch=main)
@@ -27,9 +28,8 @@ o pacote está disponível apenas em R.
 A última versão estável pode ser baixada do CRAN com o comando a seguir:
 
 ``` r
-
 # from CRAN
-install.packages("r5r")
+install.packages("geocodebr")
 ```
 
 Caso prefira, a versão em desenvolvimento:
