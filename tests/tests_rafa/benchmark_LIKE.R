@@ -248,22 +248,24 @@ d <- cnf |>
 
 
 # small sample data ------------------------------------------------------------------
-
+library(geocodebr)
 
 # open input data
 data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
-input_df <- read.csv(data_path, encoding = 'Latin-1')
+input_df <- read.csv(data_path)
 
 
 
-campos <- geocodebr::definir_campos(
-  logradouro = 'nm_logradouro',
-  numero = 'Numero',
-  cep = 'Cep',
-  localidade = 'Bairro',
-  municipio = 'nm_municipio',
-  estado = 'nm_uf'
+fields <- geocodebr::definir_campos(
+  logradouro = "nm_logradouro",
+  numero = "Numero",
+  cep = "Cep",
+  localidade = "Bairro",
+  municipio = "nm_municipio",
+  estado = "nm_uf"
 )
+
+
 # enderecos = input_df
 # campos_endereco = campos
 # n_cores = 7
