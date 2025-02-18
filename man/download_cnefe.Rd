@@ -2,7 +2,7 @@
 % Please edit documentation in R/download_cnefe.R
 \name{download_cnefe}
 \alias{download_cnefe}
-\title{Faz download dos dados do CNEGE}
+\title{Faz download dos dados do CNEFE}
 \usage{
 download_cnefe(verboso = TRUE, cache = TRUE)
 }
