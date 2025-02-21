@@ -1,52 +1,63 @@
-#' Reverse geocoding coordinates in Brazil based on CNEFE data
+#' Geocode reverso de coordenadas espaciais no Brasil
 #'
 #' @description
-#' Takes a data frame containing coordinates (latitude and longitude) and
-#' returns  the address in CNEFE that is the closest to the input coordinates.
-#' Latitude and longitude inputs are limited to possible values within the
-#' bounding box of Brazil.
+#' Geocode reverso de coordenadas geogr\u00e1ficas para endereços. A
+#' fun\u00e7\u00e3o recebe um `sf data frame` com pontos e retorna o
+#' endere\u00e7o mais pr\u00f3ximo dando uma dist\u00e2ncia m\u00e1xima de busca.
 #'
-#' @param coordenadas A data frame. It must contain the columns `'id'`,  `'lat'`, `'lon'`.
-#' @param dist_max Integer. Distancia maxima em metros.
+#' @param pontos Uma tabela de dados com classe espacial `sf data frame`.
+#' @param dist_max Integer. Distancia m\u00e1xima aceit\u00e1vel (em metros)
+#'        entre os pontos de input e o endere\u00e7o Por padr\u00e3o, a
+#'        dist\u00e2ncia \u00e9 de 1000 metros.
 #' @template verboso
 #' @template cache
 #' @template n_cores
 #'
-#' @return A `"data.frame"` object.
-#' @family Reverse geocoding
-#' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
+#' @return Retorna o `sf data.frame` de input adicionado das colunas do
+#'         endere\u00e7o encontrado. O output inclui uma coluna "distancia_metros"
+#'         que indica a dist\u00e2ncia entre o ponto de input e o endere\u00e7o
+#'         mais pr\u00f3ximo encontrado.
 #'
-#' # input data
+#' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
+#' library(geocodebr)
+#'
+#' # ler amostra de dados
 #' pontos <- readRDS(
 #'     system.file("extdata/pontos.rds", package = "geocodebr")
 #'     )
 #'
-#' #' # # reverse geocode
-#' # df_addresses <- geocodebr::reverse_geocode(
-#' #   coordenadas = pontos,
-#' #   verboso = TRUE
-#' #   )
+#' pontos <- pontos[1:50,]
 #'
-reverse_geocode_join <- function(coordenadas,
-                                  dist_max = 1000,
-                                  verboso = TRUE,
-                                  cache = TRUE,
-                                  n_cores = 1){
+#' # geocode reverso
+#' df_enderecos <- geocodebr::geocode_reverso(
+#'   pontos = pontos,
+#'   dist_max = 1000,
+#'   verboso = TRUE,
+#'   n_cores = 1
+#'   )
+#'
+#' @export
+geocode_reverso <- function(pontos,
+                            dist_max = 1000,
+                            verboso = TRUE,
+                            cache = TRUE,
+                            n_cores = 1){
 
   # check input
+  checkmate::assert_class(pontos, 'sf')
+  checkmate::assert_integer(dist_max, lower = 500, upper = 100000) # max 100 Km
   checkmate::assert_logical(verboso)
-  checkmate::assert_number(n_cores)
   checkmate::assert_logical(cache)
-  checkmate::assert_class(coordenadas, 'sf')
+  checkmate::assert_number(n_cores)
 
-  epsg <- sf::st_crs(coordenadas)$epsg
+  epsg <- sf::st_crs(pontos)$epsg
   if (epsg != 4674) { stop('Dados de input precisam estar com projeção geográfica SIRGAS 2000, EPSG 4674')}
 
 
   # prep input -------------------------------------------------------
 
   # converte para data.frame
-  coords <- sfheaders::sf_to_df(coordenadas, fill = TRUE)
+  coords <- sfheaders::sf_to_df(pontos, fill = TRUE)
   data.table::setDT(coords)
   coords[, c('sfg_id', 'point_id') := NULL]
   data.table::setnames(coords, old = c('x', 'y'), new = c('lon', 'lat'))
@@ -55,15 +66,15 @@ reverse_geocode_join <- function(coordenadas,
   coords[, tempidgeocodebr := 1:nrow(coords) ]
 
   # convert max_dist to degrees
-  # 1 degree of latitude is always 111111 meters
-  margin_lat <- dist_max / 111111
+  # 1 degree of latitude is always 111320 meters
+  margin_lat <- dist_max / 111320
 
   # 1 degree of longitude is 111320 * cos(lat)
   coords[, c("lat_min", "lat_max") := .(lat - margin_lat, lat + margin_lat)]
 
   coords[, c("lon_min", "lon_max") := .(lon - dist_max / 111320 * cos(lat),
                                         lon + dist_max / 111320 * cos(lat))
-         ]
+  ]
 
   # get bounding box around input points
   # using a range of max dist around input points
@@ -115,9 +126,9 @@ reverse_geocode_join <- function(coordenadas,
   filtered_cnefe <- arrow_open_dataset( path_to_parquet ) |>
     dplyr::filter(estado %in% potential_states) |>
     dplyr::filter(lon >= bbox_lon_min &
-                  lon <= bbox_lon_max &
-                  lat >= bbox_lat_min &
-                  lat <= bbox_lat_max) |>
+                    lon <= bbox_lon_max &
+                    lat >= bbox_lat_min &
+                    lat <= bbox_lat_max) |>
     dplyr::compute()
 
 
@@ -137,7 +148,7 @@ reverse_geocode_join <- function(coordenadas,
   # Find cases nearby -------------------------------------------------------
 
   query_filter_cases_nearby <- glue::glue(
-      "SELECT
+    "SELECT
         input_table_db.*,
         filtered_cnefe.endereco_completo,
         filtered_cnefe.estado,
@@ -155,9 +166,9 @@ reverse_geocode_join <- function(coordenadas,
         AND input_table_db.lat_max > filtered_cnefe.lat
         AND input_table_db.lon_min < filtered_cnefe.lon
         AND input_table_db.lon_max > filtered_cnefe.lon;"
-      )
+  )
 
-  output <- DBI::dbGetQuery(con, query_join_cases_nearby)
+  output <- DBI::dbGetQuery(con, query_filter_cases_nearby)
 
 
   # organize output -------------------------------------------------
@@ -172,5 +183,15 @@ reverse_geocode_join <- function(coordenadas,
   duckdb::duckdb_unregister_arrow(con, "filtered_cnefe")
   duckdb::dbDisconnect(con)
 
-  return(output)
+  # convert df to simple feature
+  output_sf <- sfheaders::sf_point(
+      obj = output,
+      x = 'lon',
+      y = 'lat',
+      keep = TRUE
+    )
+
+  sf::st_crs(output_sf) <- 4674
+
+  return(output_sf)
 }

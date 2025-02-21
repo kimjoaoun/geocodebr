@@ -185,3 +185,40 @@ library(dplyr)
 
 #' incluir parametro
 #' @output_level = c('address', 'locality', 'municipality', 'state')
+
+
+
+
+
+
+
+
+
+
+
+pontos <- readRDS(
+  system.file("extdata/pontos.rds", package = "geocodebr")
+)
+
+bench::mark(
+  # duck_filter1 = reverse_geocode_filter(coordenadas = pontos, dist_max = 2000, n_cores = 1),
+  # duck_filter8 = reverse_geocode_filter(coordenadas = pontos, dist_max = 2000, n_cores = 8),
+  # duck_join1 =  reverse_geocode_join(coordenadas = pontos, dist_max = 2000, n_cores = 1),
+  # duck_join8 =  reverse_geocode_join(coordenadas = pontos, dist_max = 2000, n_cores = 8),
+  hybrid1 = reverse_geocode_hybrid(coordenadas = pontos, dist_max = 2000, n_cores = 1),
+  hybrid8 = reverse_geocode_hybrid(coordenadas = pontos, dist_max = 2000, n_cores = 8),
+  iterations = 5,
+  check = F
+)
+
+# 1000 pontos
+#     expression      min   median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory
+#     <bch:expr>   <bch:>   <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>
+# 1 duck_filter1    3.19m    3.31m   0.00490      75MB  0.0108      5    11        17m <NULL> <Rprofmem>
+# 2 duck_filter8    2.93m    3.04m   0.00516      51MB  0.00723     5     7      16.1m <NULL> <Rprofmem>
+#
+# 1 duck_join1      2.93m    3.54m   0.00475    76.2MB  0.00854     5     9      17.6m <NULL> <Rprofmem>
+# 2 duck_join8      3.62m    4.05m   0.00407    51.2MB  0.00651     5     8      20.5m <NULL> <Rprofmem>
+#
+# 1 hybrid1         5.13m     5.9m   0.00277    88.3MB    0.262     5   473      30.1m <NULL> <Rprofmem>
+# 2 hybrid8         5.09m    5.19m   0.00321      66MB    0.307     5   478      25.9m <NULL> <Rprofmem>
