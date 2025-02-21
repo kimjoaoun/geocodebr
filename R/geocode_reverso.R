@@ -1,22 +1,21 @@
 #' Geocode reverso de coordenadas espaciais no Brasil
 #'
 #' @description
-#' Geocode reverso de coordenadas geogr\u00e1ficas para endereços. A
-#' fun\u00e7\u00e3o recebe um `sf data frame` com pontos e retorna o
-#' endere\u00e7o mais pr\u00f3ximo dando uma dist\u00e2ncia m\u00e1xima de busca.
+#' Geocode reverso de coordenadas geográficas para endereços. A função recebe um
+#' `sf data frame` com pontos e retorna o endereço mais próximo dando uma
+#' distância máxima de busca.
 #'
 #' @param pontos Uma tabela de dados com classe espacial `sf data frame`.
-#' @param dist_max Integer. Distancia m\u00e1xima aceit\u00e1vel (em metros)
-#'        entre os pontos de input e o endere\u00e7o Por padr\u00e3o, a
-#'        dist\u00e2ncia \u00e9 de 1000 metros.
+#' @param dist_max Integer. Distancia máxima aceitável (em metros) entre os
+#'        pontos de input e o endereço Por padrão, a distância é de 1000 metros.
 #' @template verboso
 #' @template cache
 #' @template n_cores
 #'
-#' @return Retorna o `sf data.frame` de input adicionado das colunas do
-#'         endere\u00e7o encontrado. O output inclui uma coluna "distancia_metros"
-#'         que indica a dist\u00e2ncia entre o ponto de input e o endere\u00e7o
-#'         mais pr\u00f3ximo encontrado.
+#' @return Retorna o `sf data.frame` de input adicionado das colunas do endereço
+#'         encontrado. O output inclui uma coluna "distancia_metros" que indica
+#'         a distância entre o ponto de input e o endereço mais próximo
+#'         encontrado.
 #'
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 #' library(geocodebr)
@@ -45,7 +44,7 @@ geocode_reverso <- function(pontos,
 
   # check input
   checkmate::assert_class(pontos, 'sf')
-  checkmate::assert_integer(dist_max, lower = 500, upper = 100000) # max 100 Km
+  checkmate::assert_number(dist_max, lower = 500, upper = 100000) # max 100 Km
   checkmate::assert_logical(verboso)
   checkmate::assert_logical(cache)
   checkmate::assert_number(n_cores)
