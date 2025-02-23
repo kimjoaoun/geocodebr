@@ -15,7 +15,7 @@ utils::globalVariables(
     "tempidgeocodebr", "input_padrao", "dist_geocodebr", "empate", "contagem_cnefe",
 
     # due to reverse geocoding draft
-    "cep", "lat_cnefe", "localidade", "lon_cnefe", "distancia_metros",
+    "cep", "lat_cnefe", "localidade", "lon_cnefe", "distancia_metros", "logradouro",
     "numero", "xmax", "xmin", "ymax", "ymin"
   )
 )

@@ -39,8 +39,7 @@ apenas o caso mais provável.}
 
 \item{resultado_sf}{Lógico. Indica se o resultado deve ser um objeto espacial
 da classe \code{sf}. Por padrão, é \code{FALSE}, e o resultado é um \code{data.frame} com
-as colunas \code{lat} e \code{lon}.
-adicionais, como o endereço encontrado de referência. Por padrão, é \code{FALSE}.}
+as colunas \code{lat} e \code{lon}.}
 
 \item{verboso}{Um valor lógico. Indica se barras de progresso e mensagens
 devem ser exibidas durante o download dos dados do CNEFE e a geocodificação
