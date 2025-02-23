@@ -19,6 +19,7 @@
 #'
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 #' library(geocodebr)
+#' library(sf)
 #'
 #' # ler amostra de dados
 #' pontos <- readRDS(

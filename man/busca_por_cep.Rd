@@ -43,6 +43,6 @@ df <- geocodebr::busca_por_cep(
   verboso = FALSE
   )
 
-head(df)
+df
 \dontshow{\}) # examplesIf}
 }
