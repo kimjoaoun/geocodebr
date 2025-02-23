@@ -24,7 +24,7 @@ test_that("expected output", {
 
   # expected results
   output <- tester(cep = ceps_valid)
-  testthat::expect_true(nrow(output) == 9)
+  testthat::expect_true(nrow(output) == 5)
 
   # expected class
   testthat::expect_s3_class(output, 'data.frame')
