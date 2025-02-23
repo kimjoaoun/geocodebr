@@ -76,6 +76,7 @@ busca_por_cep <- function(cep,
   if (length(missing_cep) == length(cep_padrao)) {
     cli::cli_abort("Nenhum CEP foi encontrado.")
   }
+
   if (length(missing_cep)>0) {
     temp_dt <- data.table::data.table(cep= missing_cep)
     output_df <- data.table::rbindlist(list(output_df, temp_dt), fill = TRUE)

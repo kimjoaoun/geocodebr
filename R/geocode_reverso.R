@@ -1,21 +1,22 @@
 #' Geocode reverso de coordenadas espaciais no Brasil
 #'
 #' @description
-#' Geocode reverso de coordenadas geográficas para endereços. A função recebe um
-#' `sf data frame` com pontos e retorna o endereço mais próximo dando uma
-#' distância máxima de busca.
+#' Geocode reverso de coordenadas geogr<c3><a1>ficas para endere<c3><a7>os. A
+#' fun<c3><a7><c3><a3>o recebe um `sf data frame` com pontos e retorna o
+#' endere<c3><a7>o mais pr<c3><b3>ximo dando uma dist<c3><a2>ncia m<c3><a1>xima
+#' de busca.
 #'
 #' @param pontos Uma tabela de dados com classe espacial `sf data frame`.
-#' @param dist_max Integer. Distancia máxima aceitável (em metros) entre os
-#'        pontos de input e o endereço Por padrão, a distância é de 1000 metros.
+#' @param dist_max Integer. Distancia m<c3><a1>xima aceit<c3><a1>vel (em metros)
+#'        entre os pontos de input e o endere<c3><a7>o Por padr<c3><a3>o, a
+#'        dist<c3><a2>ncia <c3><a9> de 1000 metros.
 #' @template verboso
 #' @template cache
 #' @template n_cores
 #'
-#' @return Retorna o `sf data.frame` de input adicionado das colunas do endereço
-#'         encontrado. O output inclui uma coluna "distancia_metros" que indica
-#'         a distância entre o ponto de input e o endereço mais próximo
-#'         encontrado.
+#' @return Retorna o `sf data.frame` de input adicionado das colunas do
+#'         endere<c3><a7>o a dist<c3><a2>ncia entre o ponto de input e o
+#'         endere<c3><a7>o mais pr<c3><b3>ximo.
 #'
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 #' library(geocodebr)
@@ -51,7 +52,9 @@ geocode_reverso <- function(pontos,
   checkmate::assert_number(n_cores)
 
   epsg <- sf::st_crs(pontos)$epsg
-  if (epsg != 4674) { stop('Dados de input precisam estar com projeção geográfica SIRGAS 2000, EPSG 4674')}
+  if (epsg != 4674) {
+    cli::cli_abort("Dados de input precisam estar com proje<c3><a7><c3><a3>o geogr<c3><a1>fica SIRGAS 2000, EPSG 4674")
+  }
 
 
   # prep input -------------------------------------------------------
