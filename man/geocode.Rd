@@ -65,7 +65,7 @@ de input devem ser passados como um \code{data.frame}, no qual cada coluna
 descreve um campo do endereço (logradouro, número, cep, etc). O resuldos dos
 endereços geolocalizados podem seguir diferentes níveis de precisão. Consulte
 abaixo a seção "Detalhes" para mais informações. As coordenadas de output
-utilizam o sistema de referência geodésico "SIRGAS2000", CRS(4674).
+utilizam o sistema de coordenadas geográficas SIRGAS 2000, EPSG 4674.
 }
 \details{
 Precisão dos resultados:

@@ -28,8 +28,8 @@ longitude (\code{lon}). Alternativamente, o resultado pode ser um objeto \code{s
 }
 \description{
 Busca endereços e suas coordenadas geográficas a partir de um CEP. As
-coordenadas de output utilizam o sistema de referência geodésico "SIRGAS2000",
-CRS(4674).
+coordenadas de output utilizam o sistema de coordenadas geográficas SIRGAS
+2000, EPSG 4674.
 }
 \examples{
 \dontshow{if (identical(tolower(Sys.getenv("NOT_CRAN")), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}

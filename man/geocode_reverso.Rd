@@ -13,11 +13,11 @@ geocode_reverso(
 )
 }
 \arguments{
-\item{pontos}{Uma tabela de dados com classe espacial \verb{sf data frame}.}
+\item{pontos}{Uma tabela de dados com classe espacial \verb{sf data frame} no
+sistema de coordenadas geográficas SIRGAS 2000, EPSG 4674.}
 
-\item{dist_max}{Integer. Distancia m\if{html}{\out{<c3>}}\if{html}{\out{<a1>}}xima aceit\if{html}{\out{<c3>}}\if{html}{\out{<a1>}}vel (em metros)
-entre os pontos de input e o endere\if{html}{\out{<c3>}}\if{html}{\out{<a7>}}o Por padr\if{html}{\out{<c3>}}\if{html}{\out{<a3>}}o, a
-dist\if{html}{\out{<c3>}}\if{html}{\out{<a2>}}ncia \if{html}{\out{<c3>}}\if{html}{\out{<a9>}} de 1000 metros.}
+\item{dist_max}{Integer. Distancia máxima aceitável (em metros) entre os
+pontos de input e o endereço Por padrão, a distância é de 1000 metros.}
 
 \item{verboso}{Um valor lógico. Indica se barras de progresso e mensagens
 devem ser exibidas durante o download dos dados do CNEFE e a geocodificação
@@ -32,15 +32,15 @@ diretório temporário.}
 processamento dos dados. O padrão é 1.}
 }
 \value{
-Retorna o \verb{sf data.frame} de input adicionado das colunas do
-endere\if{html}{\out{<c3>}}\if{html}{\out{<a7>}}o a dist\if{html}{\out{<c3>}}\if{html}{\out{<a2>}}ncia entre o ponto de input e o
-endere\if{html}{\out{<c3>}}\if{html}{\out{<a7>}}o mais pr\if{html}{\out{<c3>}}\if{html}{\out{<b3>}}ximo.
+Retorna o \verb{sf data.frame} de input adicionado das colunas do endereço
+encontrado. O output inclui uma coluna "distancia_metros" que indica
+a distância entre o ponto de input e o endereço mais próximo
+encontrado.
 }
 \description{
-Geocode reverso de coordenadas geogr\if{html}{\out{<c3>}}\if{html}{\out{<a1>}}ficas para endere\if{html}{\out{<c3>}}\if{html}{\out{<a7>}}os. A
-fun\if{html}{\out{<c3>}}\if{html}{\out{<a7>}}\if{html}{\out{<c3>}}\if{html}{\out{<a3>}}o recebe um \verb{sf data frame} com pontos e retorna o
-endere\if{html}{\out{<c3>}}\if{html}{\out{<a7>}}o mais pr\if{html}{\out{<c3>}}\if{html}{\out{<b3>}}ximo dando uma dist\if{html}{\out{<c3>}}\if{html}{\out{<a2>}}ncia m\if{html}{\out{<c3>}}\if{html}{\out{<a1>}}xima
-de busca.
+Geocode reverso de coordenadas geográficas para endereços. A função recebe um
+\verb{sf data frame} com pontos e retorna o endereço mais próximo dando uma
+distância máxima de busca.
 }
 \examples{
 \dontshow{if (identical(tolower(Sys.getenv("NOT_CRAN")), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
