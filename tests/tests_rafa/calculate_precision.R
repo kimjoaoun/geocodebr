@@ -124,3 +124,47 @@ dt[, .(lat = mean(lat),
        area_m2_ellipsoid = get_ellipsoid_area(lat, lon)
        ), by = cep]
 
+
+
+
+
+
+
+
+
+# funcao para calcular poligono concavo
+get_concave_poly <- function(lat_vec, lon_vec){
+
+  # lat_vec <- dt$lat
+  # lon_vec <- dt$lon
+  temp_matrix <- matrix( c(lon_vec, lat_vec), ncol = 2, byrow = FALSE)
+  temp_sf <- sfheaders::sf_point(temp_matrix, keep = T)
+  sf::st_crs(temp_sf) <- 4674
+
+  poly <- concaveman::concaveman(points = temp_sf)
+  # poly <- sf::st_convex_hull(x  = st_union(temp_sf))
+  # poly <- sf::st_concave_hull(x = st_union(temp_sf), ratio = 0.5)
+
+  sf::st_crs(poly) <- 4674
+
+  return( sf::st_geometry(poly) )
+}
+
+poly <- dt[, .(lat = mean(lat),
+               lon = mean(lon),
+               geometry = get_concave_poly(lat, lon)
+),
+by = cep]
+
+poly <- sf::st_as_sf(poly)
+
+dt_sf <- sfheaders::sf_point(
+  obj = dt,
+  x = 'lon',
+  y = 'lat',
+  keep = TRUE
+)
+
+sf::st_crs(dt_sf) <- 4674
+
+mapview::mapview(dt_sf, zcol='cep') + poly
