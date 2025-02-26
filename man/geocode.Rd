@@ -39,8 +39,7 @@ apenas o caso mais provável.}
 
 \item{resultado_sf}{Lógico. Indica se o resultado deve ser um objeto espacial
 da classe \code{sf}. Por padrão, é \code{FALSE}, e o resultado é um \code{data.frame} com
-as colunas \code{lat} e \code{lon}.
-adicionais, como o endereço encontrado de referência. Por padrão, é \code{FALSE}.}
+as colunas \code{lat} e \code{lon}.}
 
 \item{verboso}{Um valor lógico. Indica se barras de progresso e mensagens
 devem ser exibidas durante o download dos dados do CNEFE e a geocodificação
@@ -66,7 +65,7 @@ de input devem ser passados como um \code{data.frame}, no qual cada coluna
 descreve um campo do endereço (logradouro, número, cep, etc). O resuldos dos
 endereços geolocalizados podem seguir diferentes níveis de precisão. Consulte
 abaixo a seção "Detalhes" para mais informações. As coordenadas de output
-utilizam o sistema de referência geodésico "SIRGAS2000", CRS(4674).
+utilizam o sistema de coordenadas geográficas SIRGAS 2000, EPSG 4674.
 }
 \details{
 Precisão dos resultados:

@@ -1,3 +1,9 @@
+# geocodebr 0.2.099999 DEV
+
+- Nova função `buscapor_cep()`
+- Nova função `geocode_reverso()`
+
+
 # geocodebr 0.1.1
 
 ## Correção de bugs

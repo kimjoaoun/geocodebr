@@ -422,3 +422,9 @@ sf::st_crs(cidade_case_sf) <- 4674
 mapview::mapview(cidade_case_sf, zcol='num_adress')
 
 
+
+
+
+
+Existem 6 endereços de Avenida Brasil, número 7 no RJ. A MESMA AVENIDA!
+cada um com cep diferente.

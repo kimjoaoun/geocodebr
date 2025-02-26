@@ -228,3 +228,271 @@ DBI::dbGetQuery(con, q)
 #' jaro_winkler_similarity
 #' DICE https://stackoverflow.com/questions/51610033/getting-similar-strings-in-pl-sql-with-a-good-performance
 #'    MDS usa valores iguais ou superiores a 0,6
+
+
+
+
+
+
+
+
+library(dplyr)
+library(sf)
+library(sfheaders)
+library(arrow)
+library(mapview)
+
+tudo <- geocodebr::listar_dados_cache()
+tudo <- tudo[7]
+
+cnefe <- arrow::open_dataset( tudo ) |>
+  dplyr::filter(estado == 'RJ') |>
+  dplyr::filter(municipio == "RIO DE JANEIRO") |>
+  dplyr::filter(logradouro == "AVENIDA MINISTRO IVAN LINS") |>
+  dplyr::collect()
+
+
+check_approx <- function(numero_input, expp){
+
+input <- data.frame(
+  id = 1,
+  logradouro = 'AVENIDA MINISTRO IVAN LINS',
+  numero_input = numero_input,
+  localidade = "BARRA DA TIJUCA",
+  cep = '22620-110'
+  )
+
+df <- left_join(input, cnefe, by = c('logradouro', 'localidade', 'cep'))
+
+
+output <- df |>
+  group_by(id) |>
+  summarize(
+    numero_input = first(numero_input),
+    lat = sum((1/abs(numero_input - numero)^expp * lat)) / sum(1/abs(numero_input - numero)^expp),
+    lon = sum((1/abs(numero_input - numero)^expp * lon)) / sum(1/abs(numero_input - numero)^expp)
+    )
+
+sf_cnefe <- sfheaders::sf_point(
+  obj = cnefe,
+  x = 'lon',
+  y = 'lat',
+  keep = TRUE
+)
+
+sf_output <- sfheaders::sf_point(
+  obj = output,
+  x = 'lon',
+  y = 'lat',
+  keep = TRUE
+)
+
+
+sf::st_crs(sf_cnefe) <- 4674
+sf::st_crs(sf_output) <- 4674
+
+mapp <- mapview::mapview(sf_cnefe, zcol='numero') +
+  mapview(sf_output, col.regions = "red")
+
+return(mapp)
+}
+
+
+approx_do_rogerio = function(numero_input, dados_rua){
+
+  f_lat = with(dados_rua, approxfun(x = numero, y = lat, rule = 2, method = "linear"))
+  f_lon = with(dados_rua, approxfun(x = numero, y = lon, rule = 2, method = "linear"))
+
+  output = data.frame(lat = f_lat(numero_input),
+                      lon = f_lon(numero_input))
+
+  sf_output_rogerio <- sfheaders::sf_point(
+    obj = output,
+    x = 'lon',
+    y = 'lat',
+    keep = TRUE
+  )
+
+  sf::st_crs(sf_output_rogerio) <- 4674
+
+  mapview(sf_output_rogerio, col.regions = "orange")
+}
+
+check_approx(numero_input = 6, expp = 1)
+check_approx(numero_input = 6, expp = 3)
+
+check_approx(numero_input = 760, expp = 1)
+check_approx(numero_input = 760, expp = 10)
+
+check_approx(numero_input = 3423412341234213, expp = 40)
+
+
+
+
+approx_do_rogerio(numero_input = 100000, dados_rua = cnefe)
+
+
+# aprox SQL -------------------------------
+
+
+tudo <- geocodebr::listar_dados_cache()
+tudo <- tudo[7]
+
+cnefe <- arrow::open_dataset( tudo ) |>
+  dplyr::filter(estado == 'RJ') |>
+  dplyr::filter(municipio == "RIO DE JANEIRO") |>
+  dplyr::filter(logradouro == "AVENIDA MINISTRO IVAN LINS") |>
+  dplyr::collect()
+
+
+input <- data.frame(
+  id = 1,
+  logradouro = 'AVENIDA MINISTRO IVAN LINS',
+  numero_input = 5,
+  localidade = "BARRA DA TIJUCA",
+  cep = '22620-110'
+)
+
+
+df <- left_join(input, cnefe, by = c('logradouro', 'localidade', 'cep'))
+
+con <- geocodebr:::create_geocodebr_db()
+
+
+duckdb::dbWriteTable(con, "data_frame_ruas", df, overwrite = TRUE, temporary = TRUE)
+
+
+approximacao_sql <- function(numero_input, con) {
+  query <- sprintf("
+    WITH bounds AS (
+      SELECT
+        (SELECT MIN(numero) FROM data_frame_ruas) AS min_num,
+        (SELECT MAX(numero) FROM data_frame_ruas) AS max_num,
+        (SELECT MAX(numero) FROM data_frame_ruas WHERE numero <= %f) AS lower_num,
+        (SELECT MIN(numero) FROM data_frame_ruas WHERE numero >= %f) AS upper_num
+    ),
+    values_cte AS (
+      SELECT
+        (SELECT lat FROM data_frame_ruas ORDER BY numero ASC LIMIT 1) AS min_lat,
+        (SELECT lon FROM data_frame_ruas ORDER BY numero ASC LIMIT 1) AS min_lon,
+        (SELECT lat FROM data_frame_ruas ORDER BY numero DESC LIMIT 1) AS max_lat,
+        (SELECT lon FROM data_frame_ruas ORDER BY numero DESC LIMIT 1) AS max_lon,
+        (SELECT lat FROM data_frame_ruas WHERE numero = (SELECT MAX(numero) FROM data_frame_ruas WHERE numero <= %f)) AS lower_lat,
+        (SELECT lon FROM data_frame_ruas WHERE numero = (SELECT MAX(numero) FROM data_frame_ruas WHERE numero <= %f)) AS lower_lon,
+        (SELECT lat FROM data_frame_ruas WHERE numero = (SELECT MIN(numero) FROM data_frame_ruas WHERE numero >= %f)) AS upper_lat,
+        (SELECT lon FROM data_frame_ruas WHERE numero = (SELECT MIN(numero) FROM data_frame_ruas WHERE numero >= %f)) AS upper_lon
+    ),
+    interp AS (
+      SELECT
+        b.min_num, b.max_num, b.lower_num, b.upper_num,
+        v.min_lat, v.min_lon, v.max_lat, v.max_lon,
+        v.lower_lat, v.lower_lon, v.upper_lat, v.upper_lon
+      FROM bounds b, values_cte v
+    )
+    SELECT
+      CASE
+        WHEN %f <= min_num THEN min_lat
+        WHEN %f >= max_num THEN max_lat
+        WHEN lower_num = upper_num THEN lower_lat
+        ELSE lower_lat + ((%f - lower_num) * (upper_lat - lower_lat)) / (upper_num - lower_num)
+      END AS lat,
+      CASE
+        WHEN %f <= min_num THEN min_lon
+        WHEN %f >= max_num THEN max_lon
+        WHEN lower_num = upper_num THEN lower_lon
+        ELSE lower_lon + ((%f - lower_num) * (upper_lon - lower_lon)) / (upper_num - lower_num)
+      END AS lon
+    FROM interp
+    LIMIT 1;
+  ",
+                   numero_input, numero_input,           # For lower_num and upper_num in bounds
+                   numero_input, numero_input, numero_input, numero_input,  # For lower_lat, lower_lon, upper_lat, upper_lon in values_cte
+                   numero_input, numero_input, numero_input,  # For lat: conditions and numerator in interpolation
+                   numero_input, numero_input, numero_input   # For lon: conditions and numerator in interpolation
+  )
+
+  res <- DBI::dbGetQuery(con, query)
+  return(as.matrix(res))
+}
+
+
+numm <- 1
+
+bench::system_time(
+  a <- approximacao_sql(numm, con)
+)
+
+bench::system_time(
+  a <- approximacao_sql_optimized(numm, con)
+)
+
+a <- sfheaders::sf_point(
+  obj = a,
+  x = 'lon',
+  y = 'lat',
+  keep = TRUE
+)
+
+sf::st_crs(a) <- 4674
+
+
+
+roger <- approx_do_rogerio(numero_input = numm, dados_rua = cnefe)
+
+
+roger + a
+
+
+
+approximacao_sql_optimized <- function(numero_input, con) {
+  query <- sprintf("
+    WITH bounds AS (
+      SELECT MIN(numero) AS min_num, MAX(numero) AS max_num
+      FROM data_frame_ruas
+    ),
+    lower_row AS (
+      SELECT numero, lat, lon
+      FROM data_frame_ruas
+      WHERE numero = (
+        CASE
+          WHEN %f <= (SELECT min_num FROM bounds)
+            THEN (SELECT min_num FROM bounds)
+          ELSE (SELECT MAX(numero) FROM data_frame_ruas WHERE numero <= %f)
+        END
+      )
+      LIMIT 1
+    ),
+    upper_row AS (
+      SELECT numero, lat, lon
+      FROM data_frame_ruas
+      WHERE numero = (
+        CASE
+          WHEN %f >= (SELECT max_num FROM bounds)
+            THEN (SELECT max_num FROM bounds)
+          ELSE (SELECT MIN(numero) FROM data_frame_ruas WHERE numero >= %f)
+        END
+      )
+      LIMIT 1
+    )
+    SELECT
+      CASE
+        WHEN lr.numero = ur.numero THEN lr.lat
+        ELSE lr.lat + ((%f - lr.numero) * (ur.lat - lr.lat)) / (ur.numero - lr.numero)
+      END AS lat,
+      CASE
+        WHEN lr.numero = ur.numero THEN lr.lon
+        ELSE lr.lon + ((%f - lr.numero) * (ur.lon - lr.lon)) / (ur.numero - lr.numero)
+      END AS lon
+    FROM lower_row lr
+    CROSS JOIN upper_row ur;
+  ",
+                   numero_input, numero_input,    #/* for lower_row: condition and else */
+                   numero_input, numero_input,  #/* for upper_row: condition and else */
+                   numero_input,                #/* for lat interpolation */
+                   numero_input                 #/* for lon interpolation */
+  )
+
+  res <- DBI::dbGetQuery(con, query)
+  return(as.matrix(res))
+}
+

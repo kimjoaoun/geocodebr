@@ -21,3 +21,7 @@ message_baixando_cnefe <- function() {
 message_looking_for_matches <- function() {
   geocodebr_message(c("i" = "Geolocalizando endere\u00e7os"))
 }
+
+message_preparando_output <- function() {
+  geocodebr_message(c("i" = "Preparando output"))
+}

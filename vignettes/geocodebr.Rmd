@@ -121,11 +121,10 @@ coluna 'empate' para que o usuário possa inspecionar cada caso coluna 'endereco
 
 - `resultado_sf`: quando `TRUE`, o output é retornado como um objeto espacial de classe `sf` simple feature.
 
-As coordendas espaciais do resultado usam o sistema de referência SIRGAS2000,
-padrão adotado pelo IBGE em todo o Brasil. Cada par de coordenadas encontrado
-pode ser classificado conforme o seu grau de precisão (coluna `precisao`) e os
-campos do endereço utilizados para encontrá-lo (`tipo_resultado`). A seção a
-seguir apresenta mais informações sobre essas colunas.
+As coordendas espaciais do resultado usam o sistema de referência SIRGAS2000 
+(EPSG 4674.), padrão adotado pelo IBGE em todo o Brasil. Cada par de coordenadas encontrado pode ser classificado conforme o seu grau de precisão (coluna 
+`precisao`) e os campos do endereço utilizados para encontrá-lo (`tipo_resultado`). 
+A seção a seguir apresenta mais informações sobre essas colunas.
 
 
 ### Grau de precisão dos resultados

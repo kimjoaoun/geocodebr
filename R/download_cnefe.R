@@ -1,4 +1,4 @@
-#' Faz download dos dados do CNEGE
+#' Faz download dos dados do CNEFE
 #'
 #' Faz o download de uma versão pre-processada e enriquecida do CNEFE (Cadastro
 #' Nacional de Endereços para Fins Estatísticos) que foi criada para o uso deste

@@ -5,7 +5,7 @@
 #' descreve um campo do endereço (logradouro, número, cep, etc). O resuldos dos
 #' endereços geolocalizados podem seguir diferentes níveis de precisão. Consulte
 #' abaixo a seção "Detalhes" para mais informações. As coordenadas de output
-#' utilizam o sistema de referência geodésico "SIRGAS2000", CRS(4674).
+#' utilizam o sistema de coordenadas geográficas SIRGAS 2000, EPSG 4674.
 #'
 #' @param enderecos Um `data.frame`. Os endereços a serem geolocalizados. Cada
 #'    coluna deve representar um campo do endereço.
@@ -27,7 +27,6 @@
 #' @param resultado_sf Lógico. Indica se o resultado deve ser um objeto espacial
 #'    da classe `sf`. Por padrão, é `FALSE`, e o resultado é um `data.frame` com
 #'    as colunas `lat` e `lon`.
-#'    adicionais, como o endereço encontrado de referência. Por padrão, é `FALSE`.
 #' @template verboso
 #' @template cache
 #' @template n_cores
