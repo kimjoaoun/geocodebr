@@ -14,9 +14,9 @@ tudo <- tudo[7]
 dt <- arrow::open_dataset( tudo ) |>
   dplyr::filter(estado == 'RJ') |>
   dplyr::filter(municipio == "RIO DE JANEIRO") |>
-   dplyr::filter(cep %in% c( "22440-032")) |> # "22620-110",
-  # dplyr::filter(cep %in% c("22620-110", "20521-470")) |> # "22620-110",
-  # dplyr::filter(localidade %in% c("LEBLON")) |> # "22620-110",
+    dplyr::filter(cep %in% c( "22440-033")) |>            # 22440-035
+  # dplyr::filter(cep %in% c("22620-110", "20521-470")) |>
+  # dplyr::filter(localidade %in% c("LEBLON")) |>
   dplyr::collect()
 
 
@@ -68,15 +68,38 @@ get_concave_area <- function(lat_vec, lon_vec){
 
   # lat_vec <- dt$lat
   # lon_vec <- dt$lon
-  temp_matrix <- matrix( c(lon_vec, lat_vec), ncol = 2, byrow = FALSE)
-  temp_sf <- sfheaders::sf_point(temp_matrix, keep = T)
-  sf::st_crs(temp_sf) <- 4674
 
-  poly <- concaveman::concaveman(points = temp_sf)
-  # poly <- sf::st_convex_hull(x  = st_union(temp_sf))
-  # poly <- sf::st_concave_hull(x = st_union(temp_sf), ratio = 0.5)
+  # points buffer of 5.84 meters based on the best gps precision of cnefe
+  # https://biblioteca.ibge.gov.br/visualizacao/livros/liv102063.pdf
+  radious_meters <- 5.84
+  radious_degree <- radious_meters/111320
 
-  sf::st_crs(poly) <- 4674
+  n_points <- length(lon_vec)
+  single_point_area <- pi * radious_meters^2
+
+  if ( n_points == 1) {
+    return(single_point_area)
+  }
+
+  points <- geos::geos_make_point(
+    x = lon_vec,
+    y = lat_vec,
+    crs = 4674
+  )
+  temp_sf <- sf::st_as_sf(points)
+
+
+  buff <- sf::st_buffer(x = temp_sf, dist = radious_degree)
+  buff <- sf::st_union(buff)
+  # plot(buff)
+
+  # back to points
+  temp_points <- sfheaders::sfc_cast(buff, "POINT")
+  # plot(temp_points)
+
+  poly <- concaveman::concaveman(points = sf::st_as_sf(temp_points), concavity = 2)
+  # plot(poly)
+
   # mapview(poly) + temp_sf
 
   area_m2 <- sf::st_area(poly)
@@ -125,21 +148,13 @@ get_concave_area_geos <- function(lat_vec, lon_vec){
     distance = radious_degree
   )
 
-  buff <- geos::geos_unique_points(buff)
-  buff <- geos::geos_make_collection(buff)
-  poly <- geos::geos_concave_hull(buff, ratio  = 0.51)
-
-  poly <- geos::geos_make_valid(poly)
+  temp_points <- geos::geos_unique_points(buff)
+  temp_points <- geos::geos_make_collection(temp_points)
+  poly <- geos::geos_concave_hull(temp_points, ratio  = .5)
+  poly <- st_as_sf(poly)
   # plot(poly)
 
-  poly <- st_as_sf(poly)
-  sf::st_crs(poly) <- 4674
   # mapview(poly) + temp_sf
-
-  # buff2 <- sf::st_buffer(x = temp_sf, dist = radious_meters)
-  # buff2 <- sf::st_union(buff2)
-  # sf::st_crs(buff2) <- 4674
-  # mapview::mapview(buff) + buff2
 
   # get area
   area_m2 <- sf::st_area(poly)
@@ -156,14 +171,15 @@ bench::system_time({
 result <- dt[, .(lat = mean(lat),
          lon = mean(lon),
          area_m2_concave = get_concave_area(lat, lon),
-         area_m2_concave_geos = get_concave_area_geos(lat, lon),
-         area_m2_ellipsoid = get_ellipsoid_area(lat, lon)
+         area_m2_concave_geos = get_concave_area_geos(lat, lon)
+         #, area_m2_ellipsoid = get_ellipsoid_area(lat, lon)
   ), by = cep]
 })
-result
+View(result)
 
-
-
+data.table::setDT(result)
+result[, diff := area_m2_concave - area_m2_concave_geos]
+summary(result$diff)
 
 fconcave <- function(dt){
   dt[, .(lat = mean(lat),
@@ -182,7 +198,7 @@ fconcave_geos <- function(dt){
 bench::mark(
   fconcave(dt),
   fconcave_geos(dt),
-  iterations = 1,
+  iterations = 10,
   check = FALSE
   )
 
