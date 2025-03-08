@@ -239,71 +239,15 @@ geocode <- function(enderecos,
   # Disconnect from DuckDB when done
   duckdb::dbDisconnect(con)
 
+
   # casos de empate -----------------------------------------------
 
   if (nrow(output_df) > n_rows) {
-
-    # encontra casos de empate
-    output_df[, empate := ifelse(.N > 1, TRUE, FALSE), by = tempidgeocodebr]
-
-    # calcula distancias entre casos empatados
-    output_df[empate == TRUE,
-              dist_geocodebr := dt_haversine(
-                lat, lon,
-                data.table::shift(lat), data.table::shift(lon)
-                ),
-              by = tempidgeocodebr
-              ]
-
-    output_df[empate == TRUE,
-              dist_geocodebr := ifelse(is.na(dist_geocodebr), 0, dist_geocodebr)
-              ]
-
-    # ignora casos com dist menor do q 200 metros
-    output_df <- output_df[ empate==FALSE |
-                            empate==TRUE & dist_geocodebr == 0 |
-                            dist_geocodebr > 200
-                            ]
-
-    # update casos de empate
-    output_df[, empate := ifelse(.N > 1, TRUE, FALSE), by = tempidgeocodebr]
-
-    # conta numero de casos empatados
-    ids_empate <- output_df[empate == TRUE, ]$tempidgeocodebr
-    n_casos_empate <- unique(ids_empate) |> length()
-
-   # drop geocodebr temp columns
-   output_df[, dist_geocodebr := NULL]
-
-   if (n_casos_empate >= 1 & isFALSE(resolver_empates)) {
-     cli::cli_warn(
-       "Foram encontrados {n_casos_empate} casos de empate. Estes casos foram marcados com valor igual `TRUE` na coluna 'empate',
-       e podem ser inspecionados na coluna 'endereco_encontrado'. Alternativamente, use `resolver_empates==TRUE` para que o pacote
-       lide com os empates automaticamente."
-       )
-     }
-
-   if (n_casos_empate >= 1 & isTRUE(resolver_empates)) {
-
-    # Keeping only unique rows based on all columns except 'score',
-    # selecting the row with the max 'score'
-    output_df <- output_df[output_df[, .I[contagem_cnefe == max(contagem_cnefe)], by = tempidgeocodebr]$V1]
-    output_df <- output_df[output_df[, .I[1], by = tempidgeocodebr]$V1]
-    output_df[, c('empate', 'contagem_cnefe') := NULL]
-
-    if (verboso) {
-      plural <- ifelse(n_casos_empate==1, 'caso', 'casos')
-      message(glue::glue(
-         "Foram encontrados e resolvidos {n_casos_empate} {plural} de empate."
-       ))
+    output_df <- trata_empates_geocode(output_df, resolver_empates, verboso)
     }
-   }
-
-  }
 
   # drop geocodebr temp id column
   output_df[, tempidgeocodebr := NULL]
-
 
   # convert df to simple feature
   if (isTRUE(resultado_sf)) {
