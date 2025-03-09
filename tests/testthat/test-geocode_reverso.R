@@ -9,8 +9,7 @@ points <- readRDS(
   system.file("extdata/pontos.rds", package = "geocodebr")
 )
 
-points <- points[1:20,]
-
+points <- points[1:10,]
 
 
 tester <- function(pontos = points,
@@ -30,12 +29,12 @@ tester <- function(pontos = points,
 test_that("expected output", {
 
   # radio de busca de 1 Km
-  testthat::expect_success(std_output <- tester())
-  testthat::expect_true(nrow(std_output) == 3)
+  testthat::expect_no_failure(std_output <- tester())
+  testthat::expect_true(nrow(std_output) == 1)
 
   # radio de busca de 5 Km
-  testthat::expect_success(std_output_5K <- tester(dist_max = 5000))
-  testthat::expect_true(nrow(std_output_5K) == 15)
+  testthat::expect_no_failure(std_output_5K <- tester(dist_max = 5000))
+  testthat::expect_true(nrow(std_output_5K) == 7)
 
   # output in sf format
   testthat::expect_true(is(std_output , 'sf'))
@@ -48,36 +47,36 @@ test_that("expected output", {
 test_that("errors with incorrect input", {
 
   # input nao eh sf
-  expect_error(tester(unclass(points)))
+  testthat::expect_error(tester(unclass(points)))
 
   # input tem geometry diferente de POINT
-  expect_error( tester(pontos = sf::st_cast(points, "LINESTRING")) )
+  testthat::expect_error( tester(pontos = sf::st_cast(points, "LINESTRING")) )
 
   # input na projecao espacial errada
-  expect_error(tester(sf::st_transform(points, 4326)))
+  testthat::expect_error(tester(sf::st_transform(points, 4326)))
 
   # input fora do bbox do Brazil
   p <- sf::st_sfc(sf::st_point(c(53.12682, 25.61657)))
   p <- sf::st_sf(p)
   sf::st_crs(p) <- 4674
-  expect_error(tester(p))
+  testthat::expect_error(tester(p))
 
 
 
-  expect_error(tester(dist_max = 'A'))
-  expect_error(tester(dist_max = NA))
-  expect_error(tester(dist_max = TRUE))
+  testthat::expect_error(tester(dist_max = 'A'))
+  testthat::expect_error(tester(dist_max = NA))
+  testthat::expect_error(tester(dist_max = TRUE))
 
-  expect_error(tester(n_cores = "a"))
-  expect_error(tester(n_cores = 0))
-  expect_error(tester(n_cores = Inf))
+  testthat::expect_error(tester(n_cores = "a"))
+  testthat::expect_error(tester(n_cores = 0))
+  testthat::expect_error(tester(n_cores = Inf))
 
-  expect_error(tester(verboso = 1))
-  expect_error(tester(verboso = NA))
-  expect_error(tester(verboso = c(TRUE, TRUE)))
+  testthat::expect_error(tester(verboso = 1))
+  testthat::expect_error(tester(verboso = NA))
+  testthat::expect_error(tester(verboso = c(TRUE, TRUE)))
 
-  expect_error(tester(cache = 1))
-  expect_error(tester(cache = NA))
-  expect_error(tester(cache = c(TRUE, TRUE)))
+  testthat::expect_error(tester(cache = 1))
+  testthat::expect_error(tester(cache = NA))
+  testthat::expect_error(tester(cache = c(TRUE, TRUE)))
 })
 

@@ -1,13 +1,13 @@
 ---
-  title: "Introdução ao geocodebr"
+title: "Introdução ao geocodebr"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 code-annotations: hover
 urlcolor: blue
 vignette: >
-  %\VignetteIndexEntry{Introdução ao geocodebr}
-%\VignetteEngine{knitr::rmarkdown}
-\usepackage[utf8]{inputenc}
+  %\VignetteIndexEntry{Geocode}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
 ---
   
 ```{r, include = FALSE}
@@ -160,8 +160,8 @@ Após rodar o código desta *vignette*, é provável que o seu *cache* esteja
 configurado como a seguir:
   
 ```{r}
-listar_pasta_cache()
+geocodebr::listar_pasta_cache()
 
-listar_dados_cache()
+geocodebr::listar_dados_cache()
 ```
 

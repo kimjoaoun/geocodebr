@@ -8,6 +8,7 @@
 
 library(testthat)
 library(geocodebr)
+library(sf)
 
 test_check("geocodebr")
 

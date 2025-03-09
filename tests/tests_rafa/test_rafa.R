@@ -182,7 +182,7 @@ testthat::test_local()
 Sys.setenv(NOT_CRAN = "true")
 devtools::check(pkg = ".",  cran = FALSE, env_vars = c(NOT_CRAN = "true"))
 
-# detecat probla de cpu < 2
+# detecta problema de cpu < 2
 devtools::check(remote = TRUE, manual = TRUE)
 
 devtools::check(remote = TRUE, manual = TRUE, env_vars = c(NOT_CRAN = "false"))
