@@ -17,7 +17,7 @@
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 #' library(geocodebr)
 #'
-#' # ler amostra de CEPs
+#' # amostra de CEPs
 #' ceps <- c("70390-025", "20071-001", "99999-999")
 #'
 #' df <- geocodebr::busca_por_cep(
