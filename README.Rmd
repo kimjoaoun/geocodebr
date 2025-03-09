@@ -61,7 +61,7 @@ Uma que você possui uma tabela de dados (`data.frame`) com endereços no Brasil
 2. O segundo passo é usar a função `geocode()` para encontrar as coordenadas geográficas dos endereços de input.
 
 
-```{r, eval=FALSE}
+```{r, eval=TRUE}
 library(geocodebr)
 
 # carregando uma amostra de dados
@@ -100,7 +100,7 @@ A função `geocode_reverso()`, por sua vez, permite a geolocalização reversa,
 
 Mais detalhes na [**vignette "geocode"**](https://ipeagit.github.io/geocodebr/articles/geocode_reverso.html).
 
-```{r, eval=FALSE}
+```{r, eval=TRUE}
 # amostra de pontos espaciais
 pontos <- readRDS(
    system.file("extdata/pontos.rds", package = "geocodebr")
@@ -119,9 +119,9 @@ df_enderecos <- geocodebr::geocode_reverso(
 ```
 ### 3. Busca por CEPs
 
-Por fim, a função `busca_por_cep()` permite o fazer consultas de CEPs para encontrar endereços correspondentes e suas coordenadas espaciais.
+Por fim, a função `busca_por_cep()` permite fazer consultas de CEPs para encontrar endereços associados aqueles CEPs e suas coordenadas espaciais.
 
-```{r, eval=FALSE}
+```{r, eval=TRUE}
 # amostra de CEPs
 ceps <- c("70390-025", "20071-001")
 

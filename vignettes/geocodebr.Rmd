@@ -61,12 +61,12 @@ O **{geocodebr}** possui três funções principais para geolocalização de dad
 
 ### 1. Geolocalização: de endereços para coordenadas espaciais
 
-Uma que você possui uma tabela de dados (`data.frame`) com endereços no Brasil, a geolocalização desses dados pode ser feita em apenas dois passos:
+Uma vez que você possui uma tabela de dados (`data.frame`) com endereços no Brasil, a geolocalização desses dados pode ser feita em apenas dois passos:
   
 1. O primeiro passo é usar a função `definir_campos()` para indicar os nomes das colunas no seu `data.frame` que correspondem a cada campo dos endereços.
 2. O segundo passo é usar a função `geocode()` para encontrar as coordenadas geográficas dos endereços de input.
 
-```{r, eval=FALSE}
+```{r, eval=TRUE}
 library(geocodebr)
 
 # carregando uma amostra de dados
@@ -103,12 +103,13 @@ Os resultados do **{geocodebr}** são classificados em seis categorias gerais de
 
 A função `geocode_reverso()`, por sua vez, permite a geolocalização reversa, ou seja, a busca de endereços próximos a um conjunto de coordenadas geográficas. Mais detalhes na [**vignette "geocode"**](https://ipeagit.github.io/geocodebr/articles/geocode_reverso.html).
 
-```{r, eval=FALSE}
+```{r, eval=TRUE}
 # amostra de pontos espaciais
 pontos <- readRDS(
   system.file("extdata/pontos.rds", package = "geocodebr")
 )
 
+# seleciona somente os primeiros 20 pontos
 pontos <- pontos[1:20,]
 
 # geocode reverso
@@ -119,15 +120,14 @@ df_enderecos <- geocodebr::geocode_reverso(
   n_cores = 1
 )
 
-head(df_enderecos)
 ```
 
 
 ### 3. Busca por CEPs
 
-Por fim, a função `busca_por_cep()` permite o fazer consultas de CEPs para encontrar endereços correspondentes e suas coordenadas espaciais.
+Por fim, a função `busca_por_cep()` permite fazer consultas de CEPs para encontrar endereços associados aqueles CEPs e suas coordenadas espaciais.
 
-```{r, eval=FALSE}
+```{r, eval=TRUE}
 # amostra de CEPs
 ceps <- c("70390-025", "20071-001")
 
@@ -137,7 +137,6 @@ df_ceps <- geocodebr::busca_por_cep(
   verboso = FALSE
 )
 
-head(df_ceps)
 ```
 
 
