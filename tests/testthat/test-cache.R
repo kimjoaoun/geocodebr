@@ -3,6 +3,9 @@ skip_if(Sys.getenv("TEST_ONE") != "")
 testthat::skip_on_cran()
 testthat::skip_if_not_installed("arrow")
 
+cache_config_file <- geocodebr:::listar_arquivo_config()
+default_cache_dir <- geocodebr:::listar_pasta_cache_padrao()
+
 # definir_pasta_cache -----------------------------------------------------------
 
 tester <- function(path = NULL) definir_pasta_cache(path)

@@ -5,7 +5,7 @@
 #' descreve um campo do endereço (logradouro, número, cep, etc). O resuldos dos
 #' endereços geolocalizados podem seguir diferentes níveis de precisão. Consulte
 #' abaixo a seção "Detalhes" para mais informações. As coordenadas de output
-#' utilizam o sistema de referência geodésico "SIRGAS2000", CRS(4674).
+#' utilizam o sistema de coordenadas geográficas SIRGAS 2000, EPSG 4674.
 #'
 #' @param enderecos Um `data.frame`. Os endereços a serem geolocalizados. Cada
 #'    coluna deve representar um campo do endereço.
@@ -19,15 +19,15 @@
 #' @param resultado_completo Lógico. Indica se o output deve incluir colunas
 #'    adicionais, como o endereço encontrado de referência. Por padrão, é `FALSE`.
 #' @param resolver_empates Lógico. Alguns resultados da geolocalização podem
-#'        indicar diferentes coordenadas possíveis (e.g. duas ruas diferentes com
-#'        o mesmo nome em uma mesma cidade). Esses casos são trados como 'empate'
-#'        e o parâmetro `resolver_empates` indica se a função deve resolver esses
-#'        empates automaticamente. Por padrão, é `FALSE`, e a função retorna
-#'        apenas o caso mais provável.
+#'    indicar diferentes coordenadas possíveis (e.g. duas ruas diferentes com o
+#'    mesmo nome em uma mesma cidade). Esses casos são trados como 'empate' e o
+#'    parâmetro `resolver_empates` indica se a função deve resolver esses empates
+#'    automaticamente. Por padrão, é `FALSE`, e a função retorna apenas o caso
+#'    mais provável. Para mais detalhes sobre como é feito o processo de
+#'    desempate, consulte abaixo a seção "Detalhes".
 #' @param resultado_sf Lógico. Indica se o resultado deve ser um objeto espacial
 #'    da classe `sf`. Por padrão, é `FALSE`, e o resultado é um `data.frame` com
 #'    as colunas `lat` e `lon`.
-#'    adicionais, como o endereço encontrado de referência. Por padrão, é `FALSE`.
 #' @template verboso
 #' @template cache
 #' @template n_cores
@@ -38,6 +38,7 @@
 #'   Alternativamente, o resultado pode ser um objeto `sf`.
 #'
 #' @template precision_section
+#' @template empates_section
 #'
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 #' library(geocodebr)
@@ -131,6 +132,7 @@ geocode <- function(enderecos,
 
   # downloading cnefe
   cnefe_dir <- download_cnefe(
+    tabela = 'todas',
     verboso = verboso,
     cache = cache
   )
@@ -148,8 +150,7 @@ geocode <- function(enderecos,
   additional_cols <- ""
   if (isTRUE(resultado_completo)) {
     additional_cols <- glue::glue(
-    ", logradouro_encontrado VARCHAR,
-    numero_encontrado VARCHAR, localidade_encontrada VARCHAR,
+    ", numero_encontrado VARCHAR, localidade_encontrada VARCHAR,
     cep_encontrado VARCHAR, municipio_encontrado VARCHAR, estado_encontrado VARCHAR,
     similaridade_logradouro NUMERIC(5, 3)"
     )
@@ -161,6 +162,7 @@ geocode <- function(enderecos,
      lat NUMERIC(8, 6),
      lon NUMERIC(8, 6),
      endereco_encontrado VARCHAR,
+     logradouro_encontrado VARCHAR,
      tipo_resultado VARCHAR,
     contagem_cnefe INTEGER {additional_cols});"
     )
@@ -179,7 +181,7 @@ geocode <- function(enderecos,
   n_rows <- nrow(input_padrao)
   matched_rows <- 0
 
-  # start matching pi01
+  # start matching
   for (match_type in all_possible_match_types ) {
 
     # get key cols
@@ -217,6 +219,8 @@ geocode <- function(enderecos,
   if (verboso) finish_progress_bar(matched_rows)
 
 
+  if (verboso) message_preparando_output()
+
   # add precision column
   add_precision_col(con, update_tb = 'output_db')
 
@@ -240,71 +244,15 @@ geocode <- function(enderecos,
   # Disconnect from DuckDB when done
   duckdb::dbDisconnect(con)
 
+
   # casos de empate -----------------------------------------------
 
   if (nrow(output_df) > n_rows) {
-
-    # encontra casos de empate
-    output_df[, empate := ifelse(.N > 1, TRUE, FALSE), by = tempidgeocodebr]
-
-    # calcula distancias entre casos empatados
-    output_df[empate == TRUE,
-              dist_geocodebr := dt_haversine(
-                lat, lon,
-                data.table::shift(lat), data.table::shift(lon)
-                ),
-              by = tempidgeocodebr
-              ]
-
-    output_df[empate == TRUE,
-              dist_geocodebr := ifelse(is.na(dist_geocodebr), 0, dist_geocodebr)
-              ]
-
-    # ignora casos com dist menor do q 200 metros
-    output_df <- output_df[ empate==FALSE |
-                            empate==TRUE & dist_geocodebr == 0 |
-                            dist_geocodebr > 200
-                            ]
-
-    # update casos de empate
-    output_df[, empate := ifelse(.N > 1, TRUE, FALSE), by = tempidgeocodebr]
-
-    # conta numero de casos empatados
-    ids_empate <- output_df[empate == TRUE, ]$tempidgeocodebr
-    n_casos_empate <- unique(ids_empate) |> length()
-
-   # drop geocodebr temp columns
-   output_df[, dist_geocodebr := NULL]
-
-   if (n_casos_empate >= 1 & isFALSE(resolver_empates)) {
-     cli::cli_warn(
-       "Foram encontrados {n_casos_empate} casos de empate. Estes casos foram marcados com valor igual `TRUE` na coluna 'empate',
-       e podem ser inspecionados na coluna 'endereco_encontrado'. Alternativamente, use `resolver_empates==TRUE` para que o pacote
-       lide com os empates automaticamente."
-       )
-     }
-
-   if (n_casos_empate >= 1 & isTRUE(resolver_empates)) {
-
-    # Keeping only unique rows based on all columns except 'score',
-    # selecting the row with the max 'score'
-    output_df <- output_df[output_df[, .I[contagem_cnefe == max(contagem_cnefe)], by = tempidgeocodebr]$V1]
-    output_df <- output_df[output_df[, .I[1], by = tempidgeocodebr]$V1]
-    output_df[, c('empate', 'contagem_cnefe') := NULL]
-
-    if (verboso) {
-      plural <- ifelse(n_casos_empate==1, 'caso', 'casos')
-      message(glue::glue(
-         "Foram encontrados e resolvidos {n_casos_empate} {plural} de empate."
-       ))
+    output_df <- trata_empates_geocode(output_df, resolver_empates, verboso)
     }
-   }
-
-  }
 
   # drop geocodebr temp id column
   output_df[, tempidgeocodebr := NULL]
-
 
   # convert df to simple feature
   if (isTRUE(resultado_sf)) {

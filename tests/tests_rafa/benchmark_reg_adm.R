@@ -241,7 +241,7 @@ subset(t , logradouro_no_numbers %like% "DESEMBARGADOR SOUTO MAIOR")
 
 
 # cad unico --------------------------------------------------------------------
-sample_size <- 1000000
+sample_size <- 10000000
 
 cad_con <- ipeadatalake::ler_cadunico(
   data = 202312,
@@ -278,7 +278,7 @@ cad <- cad_con |>
          cep,
          bairro) |>
   dplyr::compute() |>
-#  dplyr::slice_sample(n = sample_size) |> # sample 20K
+  dplyr::slice_sample(n = sample_size) |> # sample 20K
   dplyr::collect()
 
 
@@ -291,6 +291,8 @@ cad <- cad_con |>
 # cad[, code_muni := enderecobr::padronizar_municipios(code_muni) ]
 # cad[, abbrev_state := enderecobr::padronizar_estados(abbrev_state, formato = 'sigla') ]
 
+
+cad$id <- 1:nrow(cad)
 
 fields_cad <- geocodebr::definir_campos(
   logradouro = 'logradouro',
@@ -305,126 +307,25 @@ fields_cad <- geocodebr::definir_campos(
 
 # aprox. 465.13 soh a padronizacao dos enderecos
 
-dani_drop <- bench::system_time( daniF() )
-rafa_drop <- bench::system_time( rafaF() )
-dani_keep <- bench::system_time( daniT() )
-rafa_keep <- bench::system_time( rafaT() )
-
 #' Cad completo 43 milhoes
 #'
 #' > rafa_drop
 #' process    real
 #' 23.9m     17m
-#'
-#' > dani_drop
-#' process    real
-#' 49.9m   41.5m
-#'
-#' > rafa_keep
-#' process    real
-#' 1.33h   1.14h
-#'
-#' > dani_keep
-#' process    real
-#' 3.75h   3.53h
-#'
-#'
-#' different order
-#'
-#' > dani_drop
-#' process    real
-#' 27.2m     20m
-#' > rafa_drop
-#' process    real
-#' 38m   31.4m
-#' > dani_keep
-#' process    real
-#' 2.15h   1.95h
-#' > rafa_keep
-#' process    real
-#' 1.65h   1.43h
 
-
-
-
-
-
-
-rafaF <- function(){ message('rafa F')
-  message(Sys.time())
+bench::system_time(
   cadgeo <- geocodebr::geocode(
     enderecos  = cad,
     campos_endereco = fields_cad,
     resultado_completo = T,
-    n_cores = 10, # 7
+    n_cores = 25, # 7
     verboso = T,
-    resultado_sf = F
+    resultado_sf = T,
+    resolver_empates = F
   )
-  message(Sys.time())
-  }
-
-rafaT_db <- function(){ message('rafa Tdb')
-  message(Sys.time())
-  df_rafaT <- geocodebr:::geocode_db(
-    addresses_table = cad,
-    address_fields = fields_cad,
-    n_cores = 10, # 7
-    full_results = T,
-    progress = T
-  )
-  message(Sys.time())
-  return(2+2)
-  }
-
-
-rafaT <- function(){ message('rafa T')
-  message(Sys.time())
-  df_rafaT <- geocodebr::geocode(
-    addresses_table = cad,
-    address_fields = fields_cad,
-    n_cores = 10, # 7
-    full_results = T,
-    progress = T
-  )
-  message(Sys.time())
-  return(2+2)
-  }
-
-daniT <- function(){ message('dani')
-  message(Sys.time())
-  df_dani <- geocodebr:::geocode_dani_arrow(
-    addresses_table = cad,
-    address_fields = fields_cad,
-    n_cores = 10,
-    full_results = T,
-    progress = T
-  )
-  message(Sys.time())
-  return(2+2)
-  }
-
-daniF <- function(){ message('dani')
-  message(Sys.time())
-  df_dani <- geocodebr:::geocode_dani_arrow(
-    addresses_table = cad,
-    address_fields = fields_cad,
-    n_cores = 10,
-    full_results = F,
-    progress = T
-  )
-  message(Sys.time())
-  return(2+2)
-  }
-
-
-mb <- microbenchmark::microbenchmark(
-  rafa_drop = rafaF(),
-  dani_drop = daniF(),
-  rafa_keep = rafaT(),
-  dani_keep = daniT(),
-  times  = 5
 )
-mb
+
+
 
 # 1 milhao
 # Unit: seconds
@@ -474,88 +375,9 @@ bm
 #' manter ou dropar matched_address faz boa diferenca de tempo, mas nao de memoria
 #'
 
-n_rounds <- 1
-
-# 517.55
-bm_dani_arrow <- bench::mark(
-  df_dani_arrow = daniF(),
-  check = F,
-  iterations  = n_rounds
-)
-bm_dani_arrow
-
-
-bm_rafa_drop <- bench::mark(
-  rafa_drop = rafaF(),
-  check = F,
-  iterations  = n_rounds
-)
-bm_rafa_drop
 
 
 
-bm_rafa_keep_db <- bench::mark(
-  rafa_keep_db = rafaT_db(),
-  check = F,
-  iterations  = n_rounds
-)
-bm_rafa_keep_db
-
-
-# bm_rafa_keep 28 min
-bm_rafa_keep <- bench::mark(
-  rafa_keep = rafaT(),
-  check = F,
-  iterations  = n_rounds
-)
-bm_rafa_keep
-
-
-
-
-
-time_dani1 <- system.time( df_dani_arrow <- daniT() ) # 22.85667
-time_dani2 <- system.time( df_dani_arrow <- daniT() ) # 30.45833
-time_dani3 <- system.time( df_dani_arrow <- daniT() ) # 40.58983
-time_dani4 <- system.time( df_dani_arrow <- daniT() ) #
-time_dani5 <- system.time( df_dani_arrow <- daniT() ) #
-time_rafa_keep1 <- system.time( rafa_keep <- rafaT() ) # 33.182
-time_rafa_keep2 <- system.time( rafa_keep <- rafaT() ) # 31.47183
-time_rafa_keep3 <- system.time( rafa_keep <- rafaT() ) # 34.2515
-time_rafa_keep4 <- system.time( rafa_keep <- rafaT() ) # 34.2515
-time_rafa_keep5 <- system.time( rafa_keep <- rafaT() ) # 34.2515
-time_rafa_keep_db1 <- system.time( rafa_keep_db <- rafaT_db() )
-time_rafa_keep_db2 <- system.time( rafa_keep_db <- rafaT_db() )
-time_rafa_keep_db3 <- system.time( rafa_keep_db <- rafaT_db() )
-time_rafa_keep_db4 <- system.time( rafa_keep_db <- rafaT_db() )
-time_rafa_keep_db5 <- system.time( rafa_keep_db <- rafaT_db() )
-
-
-time_dani1
-time_dani2
-time_dani3
-time_dani4
-time_dani5
-time_rafa_keep1
-time_rafa_keep2
-time_rafa_keep3
-time_rafa_keep4
-time_rafa_keep5
-time_rafa_keep_db1
-time_rafa_keep_db2
-time_rafa_keep_db3
-time_rafa_keep_db4
-time_rafa_keep_db5
-
-bm <- bench::mark(
-  rafa_drop = rafaF(),
-  dani_drop = daniF(),
-  rafa_keep = rafaT(),
-  dani_keep = daniT(),
-  check = F,
-  iterations  = 1
-)
-bm
 
 # 500 K
 #     expression     min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory     time
@@ -597,25 +419,6 @@ bm
 
 
 
-
-
-
-
-
-
-gc()
-
-bm <- bench::mark(
-  # rafa_keep = rafaT(),
-  # dani_keep = daniT(),
-  rafa_keep_db = rafaT_db(),
-  check = F,
-  iterations  = 5
-)
-bm
-
-
-
 # 1 milhao 66666666666
 #   expression     min  median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory     time
 #   <bch:expr>   <bch>  <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>     <list>
@@ -649,8 +452,46 @@ bm
 
 
 
+# checando empates no cadunico -------------------------------------------------
+
+
+
+data.table::setDT(empate)
+
+empate <- filter(cadgeo, empate==T)
+empate <- empate[order(id)]
+empate[, count := .N, by = id]
+#  View(empate)
+
+table(empate$tipo_resultado) / nrow(empate) * 100
+
+
+
+d <- unique(empate$id)[1]
+
+temp <- empate |>
+  dplyr::filter(id == d ) #
 
 
 
 
+temp <- empate |>
+  dplyr::filter( tipo_resultado=='dn02') #
 
+d <- unique(temp$id)[6]
+
+temp <- temp |>
+  dplyr::filter(id == d ) #
+
+temp$tipo_resultado
+temp$endereco_encontrado
+
+
+mapview::mapview(temp, zcol='endereco_encontrado')
+
+sf::st_distance(temp)
+
+# nao era para ser empate
+5 "da02" "da02"   mesmo rua e cep
+[1] "RUA PAULO SIMOES DA COSTA, 32 (aprox) - JARDIM ANGELA, SAO PAULO - SP, 04929-140"
+[2] "RUA PAULO SIMOES DA COSTA, 32 (aprox) - ALTO DO RIVIERA, SAO PAULO - SP, 04929-140"

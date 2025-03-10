@@ -4,14 +4,19 @@ testthat::skip_on_cran()
 testthat::skip_if_not_installed("arrow")
 
 
-tester <- function(verboso = TRUE, cache = TRUE) {
-  download_cnefe(verboso, cache)
+tester <- function(tabela = "todas", verboso = TRUE, cache = TRUE) {
+  download_cnefe(tabela, verboso, cache)
 }
 
 test_that("errors with incorrect input", {
-  expect_error(tester(1))
-  expect_error(tester(NA))
-  expect_error(tester(c(TRUE, TRUE)))
+  expect_error(tester(tabela = 'banana'))
+  expect_error(tester(tabela = 1))
+  expect_error(tester(tabela = NA))
+  expect_error(tester(tabela = c(TRUE, TRUE)))
+
+  expect_error(tester(verboso = 1))
+  expect_error(tester(verboso = NA))
+  expect_error(tester(verboso = c(TRUE, TRUE)))
 
   expect_error(tester(cache = 1))
   expect_error(tester(cache = NA))
@@ -21,6 +26,10 @@ test_that("errors with incorrect input", {
 test_that("returns the path to the directory where the files were saved", {
   result <- tester()
   expect_identical(result, file.path(listar_pasta_cache()))
+
+  result <- tester(tabela = "municipio_cep")
+  expect_identical(result, file.path(listar_pasta_cache()))
+
 })
 
 test_that("cache usage is controlled by the cache argument", {

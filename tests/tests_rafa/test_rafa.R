@@ -112,7 +112,11 @@ interview_manual(year = 1970)
 
 
 
+# github actions ------------------------
 
+usethis::use_github_action("test-coverage")
+usethis::use_github_action("check-standard")
+usethis::use_github_action("pkgdown")
 
 # Coverage ------------------------
 # usethis::use_coverage()
@@ -129,6 +133,8 @@ t1 <- covr::function_coverage(fun=geocode, test_file("tests/testthat/test-geocod
 t1 <- covr::function_coverage(fun=definir_campos, test_file("tests/testthat/test-definir_campos.R"))
 t1 <- covr::function_coverage(fun=download_cnefe, test_file("tests/testthat/test-download_cnefe.R"))
 t1 <- covr::function_coverage(fun=listar_dados_cache, test_file("tests/testthat/test_cache.R"))
+t1 <- covr::function_coverage(fun=busca_por_cep, test_file("tests/testthat/test-busca_por_cep.R"))
+t1 <- covr::function_coverage(fun=geocodebr_message, test_file("tests/testthat/test-message.R"))
 
 t1
 
@@ -177,7 +183,7 @@ testthat::test_local()
 Sys.setenv(NOT_CRAN = "true")
 devtools::check(pkg = ".",  cran = FALSE, env_vars = c(NOT_CRAN = "true"))
 
-# detecat probla de cpu < 2
+# detecta problema de cpu < 2
 devtools::check(remote = TRUE, manual = TRUE)
 
 devtools::check(remote = TRUE, manual = TRUE, env_vars = c(NOT_CRAN = "false"))

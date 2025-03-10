@@ -31,16 +31,16 @@ obrigatórios. Note que o campo  \code{"localidade"} é equivalente a 'bairro'.}
 adicionais, como o endereço encontrado de referência. Por padrão, é \code{FALSE}.}
 
 \item{resolver_empates}{Lógico. Alguns resultados da geolocalização podem
-indicar diferentes coordenadas possíveis (e.g. duas ruas diferentes com
-o mesmo nome em uma mesma cidade). Esses casos são trados como 'empate'
-e o parâmetro \code{resolver_empates} indica se a função deve resolver esses
-empates automaticamente. Por padrão, é \code{FALSE}, e a função retorna
-apenas o caso mais provável.}
+indicar diferentes coordenadas possíveis (e.g. duas ruas diferentes com o
+mesmo nome em uma mesma cidade). Esses casos são trados como 'empate' e o
+parâmetro \code{resolver_empates} indica se a função deve resolver esses empates
+automaticamente. Por padrão, é \code{FALSE}, e a função retorna apenas o caso
+mais provável. Para mais detalhes sobre como é feito o processo de
+desempate, consulte abaixo a seção "Detalhes".}
 
 \item{resultado_sf}{Lógico. Indica se o resultado deve ser um objeto espacial
 da classe \code{sf}. Por padrão, é \code{FALSE}, e o resultado é um \code{data.frame} com
-as colunas \code{lat} e \code{lon}.
-adicionais, como o endereço encontrado de referência. Por padrão, é \code{FALSE}.}
+as colunas \code{lat} e \code{lon}.}
 
 \item{verboso}{Um valor lógico. Indica se barras de progresso e mensagens
 devem ser exibidas durante o download dos dados do CNEFE e a geocodificação
@@ -66,7 +66,7 @@ de input devem ser passados como um \code{data.frame}, no qual cada coluna
 descreve um campo do endereço (logradouro, número, cep, etc). O resuldos dos
 endereços geolocalizados podem seguir diferentes níveis de precisão. Consulte
 abaixo a seção "Detalhes" para mais informações. As coordenadas de output
-utilizam o sistema de referência geodésico "SIRGAS2000", CRS(4674).
+utilizam o sistema de coordenadas geográficas SIRGAS 2000, EPSG 4674.
 }
 \details{
 Precisão dos resultados:
@@ -83,6 +83,32 @@ Os resultados do \strong{{geocodebr}} são classificados em seis amplas categori
 
 Cada nível de precisão pode ser desagregado em tipos de correspondência mais
 refinados.
+
+Lidando com casos de empate:
+
+No processo de geolocalização de dados, é possível que para alguns endereços
+de input sejam encontrados diferentes coordenadas possíveis (e.g. duas ruas
+diferentes com o mesmo nome, mas em bairros distintos em uma mesma cidade).
+Esses casos são trados como empate'. Quando a função \code{geocode()} recebe o
+o parâmetro \code{resolver_empates = TRUE}, os casos de empate são resolvidos
+automaticamente pela função. A solução destes empates é feita da seguinte
+maneira:
+\enumerate{
+\item Quando se encontra diferente coordenadas possíveis para um endereço de
+input, nós assumimos que essas coordendas pertencem provavelmente a endereços
+diferentes se (a) estas coordenadas estão a mais de 1Km entre si, ou (b) estão
+associadas a um logradouro 'ambíguo', i.e. que costumam se repetir em muitos
+bairros (e.g. "RUA A", "RUA QUATRO", "RUA 10", etc). Nestes casos, a solução
+de desempate é retornar o ponto com maior número de estabelecimentos no CNEFE,
+valor indicado na coluna \code{"contagem_cnefe"}.
+\item Quando as coordenadas possivelmente associadas a um endereço estão a menos
+de 1Km entre si e não se trata de um logradouro 'ambíguo', nós assumimos que
+os pontos pertencem provavelmente ao mesmo logradouro (e.g. diferentes CEPs
+ao longo de uma mesma rua). Nestes casos, a solução de desempate é retornar
+um ponto que resulta da média das coordenadas dos pontos possíveis ponderada
+pelo valor de \code{"contagem_cnefe"}. Nesse caso, a coluna de output
+\code{"endereco_encontrado"} recebe valor do ponto com maior \code{"contagem_cnefe"}.
+}
 }
 \section{Tipos de resultados}{
 A coluna \code{tipo_resultado} fornece informações mais detalhadas sobre como

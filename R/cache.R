@@ -1,3 +1,19 @@
+data_release <- "v0.2.0"
+
+listar_pasta_cache_padrao <- function() {
+  fs::path(
+    tools::R_user_dir("geocodebr", which = "cache"),
+    glue::glue("data_release_{data_release}")
+  )
+}
+
+listar_arquivo_config <- function() {
+  fs::path(
+    tools::R_user_dir("geocodebr", which = "config"),
+    "cache_dir"
+  )
+}
+
 #' Define um diretório de cache para o geocodebr
 #'
 #' Define um diretório de cache para os dados do geocodebr. Essa configuração
@@ -20,7 +36,7 @@ definir_pasta_cache <- function(path) {
   checkmate::assert_string(path, null.ok = TRUE)
 
   if (is.null(path)) {
-    cache_dir <- default_cache_dir
+    cache_dir <- listar_pasta_cache_padrao()
   } else {
     cache_dir <- fs::path_norm(path)
   }
@@ -30,14 +46,16 @@ definir_pasta_cache <- function(path) {
     class = "geocodebr_cache_dir"
   )
 
-  if (!fs::file_exists(cache_config_file)) {
-    fs::dir_create(fs::path_dir(cache_config_file))
-    fs::file_create(cache_config_file)
+  arquivo_config <- listar_arquivo_config()
+
+  if (!fs::file_exists(arquivo_config)) {
+    fs::dir_create(fs::path_dir(arquivo_config))
+    fs::file_create(arquivo_config)
   }
 
   cache_dir <- as.character(cache_dir)
 
-  writeLines(cache_dir, con = cache_config_file)
+  writeLines(cache_dir, con = arquivo_config)
 
   return(invisible(cache_dir))
 }
@@ -58,11 +76,13 @@ definir_pasta_cache <- function(path) {
 #'
 #' @export
 listar_pasta_cache <- function() {
-  if (fs::file_exists(cache_config_file)) {
-    cache_dir <- readLines(cache_config_file)
+  arquivo_config <- listar_arquivo_config()
+
+  if (fs::file_exists(arquivo_config)) {
+    cache_dir <- readLines(arquivo_config)
     cache_dir <- fs::path_norm(cache_dir)
   } else {
-    cache_dir <- default_cache_dir
+    cache_dir <- listar_pasta_cache_padrao()
   }
 
   cache_dir <- as.character(cache_dir)

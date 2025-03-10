@@ -422,3 +422,36 @@ sf::st_crs(cidade_case_sf) <- 4674
 mapview::mapview(cidade_case_sf, zcol='num_adress')
 
 
+
+
+
+
+Existem 6 endereços de Avenida Brasil, número 7 no RJ. A MESMA AVENIDA!
+cada um com cep diferente.
+
+
+# cep estranho no rio de janeiro -----------------------------------------------
+
+tudo <- geocodebr::listar_dados_cache()
+tudo <- tudo[7]
+
+dt <- arrow::open_dataset( tudo ) |>
+  dplyr::filter(estado == 'RJ') |>
+  dplyr::filter(municipio == "RIO DE JANEIRO") |>
+  dplyr::filter(cep %in% c( "22440-035")) |>
+  # dplyr::filter(cep %in% c("22620-110", "20521-470")) |>
+  # dplyr::filter(localidade %in% c("LEBLON")) |>
+  dplyr::collect()
+
+
+dt_sf <- sfheaders::sf_point(
+  obj = dt,
+  x = 'lon',
+  y = 'lat',
+  keep = TRUE
+)
+
+sf::st_crs(dt_sf) <- 4674
+
+mapview::mapview(dt_sf, zcol='cep')
+
