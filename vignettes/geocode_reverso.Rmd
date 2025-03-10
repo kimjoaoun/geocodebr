@@ -28,7 +28,6 @@ A função `geocode_reverso()` permite fazer geolocalização reversa, isto é, 
 
 A função recebe como *input* um objeto espacial `sf` com geometria do tipo `POINT`. O resultado é um *data frame* com o endereço encontrado mais próximo de cada ponto de *input*, onde a coluna `"distancia_metros"` indica a distância entre coordenadas originais e os endereços encontrados.
 
-Por padrão, a função busca pelo endereço mais próximo num raio aproximado de 1000 metros. No entanto,  o usuário pode ajustar esse valor usando o parâmetro `dist_max` para definir a distância máxima (em metros) de busca.
 
 ```{r, eval=TRUE}
 library(geocodebr)
@@ -52,4 +51,12 @@ df_enderecos <- geocodebr::geocode_reverso(
 head(df_enderecos)
 ```
 
-Obs. Se um ponto de *input* não tiver um endereço correspondente dentro do raio de busca, o ponto nao é incluído no *output* da função.
+Por padrão, a função busca pelo endereço mais próximo num raio aproximado de 1000 metros. No entanto,  o usuário pode ajustar esse valor usando o parâmetro `dist_max` para definir a distância máxima (em metros) de busca. Se um ponto de *input* não tiver nenhum endereço próximo dentro do raio de busca, o ponto não é incluído no *output*.
+
+**Nota:** A função `geocode_reverso()` requer que os dados do CNEFE estejam armazenados
+localmente. A primeita vez que a função é executada, ela baixa os dados do CNEFE 
+e salva em um cache local na sua máquina. No total, esses dados somam cerca de 
+3 GB, o que pode fazer com que a primeira execução da função demore. Esses dados, 
+no entanto, são salvos de forma  persistente, logo eles são baixados uma única vez. Mais informações sobre o cache de dados [aqui](https://ipeagit.github.io/geocodebr/articles/geocodebr.html#cache-de-dados).
+
+
