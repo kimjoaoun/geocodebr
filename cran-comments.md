@@ -1,15 +1,8 @@
 ## R CMD check results
 
-── R CMD check results ────────────────────────────────────────────────────────────────────────────────────────────────── geocodebr 0.1.1 ────
-Duration: 1m 32.3s
+── R CMD check results ─────────────────────────────────────── geocodebr 0.1.19999 ────
+Duration: 5m 31.5s
 
-❯ checking CRAN incoming feasibility ... [52s] NOTE
-  Maintainer: 'Rafael H. M. Pereira <rafa.pereira.br@gmail.com>'
-  
-  Days since last update: 5
-
-0 errors ✔ | 0 warnings ✔ | 1 note ✖
+0 errors ✔ | 0 warnings ✔ | 0 notes ✔
 
 
-* Bug fix.
-- Fixes serious bug with data caching

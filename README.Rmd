@@ -64,6 +64,7 @@ Uma que você possui uma tabela de dados (`data.frame`) com endereços no Brasil
 
 ```{r, eval=TRUE}
 library(geocodebr)
+library(sf)
 
 # carregando uma amostra de dados
 input_df <- read.csv(system.file("extdata/small_sample.csv", package = "geocodebr"))

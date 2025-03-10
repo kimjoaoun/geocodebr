@@ -41,7 +41,7 @@ download_cnefe <- function(tabela = "todas", verboso = TRUE, cache = TRUE) {
   if (tabela != "todas") {
 
     if (!any(all_files %like% tabela)){
-      cli::cli_abort("A 'tabela' deve ser uma das seguintes opções: {all_files_basename}")
+      cli::cli_abort("A 'tabela' deve ser uma das seguintes op\u00e7\u00f5es: {all_files_basename}")
       }
 
     all_files <- all_files_basename[all_files_basename == tabela]
