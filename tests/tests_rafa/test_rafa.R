@@ -134,6 +134,7 @@ t1 <- covr::function_coverage(fun=definir_campos, test_file("tests/testthat/test
 t1 <- covr::function_coverage(fun=download_cnefe, test_file("tests/testthat/test-download_cnefe.R"))
 t1 <- covr::function_coverage(fun=listar_dados_cache, test_file("tests/testthat/test_cache.R"))
 t1 <- covr::function_coverage(fun=busca_por_cep, test_file("tests/testthat/test-busca_por_cep.R"))
+t1 <- covr::function_coverage(fun=geocodebr_message, test_file("tests/testthat/test-message.R"))
 
 t1
 

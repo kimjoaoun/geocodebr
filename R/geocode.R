@@ -130,6 +130,7 @@ geocode <- function(enderecos,
 
   # downloading cnefe
   cnefe_dir <- download_cnefe(
+    tabela = 'todas',
     verboso = verboso,
     cache = cache
   )

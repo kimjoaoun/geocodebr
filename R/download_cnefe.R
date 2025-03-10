@@ -4,6 +4,7 @@
 #' Nacional de Endereços para Fins Estatísticos) que foi criada para o uso deste
 #' pacote.
 #'
+#' @param tabela Nome da tabela para ser baixada. Por padrão, baixa `"todas"`.
 #' @template verboso
 #' @template cache
 #'
@@ -13,9 +14,7 @@
 #' download_cnefe(verboso = FALSE)
 #'
 #' @export
-download_cnefe <- function(verboso = TRUE, cache = TRUE) {
-  checkmate::assert_logical(verboso, any.missing = FALSE, len = 1)
-  checkmate::assert_logical(cache, any.missing = FALSE, len = 1)
+download_cnefe <- function(tabela = "todas", verboso = TRUE, cache = TRUE) {
 
   all_files <- c(
     "municipio_logradouro_numero_localidade.parquet",  # 4 largest files       ok 3
@@ -31,6 +30,24 @@ download_cnefe <- function(verboso = TRUE, cache = TRUE) {
     # "municipio_logradouro_numero.parquet", # 4 largest files
     "municipio_logradouro_localidade.parquet"                               #  ok 3
   )
+  all_files_basename <- fs::path_ext_remove(all_files)
+
+
+  # check input
+  checkmate::assert_logical(verboso, any.missing = FALSE, len = 1)
+  checkmate::assert_logical(cache, any.missing = FALSE, len = 1)
+
+  # seleciona tabela
+  if (tabela != "todas") {
+
+    if (!any(all_files %like% tabela)){
+      cli::cli_abort("A 'tabela' deve ser uma das seguintes opções: {all_files_basename}")
+      }
+
+    all_files <- all_files_basename[all_files_basename == tabela]
+    all_files <- paste0(all_files, ".parquet")
+  }
+
 
   data_urls <- glue::glue(
     "https://github.com/ipeaGIT/padronizacao_cnefe/releases/",

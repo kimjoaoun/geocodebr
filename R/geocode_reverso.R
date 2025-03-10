@@ -111,6 +111,7 @@ geocode_reverso <- function(pontos,
 
   # downloading cnefe
   cnefe_dir <- download_cnefe(
+    tabela = 'municipio_logradouro_numero_cep_localidade',
     verboso = verboso,
     cache = cache
   )

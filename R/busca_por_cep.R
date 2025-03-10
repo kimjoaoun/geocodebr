@@ -50,6 +50,7 @@ busca_por_cep <- function(cep,
 
   # downloading cnefe
   cnefe_dir <- download_cnefe(
+    tabela = 'municipio_logradouro_cep_localidade',
     verboso = verboso,
     cache = cache
   )

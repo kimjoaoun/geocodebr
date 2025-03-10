@@ -4,9 +4,11 @@
 \alias{download_cnefe}
 \title{Faz download dos dados do CNEFE}
 \usage{
-download_cnefe(verboso = TRUE, cache = TRUE)
+download_cnefe(tabela = "todas", verboso = TRUE, cache = TRUE)
 }
 \arguments{
+\item{tabela}{Nome da tabela para ser baixada. Por padrão, baixa \code{"todas"}.}
+
 \item{verboso}{Um valor lógico. Indica se barras de progresso e mensagens
 devem ser exibidas durante o download dos dados do CNEFE e a geocodificação
 dos endereços. O padrão é \code{TRUE}.}
