@@ -4,6 +4,7 @@
 #'
 #' @importFrom dplyr mutate select across case_when all_of
 #' @importFrom data.table := .I .SD %chin% .GRP .N %like%
+#' @importFrom stats weighted.mean
 #'
 #' @keywords internal
 "_PACKAGE"
@@ -16,7 +17,10 @@ utils::globalVariables(
 
     # due to reverse geocoding draft
     "cep", "lat_cnefe", "localidade", "lon_cnefe", "distancia_metros", "logradouro",
-    "numero", "xmax", "xmin", "ymax", "ymin"
+    "numero", "xmax", "xmin", "ymax", "ymin",
+
+    # due to empates
+    "endereco_encontrado", "logradouro_encontrado"
   )
 )
 

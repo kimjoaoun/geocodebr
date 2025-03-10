@@ -54,9 +54,9 @@ trata_empates_geocode <- function(output_df = parent.frame()$output_df,
   if (isFALSE(resolver_empates)) {
 
     cli::cli_warn(
-      "Foram encontrados {n_casos_empate} casos de empate. Estes casos foram marcados com valor igual `TRUE` na coluna 'empate',
+      "Foram encontrados {n_casos_empate} casos de empate. Estes casos foram marcados com valor `TRUE` na coluna 'empate',
        e podem ser inspecionados na coluna 'endereco_encontrado'. Alternativamente, use `resolver_empates = TRUE` para que o pacote
-       lide com os empates automaticamente (ver documenta\u00e7\u00e3o da fun\u00e7\u00e3o)."
+       lide com os empates automaticamente. Ver documenta\u00e7\u00e3o da fun\u00e7\u00e3o."
     )
   }
 
@@ -70,7 +70,7 @@ trata_empates_geocode <- function(output_df = parent.frame()$output_df,
   #    solucao: agrega casos provaveis de serem na mesma rua com media ponderada
   #    das coordenadas, mas retorna  endereco_encontrado do caso com maior
   #    contagem_cnefe
-  # questao documnetada no issue #37
+  # questao documnetada no issue 37
 
   if (isTRUE(resolver_empates)) {
 
@@ -140,7 +140,7 @@ trata_empates_geocode <- function(output_df = parent.frame()$output_df,
     ]
 
     # ainda dah pra salvar enderecos com datas (e.g. 'RUA 15 DE NOVEMBRO')
-    meses_pattern <- "\\b\\DE (JANEIRO|FEVEREIRO|MARÇO|ABRIL|MAIO|JUNHO|JULHO|AGOSTO|SETEMBRO|OUTUBRO|NOVEMBRO|DEZEMBRO)\\b"
+    meses_pattern <- "\\b\\DE (JANEIRO|FEVEREIRO|MAR\u00c7O|ABRIL|MAIO|JUNHO|JULHO|AGOSTO|SETEMBRO|OUTUBRO|NOVEMBRO|DEZEMBRO)\\b"
     empates_perdidos <- empates_perdidos[ ! grepl(meses_pattern, logradouro_encontrado) ]
 
     # selecting the row with max 'contagem_cnefe'
