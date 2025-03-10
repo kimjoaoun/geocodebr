@@ -51,6 +51,11 @@ geocode_reverso <- function(pontos,
   checkmate::assert_logical(cache)
   checkmate::assert_number(n_cores)
 
+  # check if geometry type is POINT
+  if (any(sf::st_geometry_type(pontos) != 'POINT')) {
+    cli::cli_abort("Input precisa ser um sf data frame com geometria do tipo POINT.")
+  }
+
   epsg <- sf::st_crs(pontos)$epsg
   if (epsg != 4674) {
     cli::cli_abort("Dados de input precisam estar com sistema de coordenadas geogr\u00e1ficas SIRGAS 2000, EPSG 4674.")
@@ -106,6 +111,7 @@ geocode_reverso <- function(pontos,
 
   # downloading cnefe
   cnefe_dir <- download_cnefe(
+    tabela = 'municipio_logradouro_numero_cep_localidade',
     verboso = verboso,
     cache = cache
   )
@@ -165,7 +171,7 @@ geocode_reverso <- function(pontos,
       FROM
         input_table_db, filtered_cnefe
       WHERE
-        input_table_db.lat_min <  filtered_cnefe.lat
+        input_table_db.lat_min < filtered_cnefe.lat
         AND input_table_db.lat_max > filtered_cnefe.lat
         AND input_table_db.lon_min < filtered_cnefe.lon
         AND input_table_db.lon_max > filtered_cnefe.lon;"
@@ -182,6 +188,10 @@ geocode_reverso <- function(pontos,
   # find the closest point
   output[, distancia_metros := dt_haversine(lat,lon , lat_cnefe, lon_cnefe)]
   output <- output[output[, .I[distancia_metros == min(distancia_metros)], by = tempidgeocodebr]$V1]
+
+  # sort data
+  output <- output[order(tempidgeocodebr)]
+  output[, tempidgeocodebr := NULL]
 
   duckdb::duckdb_unregister_arrow(con, "filtered_cnefe")
   duckdb::dbDisconnect(con)

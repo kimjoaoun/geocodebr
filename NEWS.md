@@ -1,7 +1,16 @@
-# geocodebr 0.2.099999 DEV
+# geocodebr 0.1.19999 DEV
+
+## Novas funcionalidades
 
 - Nova função `buscapor_cep()`
 - Nova função `geocode_reverso()`
+- A função `download_cnefe()` agora aceita o argumento `tabela` para baixar tabelas específicas.
+
+## Notas
+
+- Nova vignette sobre a função `geocode_reverso()`
+- Vignette sobre a função `geocode()` reorganizada
+
 
 
 # geocodebr 0.1.1

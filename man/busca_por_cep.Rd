@@ -35,7 +35,7 @@ coordenadas de output utilizam o sistema de coordenadas geográficas SIRGAS
 \dontshow{if (identical(tolower(Sys.getenv("NOT_CRAN")), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 library(geocodebr)
 
-# ler amostra de CEPs
+# amostra de CEPs
 ceps <- c("70390-025", "20071-001", "99999-999")
 
 df <- geocodebr::busca_por_cep(

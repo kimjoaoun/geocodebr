@@ -24,7 +24,8 @@ coverage](https://codecov.io/gh/ipeaGIT/geocodebr/branch/main/graph/badge.svg)](
 [![Lifecycle:
 experimental](https://lifecycle.r-lib.org/articles/figures/lifecycle-experimental.svg)](https://lifecycle.r-lib.org/articles/stages.html) 
 
-O **{geocodebr}** é um pacote computacional para geolicalização de endereços Brasileiros. O pacote oferece uma maneira simples e eficiente de geolocalizar endereços para encontrar suas coordenadas geográficas. O pacote é baseado em conjuntos de dados espaciais abertos de endereços brasileiros, utilizando principalmente o Cadastro Nacional de Endereços para Fins Estatísticos (CNEFE). O CNEFE é 
+O **{geocodebr}** é um pacote computacional para geolicalização de endereços Brasileiros. O pacote oferece uma maneira simples e eficiente de geolocalizar 
+dados sem limite de número de consultas. O pacote é baseado em conjuntos de dados espaciais abertos de endereços brasileiros, utilizando como fonte principal o Cadastro Nacional de Endereços para Fins Estatísticos (CNEFE). O CNEFE é 
 [publicado](https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html) pelo Instituto Brasileiro de Geografia e Estatística (IBGE). Atualmente, o pacote está disponível apenas em R.
 
 
@@ -45,17 +46,25 @@ remotes::install_github("ipeaGIT/geocodebr")
 
 ## Utilização
 
-### Geolocalização: de endereços para coordenadas espaciais
+O {geocodebr} possui três funções principais para geolocalização de dados:
 
-Uma que você possui uma tabela de dados (`data.frame`) com endereços no Brasil, a geolocalização desses dados com **{geocodebr}** pode ser feita em apenas dois passos:
+1. `geocode()`
+2. `geocode_reverso()`
+3. `busca_por_cep()`
+
+
+### 1. Geolocalização: de endereços para coordenadas espaciais
+
+Uma que você possui uma tabela de dados (`data.frame`) com endereços no Brasil, a geolocalização desses dados pode ser feita em apenas dois passos:
 
 1. O primeiro passo é usar a função `definir_campos()` para indicar os nomes das colunas no seu `data.frame` que correspondem a cada campo dos endereços.
 
 2. O segundo passo é usar a função `geocode()` para encontrar as coordenadas geográficas dos endereços de input.
 
 
-```{r, eval=FALSE}
+```{r, eval=TRUE}
 library(geocodebr)
+library(sf)
 
 # carregando uma amostra de dados
 input_df <- read.csv(system.file("extdata/small_sample.csv", package = "geocodebr"))
@@ -84,18 +93,46 @@ df <- geocodebr::geocode(
 
 ```
 
-Cabe também destacar aqui outros dois argumentos da função `geocode()`:
-
-- `resolver_empates`: serve para indicar se o usuário quer que a função resolva automaticamente casos de empate, i.e. casos que o endereço de input do usuário pode se referir a diferentes localidades na cidade (e.g. logradouros diferentes com mesmo nome mas em bairros distintos)
-- `resultado_sf`: quando `TRUE`, o output é retornado como um objeto espacial de classe `sf` simple feature.
+Os resultados do **{geocodebr}** são classificados em seis categorias gerais de `precisao`, dependendo do nível de exatidão com que cada endereço de input foi encontrado nos dados do CNEFE. Para mais informações, consulte a documentação da função ou a [**vignette "geocode"**](https://ipeagit.github.io/geocodebr/articles/geocode.html).
 
 
+### 2. Geolocalização reversa: de coordenadas espaciais para endereços
 
-Os resultados do **{geocodebr}** são classificados em seis categorias gerais de `precisao`, dependendo do nível de exatidão com que cada endereço de input foi encontrado nos dados do CNEFE. Para mais informações, consulte a documentação da função ou a **vignette de geocode**.
+A função `geocode_reverso()`, por sua vez, permite a geolocalização reversa, ou seja, a busca de endereços próximos a um conjunto de coordenadas geográficas. A função pode ser útil, por exemplo, para identificar endereços próximos a pontos de interesse, como escolas, hospitais, ou locais de acidentes.
 
+Mais detalhes na [**vignette "geocode"**](https://ipeagit.github.io/geocodebr/articles/geocode_reverso.html).
 
+```{r, eval=TRUE}
+# amostra de pontos espaciais
+pontos <- readRDS(
+   system.file("extdata/pontos.rds", package = "geocodebr")
+   )
 
+pontos <- pontos[1:20,]
 
+# geocode reverso
+df_enderecos <- geocodebr::geocode_reverso(
+ pontos = pontos,
+ dist_max = 1000,
+ verboso = FALSE,
+ n_cores = 1
+ )
+
+```
+### 3. Busca por CEPs
+
+Por fim, a função `busca_por_cep()` permite fazer consultas de CEPs para encontrar endereços associados a cada CEP e suas coordenadas espaciais.
+
+```{r, eval=TRUE}
+# amostra de CEPs
+ceps <- c("70390-025", "20071-001")
+
+df_ceps <- geocodebr::busca_por_cep(
+ cep = ceps,
+ resultado_sf = FALSE,
+ verboso = FALSE
+ )
+```
 
 
 ## Projetos relacionados
