@@ -6,6 +6,11 @@
 - Nova função `geocode_reverso()`
 - A função `download_cnefe()` agora aceita o argumento `tabela` para baixar tabelas específicas.
 
+## Correção de bugs
+
+- Resolve bug que decaracterizava colunas de classe `integer64` na tabela de input de endereços. [Encerra issue #40](https://github.com/ipeaGIT/geocodebr/issues/40).
+
+
 ## Notas
 
 - Nova vignette sobre a função `geocode_reverso()`
