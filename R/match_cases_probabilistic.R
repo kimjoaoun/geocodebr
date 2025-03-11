@@ -1,11 +1,29 @@
-match_cases_probabilistic <- function( # nocov start
+# (A) como eh hj
+# 1st step: match
+#  - faz match de todas ruas e traz todos seus numeros
+#  - calcula distancia de string para cada logra+numero e fica com um par
+# 2nd step: aggregate
+#  - agrega
+#
+#
+# (B) como poderia ser
+# 1st step: match
+#  - faz match de todas ruas unicas, mas sem numero
+#  - calcula distancia de string para cada logra unico e fica com um par
+#  - cria uma tab intermediaria que tem a coluna de logradouro deterministico
+# 2nd step: faz match deterministico para trazer numeros
+# 3rd step: aggregate
+#  - agrega
+
+
+match_cases_probabilistic <- function(
     con = con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe',
     output_tb = "output_db",
     key_cols = key_cols,
     match_type = match_type,
-    resultado_completo){
+    resultado_completo){ # nocov start
 
   # get corresponding parquet table
   table_name <- get_reference_table(key_cols, match_type)
@@ -69,6 +87,8 @@ match_cases_probabilistic <- function( # nocov start
 
   # min cutoff for string match
   min_cutoff <- get_prob_match_cutoff(match_type)
+
+
 
   # 1st step: match  --------------------------------------------------------
 

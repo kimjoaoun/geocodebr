@@ -133,8 +133,7 @@ endereço utilizados no cálculo das coordenadas de cada endereço de entrada. C
 categoria é nomeada a partir de um código de quatro caracteres:
 \itemize{
 \item o primeiro caracter, sempre \code{d} ou \code{p}, determina se a correspondência foi
-feita de forma determinística (\code{d}) ou probabilística (\code{p}) - a segunda opção
-ainda não foi implementada no pacote, mas é planejada em versões futuras;
+feita de forma determinística (\code{d}) ou probabilística (\code{p});
 \item o segundo faz menção à categoria de \code{precisao} na qual o resultado foi
 classificado (\code{n} para \code{"numero"}, \code{a} para \code{"numero_aproximado"}, \code{r} para
 \code{"logradouro"}, \code{c} para \code{"cep"}, \code{b} para \code{"localidade"} e \code{m} para \code{"municipio"});

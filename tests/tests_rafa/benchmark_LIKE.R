@@ -113,6 +113,8 @@ bench::system_time(
     resolver_empates = T
   )
 )
+# VERSAO prob atual: 1.2m
+
 
 empates <- subset(dfgeo, empate==T)
 a <- table(empates$id) |> as.data.frame()

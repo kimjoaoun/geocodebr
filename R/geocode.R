@@ -124,8 +124,12 @@ geocode <- function(enderecos,
   }
 
   # create temp id
-  input_padrao[, tempidgeocodebr := 1:nrow(input_padrao) ]
   data.table::setDT(enderecos)[, tempidgeocodebr := 1:nrow(input_padrao) ]
+  input_padrao[, tempidgeocodebr := 1:nrow(input_padrao) ]
+
+  # temp coluna de logradouro q sera usada no match probabilistico
+  input_padrao[, temp_lograd_determ := NA_character_ ]
+  input_padrao[, similaridade_logradouro := NA_real_ ]
 
   # # sort input data
   # input_padrao <- input_padrao[order(estado, municipio, logradouro, numero, cep, localidade)]
@@ -164,7 +168,7 @@ geocode <- function(enderecos,
      endereco_encontrado VARCHAR,
      logradouro_encontrado VARCHAR,
      tipo_resultado VARCHAR,
-    contagem_cnefe INTEGER {additional_cols});"
+     contagem_cnefe INTEGER {additional_cols});"
     )
 
   DBI::dbExecute(con, query_create_empty_output_db)
