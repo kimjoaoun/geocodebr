@@ -113,6 +113,8 @@ bench::system_time(
     resolver_empates = T
   )
 )
+# VERSAO prob atual: 1.2m
+
 
 empates <- subset(dfgeo, empate==T)
 a <- table(empates$id) |> as.data.frame()
@@ -135,46 +137,12 @@ round(table(dfgeo2$precisao) / nrow(dfgeo2) *100, 1)
 # com   2.5               0.3              14.8               0.6              45.8              36.0
 # sem  31.4               2.3               7.2               0.6              33.3              26.2
 
-temp <- left_join( select(dfgeo2, id, tipo_resultado), select(dfgeo, id, tipo_resultado), by = 'id'  )
+temp <- left_join( select(dfgeo, id, tipo_resultado), select(dfgeo2, id, tipo_resultado), by = 'id'  )
 t <- table(temp$tipo_resultado.x, temp$tipo_resultado.y) |> as.data.frame()
+t <- filter(t, Freq>0)
+View(t)
 
 
-setDT(dfgeo)
-dfgeo[, empate := ifelse(.N>1,1,0), by = id]
-a <- dfgeo[empate==1]
-table(a$precisao)
-
-
-
-dt.haversine <- function(lat_from, lon_from, lat_to, lon_to, r = 6378137){
-  radians <- pi/180
-  lat_to <- lat_to * radians
-  lat_from <- lat_from * radians
-  lon_to <- lon_to * radians
-  lon_from <- lon_from * radians
-  dLat <- (lat_to - lat_from)
-  dLon <- (lon_to - lon_from)
-  a <- (sin(dLat/2)^2) + (cos(lat_from) * cos(lat_to)) * (sin(dLon/2)^2)
-  return(2 * atan2(sqrt(a), sqrt(1 - a)) * r)
-}
-a <- a[order(id)]
-
-a[, dist := round(dt.haversine(lat, lon, shift(lat), shift(lon))), by=id]
-a[, dist := fifelse(is.na(dist), 0, dist)]
-
-unique(a$id) |> length()
-# 132 casos olhand para niveis 2, 3, e 4
-
-summary(a$dist)
-
-# dist menor do q 100 metros, fica com 1o
-#
-a2 <- filter(a, dist == 0 | dist > 100)
-
-library(profvis)
-profvis({
-  rafaT()
-})
 
 
 
@@ -295,31 +263,3 @@ unique(df_rafa$match_type) |> length()
 table(df_rafa$match_type)
 
 
-  # en01: logradouro, numero, cep e bairro
-  # en02: logradouro, numero e cep
-  # en03: logradouro, numero e bairro
-  # en04: logradouro e numero
-      # pn01: logradouro, numero, cep e bairro
-      # pn02: logradouro, numero e cep
-      # pn03: logradouro, numero e bairro
-      # pn04: logradouro e numero
-  # ei01: logradouro, numero, cep e bairro
-  # ei02: logradouro, numero e cep
-  # ei03: logradouro, numero e bairro
-  # ei04: logradouro e numero
-        # pi01: logradouro, numero, cep e bairro
-        # pi02: logradouro, numero e cep
-        # pi03: logradouro, numero e bairro
-        # pi04: logradouro e numero
-  # er01: logradouro, cep e bairro
-  # er02: logradouro e cep
-  # er03: logradouro e bairro
-  # er04: logradouro
-      # pr01: logradouro, cep e bairro
-      # pr02: logradouro e cep
-      # pr03: logradouro e bairro
-      # pr04: logradouro
-  # ec01: municipio, cep, localidade
-  # ec02: municipio, cep
-  # eb01: municipio, localidade
-  # em01: municipio

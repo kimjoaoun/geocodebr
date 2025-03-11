@@ -147,8 +147,7 @@ endereço utilizados no cálculo das coordenadas de cada endereço de entrada. C
 categoria é nomeada a partir de um código de quatro caracteres:
 
 - o primeiro, sempre `d` ou `p`, determina se a correspondência foi feita de
-forma determinística (`d`) ou probabilística (`p`) - a segunda opção ainda não
-foi implementada no pacote, mas é planejada em versões futuras;
+forma determinística (`d`) ou probabilística (`p`);
 - o segundo faz menção à categoria de `precisao` na qual o resultado foi
 classificado (`n` para `"numero"`, `a` para `"numero_aproximado"`, `l` para
 `"logradouro"`, `c` para `"cep"`, `b` para `"localidade"` e `m` para
@@ -201,6 +200,3 @@ As categorias de `tipo_resultado` são listadas abaixo, junto às categorias de
   - `dm01` - municipio
 
 Endereços não encontrados são retornados com latitude, longitude, precisão e tipo de resultado `NA`.
-
-
-***Nota:*** As categorias de `tipo_resultado` que começam com 'p' utilizam correspondência probabilística do campo logradouro, enquanto os tipos que começam com 'e' utilizam apenas correspondência determinística. **As categorias de `tipo_resultado` que usam correspondência probabilística ainda não estão implementados no pacote geocodebr**.

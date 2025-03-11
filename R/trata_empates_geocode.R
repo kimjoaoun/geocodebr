@@ -1,5 +1,5 @@
 # calculate distances between pairs of coodinates
-dt_haversine <- function(lat_from, lon_from, lat_to, lon_to, r = 6378137){
+dt_haversine <- function(lat_from, lon_from, lat_to, lon_to, r = 6378137){ # nocov start
   radians <- pi/180
   lat_to <- lat_to * radians
   lat_from <- lat_from * radians
@@ -10,12 +10,12 @@ dt_haversine <- function(lat_from, lon_from, lat_to, lon_to, r = 6378137){
   a <- (sin(dLat/2)^2) + (cos(lat_from) * cos(lat_to)) * (sin(dLon/2)^2)
   dist <- 2 * atan2(sqrt(a), sqrt(1 - a)) * r
   return(dist)
-}
+} # nocov end
 
 
 trata_empates_geocode <- function(output_df = parent.frame()$output_df,
                                   resolver_empates = parent.frame()$resolver_empates,
-                                  verboso = parent.frame()$verboso) {
+                                  verboso = parent.frame()$verboso) { # nocov start
 
   # encontra casos de empate
   data.table::setDT(output_df)[, empate := ifelse(.N > 1, TRUE, FALSE), by = tempidgeocodebr]
@@ -186,8 +186,11 @@ trata_empates_geocode <- function(output_df = parent.frame()$output_df,
   # drop geocodebr dist columns
   output_df2[, dist_geocodebr := NULL]
 
+  # reorder columns
+  output_df2 <- output_df2[order(tempidgeocodebr)]
+
   return(output_df2)
-}
+} # nocov end
 
 
 
@@ -214,7 +217,3 @@ trata_empates_geocode <- function(output_df = parent.frame()$output_df,
 # mapview::mapview(a, zcol='cep')
 #
 # sf::st_distance(a)
-
-
-
-

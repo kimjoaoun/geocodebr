@@ -41,14 +41,14 @@ test_that("expected output", {
 
   # find expected match cases
   match_types_found <- unique(std_output$tipo_resultado)
-  testthat::expect_true(length(match_types_found) == 16)
+  testthat::expect_true(length(match_types_found) == 17)
 
   # full results
   testthat::expect_warning(full_output <- tester(resultado_completo = TRUE))
   testthat::expect_true('endereco_encontrado' %in% names(full_output))
 
   # output in sf format
-  testthat::expect_warning(sf_output <- tester(resultado_sf = T))
+  testthat::expect_warning(sf_output <- tester(resultado_sf = TRUE))
   testthat::expect_true(is(sf_output , 'sf'))
 })
 
@@ -62,6 +62,9 @@ test_that("test empates", {
   # resolvendo empates
   testthat::expect_message( std_output <- tester(verboso = TRUE, resolver_empates = TRUE) )
   testthat::expect_true(nrow(std_output) == nrow(input_df))
+
+  # output ordenado como input
+  testthat::expect_true( all(std_output$id == 1:nrow(input_df)) )
 
 })
 

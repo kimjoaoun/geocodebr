@@ -36,8 +36,7 @@
 #' categoria é nomeada a partir de um código de quatro caracteres:
 #'
 #' - o primeiro caracter, sempre `d` ou `p`, determina se a correspondência foi
-#' feita de forma determinística (`d`) ou probabilística (`p`) - a segunda opção
-#' ainda não foi implementada no pacote, mas é planejada em versões futuras;
+#' feita de forma determinística (`d`) ou probabilística (`p`);
 #' - o segundo faz menção à categoria de `precisao` na qual o resultado foi
 #' classificado (`n` para `"numero"`, `a` para `"numero_aproximado"`, `r` para
 #' `"logradouro"`, `c` para `"cep"`, `b` para `"localidade"` e `m` para `"municipio"`);
