@@ -132,7 +132,8 @@ merge_results <- function(con,
                           resultado_completo){
 
 
-  select_columns_y <- c('lat', 'lon', 'tipo_resultado', 'precisao', 'endereco_encontrado', 'contagem_cnefe')
+  select_columns_y <- c('lat', 'lon', 'tipo_resultado', 'precisao',
+                        'endereco_encontrado', 'logradouro_encontrado', 'contagem_cnefe')
 
   if (isTRUE(resultado_completo)) {
   select_columns_y <- c(select_columns_y, 'numero_encontrado' , 'cep_encontrado',
@@ -305,21 +306,6 @@ assert_and_assign_address_fields <- function(address_fields, addresses_table) {
   complete_fields_list <- append(as.list(address_fields), missing_fields_list)
 
   return(complete_fields_list)
-}
-
-
-# calculate distances between pairs of coodinates
-dt_haversine <- function(lat_from, lon_from, lat_to, lon_to, r = 6378137){
-  radians <- pi/180
-  lat_to <- lat_to * radians
-  lat_from <- lat_from * radians
-  lon_to <- lon_to * radians
-  lon_from <- lon_from * radians
-  dLat <- (lat_to - lat_from)
-  dLon <- (lon_to - lon_from)
-  a <- (sin(dLat/2)^2) + (cos(lat_from) * cos(lat_to)) * (sin(dLon/2)^2)
-  dist <- 2 * atan2(sqrt(a), sqrt(1 - a)) * r
-  return(dist)
 }
 
 

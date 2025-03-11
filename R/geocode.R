@@ -19,11 +19,12 @@
 #' @param resultado_completo Lógico. Indica se o output deve incluir colunas
 #'    adicionais, como o endereço encontrado de referência. Por padrão, é `FALSE`.
 #' @param resolver_empates Lógico. Alguns resultados da geolocalização podem
-#'        indicar diferentes coordenadas possíveis (e.g. duas ruas diferentes com
-#'        o mesmo nome em uma mesma cidade). Esses casos são trados como 'empate'
-#'        e o parâmetro `resolver_empates` indica se a função deve resolver esses
-#'        empates automaticamente. Por padrão, é `FALSE`, e a função retorna
-#'        apenas o caso mais provável.
+#'    indicar diferentes coordenadas possíveis (e.g. duas ruas diferentes com o
+#'    mesmo nome em uma mesma cidade). Esses casos são trados como 'empate' e o
+#'    parâmetro `resolver_empates` indica se a função deve resolver esses empates
+#'    automaticamente. Por padrão, é `FALSE`, e a função retorna apenas o caso
+#'    mais provável. Para mais detalhes sobre como é feito o processo de
+#'    desempate, consulte abaixo a seção "Detalhes".
 #' @param resultado_sf Lógico. Indica se o resultado deve ser um objeto espacial
 #'    da classe `sf`. Por padrão, é `FALSE`, e o resultado é um `data.frame` com
 #'    as colunas `lat` e `lon`.
@@ -37,6 +38,7 @@
 #'   Alternativamente, o resultado pode ser um objeto `sf`.
 #'
 #' @template precision_section
+#' @template empates_section
 #'
 #' @examplesIf identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 #' library(geocodebr)
@@ -148,8 +150,7 @@ geocode <- function(enderecos,
   additional_cols <- ""
   if (isTRUE(resultado_completo)) {
     additional_cols <- glue::glue(
-    ", logradouro_encontrado VARCHAR,
-    numero_encontrado VARCHAR, localidade_encontrada VARCHAR,
+    ", numero_encontrado VARCHAR, localidade_encontrada VARCHAR,
     cep_encontrado VARCHAR, municipio_encontrado VARCHAR, estado_encontrado VARCHAR,
     similaridade_logradouro NUMERIC(5, 3)"
     )
@@ -161,6 +162,7 @@ geocode <- function(enderecos,
      lat NUMERIC(8, 6),
      lon NUMERIC(8, 6),
      endereco_encontrado VARCHAR,
+     logradouro_encontrado VARCHAR,
      tipo_resultado VARCHAR,
     contagem_cnefe INTEGER {additional_cols});"
     )
@@ -179,7 +181,7 @@ geocode <- function(enderecos,
   n_rows <- nrow(input_padrao)
   matched_rows <- 0
 
-  # start matching pi01
+  # start matching
   for (match_type in all_possible_match_types ) {
 
     # get key cols
@@ -216,6 +218,8 @@ geocode <- function(enderecos,
 
   if (verboso) finish_progress_bar(matched_rows)
 
+
+  if (verboso) message_preparando_output()
 
   # add precision column
   add_precision_col(con, update_tb = 'output_db')

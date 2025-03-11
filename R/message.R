@@ -23,5 +23,5 @@ message_looking_for_matches <- function() {
 }
 
 message_preparando_output <- function() {
-  geocodebr_message(c("i" = "Preparando output"))
+  geocodebr_message(c("i" = "Preparando resultados"))
 }

@@ -5,7 +5,7 @@ output: rmarkdown::html_vignette
 code-annotations: hover
 urlcolor: blue
 vignette: >
-  %\VignetteIndexEntry{Geocode}
+  %\VignetteIndexEntry{Introdução ao geocodebr}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
