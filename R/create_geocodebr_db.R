@@ -18,7 +18,10 @@ create_geocodebr_db <- function( # nocov start
   }
 
   # create db connection
-  con <- duckdb::dbConnect(duckdb::duckdb(), dbdir= db_path ) # db_path ":memory:"
+  con <- duckdb::dbConnect(
+    duckdb::duckdb( bigint = "integer64" ),
+    dbdir= db_path
+    ) # db_path ":memory:"
 
   # Set Number of cores for parallel operation
   if (is.null(n_cores)) {
