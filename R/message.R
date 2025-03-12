@@ -15,7 +15,7 @@ message_standardizing_addresses <- function() {
 }
 
 message_baixando_cnefe <- function() {
-  geocodebr_message(c("i" = "Baixandos dados do CNEFE"))
+  geocodebr_message(c("i" = "Baixando dados do CNEFE"))
 }
 
 message_looking_for_matches <- function() {
