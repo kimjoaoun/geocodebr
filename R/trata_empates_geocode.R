@@ -1,43 +1,61 @@
-# calculate distances between pairs of coodinates
-dt_haversine <- function(lat_from, lon_from, lat_to, lon_to, r = 6378137){ # nocov start
-  radians <- pi/180
-  lat_to <- lat_to * radians
-  lat_from <- lat_from * radians
-  lon_to <- lon_to * radians
-  lon_from <- lon_from * radians
-  dLat <- (lat_to - lat_from)
-  dLon <- (lon_to - lon_from)
-  a <- (sin(dLat/2)^2) + (cos(lat_from) * cos(lat_to)) * (sin(dLon/2)^2)
-  dist <- 2 * atan2(sqrt(a), sqrt(1 - a)) * r
-  return(dist)
-} # nocov end
+# mathch prob sem numero
 
+
+
+# # calculate distances between pairs of coodinates
+# dt_haversine <- function(lat_from, lon_from, lat_to, lon_to, r = 6378137){ # nocov start
+#   radians <- pi/180
+#   lat_to <- lat_to * radians
+#   lat_from <- lat_from * radians
+#   lon_to <- lon_to * radians
+#   lon_from <- lon_from * radians
+#   dLat <- (lat_to - lat_from)
+#   dLon <- (lon_to - lon_from)
+#   a <- (sin(dLat/2)^2) + (cos(lat_from) * cos(lat_to)) * (sin(dLon/2)^2)
+#   dist <- 2 * atan2(sqrt(a), sqrt(1 - a)) * r
+#   return(dist)
+# } # nocov end
+
+# Rcpp::sourceCpp("./src/distance_calcs.cpp")
 
 trata_empates_geocode <- function(output_df = parent.frame()$output_df,
                                   resolver_empates = parent.frame()$resolver_empates,
                                   verboso = parent.frame()$verboso) { # nocov start
 
-  # encontra casos de empate
+  # encontra possiveis casos de empate
   data.table::setDT(output_df)[, empate := ifelse(.N > 1, TRUE, FALSE), by = tempidgeocodebr]
 
-  # calcula distancias entre casos empatados
+  # # calcula distancias entre casos empatados
+  # output_df[empate == TRUE,
+  #           dist_geocodebr := dt_haversine(
+  #             lat, lon,
+  #             data.table::shift(lat), data.table::shift(lon)
+  #           ),
+  #           by = tempidgeocodebr
+  #           ]
+  #
+  # # coloca distancia 0 p/ primeiro caso
+  # #!!! isso aqui podia ser imples add 0 para 1st case
+  # output_df[empate == TRUE,
+  #           dist_geocodebr := ifelse(is.na(dist_geocodebr), 0, dist_geocodebr)
+  #           ]
+
+  # calculate distance between successive points
   output_df[empate == TRUE,
-            dist_geocodebr := dt_haversine(
+            dist_geocodebr_c := rcpp_distance_haversine(
               lat, lon,
-              data.table::shift(lat), data.table::shift(lon)
-            ),
+              data.table::shift(lat, type = "lead"),
+              data.table::shift(lon, type = "lead"),
+              tolerance = 1e10
+              ),
             by = tempidgeocodebr
             ]
 
-  # coloca distancia 0 p/ primeiro caso
-  output_df[empate == TRUE,
-            dist_geocodebr := ifelse(is.na(dist_geocodebr), 0, dist_geocodebr)
-            ]
 
-  # ignora casos com dist menor do q 300 metros
+  # MANTEM apenas casos de empate que estao a mais de 300 metros
   output_df2 <- output_df[ empate==FALSE |
                            empate==TRUE & dist_geocodebr == 0 |
-                           dist_geocodebr > 300
+                           empate==TRUE & dist_geocodebr > 300
                            ]
 
   # update casos de empate
@@ -64,7 +82,7 @@ trata_empates_geocode <- function(output_df = parent.frame()$output_df,
 
   # se for para resolver empates, trata de 3 casos separados
   # a) nao empatados
-  # b) empatados perdidos (dis > 1Km e lograoduros ambiguos)
+  # b) empatados perdidos (dist > 1Km e lograoduros ambiguos)
   #    solucao: usa caso com maior contagem_cnefe
   # c) empatados mas que da pra salvar (dist < 1km e logradouros nao ambiguos)
   #    solucao: agrega casos provaveis de serem na mesma rua com media ponderada
@@ -152,7 +170,7 @@ trata_empates_geocode <- function(output_df = parent.frame()$output_df,
     ids_empate_salve <- output_df2[!tempidgeocodebr %in% c(ids_sem_empate, empates_perdidos$tempidgeocodebr)]$tempidgeocodebr
     empates_salve <- output_df2[ tempidgeocodebr %in% ids_empate_salve ]
 
-    # check if we left anyone behind
+    # check if we have every id TRUE: no id should be left behind
     length(unique(output_df2$tempidgeocodebr)) == sum(
       length(ids_sem_empate),
       length(unique(empates_perdidos$tempidgeocodebr)) ,
@@ -163,8 +181,8 @@ trata_empates_geocode <- function(output_df = parent.frame()$output_df,
     # fica com caso que tem max 'contagem_cnefe'
     empates_salve[, c('lat', 'lon') := list(weighted.mean(lat, w = contagem_cnefe),
                                             weighted.mean(lon, w = contagem_cnefe)
-    ),
-    by = tempidgeocodebr]
+                                            ),
+                  by = tempidgeocodebr]
 
     # selecting the row with max 'contagem_cnefe'
     empates_salve <- empates_salve[empates_salve[, .I[contagem_cnefe == max(contagem_cnefe)], by = tempidgeocodebr]$V1]
@@ -191,29 +209,3 @@ trata_empates_geocode <- function(output_df = parent.frame()$output_df,
 
   return(output_df2)
 } # nocov end
-
-
-
-#
-# # idd <- unique(empates_salve$tempidgeocodebr)#[which(empates_salve$tipo_resultado %like% '03')])
-# # idd <- unique(output_df2$tempidgeocodebr[which(output_df2$tempidgeocodebr %like% ids_salve)])
-#
-# idd = ids_salve[15]
-# iddn <- idd[1]
-#
-# a <- output_df2 |>
-#   filter(tempidgeocodebr ==  iddn)
-#
-# a
-# a <- sfheaders::sf_point(
-#   obj = a,
-#   x = 'lon',
-#   y = 'lat',
-#   keep = TRUE
-# )
-# sf::st_crs(a) <- 4674
-#
-# #col_col <-
-# mapview::mapview(a, zcol='cep')
-#
-# sf::st_distance(a)

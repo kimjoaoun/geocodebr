@@ -16,8 +16,8 @@ update_progress_bar <- function(matched_rows,
     status = glue::glue("Procurando a categoria {formatted_case}"),
     force = TRUE,
     .envir = .envir
-  )
-}
+    )
+  }
 
 finish_progress_bar <- function(matched_rows, .envir = parent.frame()) {
   cli::cli_progress_update(
