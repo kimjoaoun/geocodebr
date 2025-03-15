@@ -1,22 +1,3 @@
-# mathch prob sem numero
-
-
-
-# # calculate distances between pairs of coodinates
-# dt_haversine <- function(lat_from, lon_from, lat_to, lon_to, r = 6378137){ # nocov start
-#   radians <- pi/180
-#   lat_to <- lat_to * radians
-#   lat_from <- lat_from * radians
-#   lon_to <- lon_to * radians
-#   lon_from <- lon_from * radians
-#   dLat <- (lat_to - lat_from)
-#   dLon <- (lon_to - lon_from)
-#   a <- (sin(dLat/2)^2) + (cos(lat_from) * cos(lat_to)) * (sin(dLon/2)^2)
-#   dist <- 2 * atan2(sqrt(a), sqrt(1 - a)) * r
-#   return(dist)
-# } # nocov end
-
-# Rcpp::sourceCpp("./src/distance_calcs.cpp")
 
 trata_empates_geocode <- function(output_df = parent.frame()$output_df,
                                   resolver_empates = parent.frame()$resolver_empates,
@@ -42,7 +23,7 @@ trata_empates_geocode <- function(output_df = parent.frame()$output_df,
 
   # calculate distance between successive points
   output_df[empate == TRUE,
-            dist_geocodebr_c := rcpp_distance_haversine(
+            dist_geocodebr := rcpp_distance_haversine(
               lat, lon,
               data.table::shift(lat, type = "lead"),
               data.table::shift(lon, type = "lead"),
@@ -72,9 +53,11 @@ trata_empates_geocode <- function(output_df = parent.frame()$output_df,
   if (isFALSE(resolver_empates)) {
 
     cli::cli_warn(
-      "Foram encontrados {n_casos_empate} casos de empate. Estes casos foram marcados com valor `TRUE` na coluna 'empate',
-       e podem ser inspecionados na coluna 'endereco_encontrado'. Alternativamente, use `resolver_empates = TRUE` para que o pacote
-       lide com os empates automaticamente. Ver documenta\u00e7\u00e3o da fun\u00e7\u00e3o."
+      "Foram encontrados {n_casos_empate} casos de empate. Estes casos foram
+      marcados com valor `TRUE` na coluna 'empate', e podem ser inspecionados na
+      coluna 'endereco_encontrado'. Alternativamente, use `resolver_empates = TRUE`
+      para que o pacote lide com os empates automaticamente. Ver
+      documenta\u00e7\u00e3o da fun\u00e7\u00e3o."
     )
   }
 
@@ -209,3 +192,24 @@ trata_empates_geocode <- function(output_df = parent.frame()$output_df,
 
   return(output_df2)
 } # nocov end
+
+
+
+
+
+
+# # calculate distances between pairs of coodinates
+# dt_haversine <- function(lat_from, lon_from, lat_to, lon_to, r = 6378137){ # nocov start
+#   radians <- pi/180
+#   lat_to <- lat_to * radians
+#   lat_from <- lat_from * radians
+#   lon_to <- lon_to * radians
+#   lon_from <- lon_from * radians
+#   dLat <- (lat_to - lat_from)
+#   dLon <- (lon_to - lon_from)
+#   a <- (sin(dLat/2)^2) + (cos(lat_from) * cos(lat_to)) * (sin(dLon/2)^2)
+#   dist <- 2 * atan2(sqrt(a), sqrt(1 - a)) * r
+#   return(dist)
+# } # nocov end
+
+# Rcpp::sourceCpp("./src/distance_calcs.cpp")

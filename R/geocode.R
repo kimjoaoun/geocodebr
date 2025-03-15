@@ -151,9 +151,9 @@ geocode <- function(enderecos,
 
   # create an empty output table that will be populated -----------------------------------------------
 
-  additional_cols <- ""
+  additional_cols_output_db <- ""
   if (isTRUE(resultado_completo)) {
-    additional_cols <- glue::glue(
+    additional_cols_output_db <- glue::glue(
     ", numero_encontrado VARCHAR, localidade_encontrada VARCHAR,
     cep_encontrado VARCHAR, municipio_encontrado VARCHAR, estado_encontrado VARCHAR,
     similaridade_logradouro NUMERIC(5, 3)"
@@ -168,7 +168,7 @@ geocode <- function(enderecos,
      endereco_encontrado VARCHAR,
      logradouro_encontrado VARCHAR,
      tipo_resultado VARCHAR,
-     contagem_cnefe INTEGER {additional_cols});"
+     contagem_cnefe INTEGER {additional_cols_output_db});"
     )
 
   DBI::dbExecute(con, query_create_empty_output_db)
@@ -202,6 +202,7 @@ geocode <- function(enderecos,
         } else if (match_type %in% c(probabilistic_exact_types, probabilistic_types_no_number)) { match_cases_probabilistic
         } else if (match_type %in% probabilistic_interpolation_types) { match_weighted_cases_probabilistic
           }
+
 
       n_rows_affected <- match_fun(
         con,
@@ -250,7 +251,6 @@ geocode <- function(enderecos,
 
 
   # casos de empate -----------------------------------------------
-
   if (nrow(output_df) > n_rows) {
     output_df <- trata_empates_geocode(output_df, resolver_empates, verboso)
     }

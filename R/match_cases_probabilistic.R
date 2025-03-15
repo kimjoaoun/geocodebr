@@ -1,20 +1,8 @@
-# (A) como eh hj
-# 1st step: match
-#  - faz match de todas ruas e traz todos seus numeros
-#  - calcula distancia de string para cada logra+numero e fica com um par
-# 2nd step: aggregate
-#  - agrega
-#
-#
-# (B) como poderia ser
-# 1st step: match
-#  - faz match de todas ruas unicas, mas sem numero
-#  - calcula distancia de string para cada logra unico e fica com um par
-#  - cria uma tab intermediaria que tem a coluna de logradouro deterministico
-# 2nd step: faz match deterministico para trazer numeros
-# 3rd step: aggregate
-#  - agrega
+# 1st step: create small table with unique logradouros
+# 2nd step: update input_padrao_db with the most probable logradouro
+# 3rd step: deterministic match to update output
 
+#>>>> tentar usar distinct do arrow()
 
 match_cases_probabilistic <- function(
     con = con,
@@ -25,8 +13,413 @@ match_cases_probabilistic <- function(
     match_type = match_type,
     resultado_completo){ # nocov start
 
+  # get corresponding parquet table and key columns
+  table_name <- get_reference_table(match_type)
+  key_cols <- get_key_cols(match_type)
+
+  # build path to local file
+  path_to_parquet <- paste0(listar_pasta_cache(), "/", table_name, ".parquet")
+
+  # determine geographical scope of the search
+  input_states <- DBI::dbGetQuery(con, "SELECT DISTINCT estado FROM input_padrao_db;")$estado
+  input_municipio <- DBI::dbGetQuery(con, "SELECT DISTINCT municipio FROM input_padrao_db;")$municipio
+
+  # Load CNEFE data and write to DuckDB
+  # filter cnefe to include only states and municipalities
+  # present in the input table, reducing the search scope
+  filtered_cnefe <- arrow_open_dataset( path_to_parquet ) |>
+    dplyr::filter(estado %in% input_states) |>
+    dplyr::filter(municipio %in% input_municipio) |>
+    dplyr::compute()
+
+  # register filtered_cnefe to db
+  duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
+
+
+
+  # 1st step: create small table with unique logradouros -----------------------
+
+  # select only key columns to get unique values
+  unique_cols <- key_cols[!key_cols %in%  c("numero")]
+
+  unique_logradouros <- filtered_cnefe |>
+    dplyr::select( dplyr::all_of(unique_cols)) |>
+    dplyr::distinct() |>
+    dplyr::compute()
+
+  # register to db
+  duckdb::duckdb_register_arrow(con, "unique_logradouros", unique_logradouros)
+  # a <- DBI::dbReadTable(con, 'unique_logradouros')
+
+
+
+
+  # 2nd step: update input_padrao_db with the most probable logradouro ---------
+
+  # cols that cannot be null
+  cols_not_null <-  paste(
+    glue::glue("{x}.{key_cols} IS NOT NULL"),
+    collapse = ' AND '
+  )
+
+  # remove numero and logradouro from key cols to allow for the matching
+  key_cols_string_dist <- key_cols[key_cols != 'logradouro']
+
+
+  join_condition_string_dist <- paste(
+    glue::glue("unique_logradouros.{key_cols_string_dist} = {x}.{key_cols_string_dist}"),
+    collapse = ' AND '
+  )
+
+
+  # min cutoff for string match
+  min_cutoff <- get_prob_match_cutoff(match_type)
+
+
+  # query
+  query_lookup <- glue::glue(
+    "WITH ranked_data AS (
+    SELECT
+      {x}.tempidgeocodebr,
+      {x}.logradouro AS logradouro,
+      unique_logradouros.logradouro AS logradouro_cnefe,
+      jaro_similarity({x}.logradouro, unique_logradouros.logradouro) AS similarity,
+      RANK() OVER (PARTITION BY {x}.tempidgeocodebr ORDER BY similarity DESC) AS rank
+    FROM {x}
+    JOIN unique_logradouros
+      ON {join_condition_string_dist}
+    WHERE {cols_not_null}
+  )
+
+  UPDATE {x}
+    SET temp_lograd_determ = ranked_data.logradouro_cnefe,
+        similaridade_logradouro = similarity
+    FROM ranked_data
+  WHERE {x}.tempidgeocodebr = ranked_data.tempidgeocodebr
+    AND similarity > {min_cutoff}
+    AND rank = 1;"
+  )
+
+  DBI::dbExecute(con, query_lookup)
+  # b <- DBI::dbReadTable(con, 'input_padrao_db')
+
+
+
+
+  # 3rd step: update output table com match deterministico --------------------------------------------------------
+
+  key_cols <- get_key_cols(match_type)
+
+  # update join condition to use probable logradouro and deterministic number
+  join_condition_match <- paste(
+    glue::glue("{y}.{key_cols} = {x}.{key_cols}"),
+    collapse = ' AND '
+  )
+
+  join_condition_match <- gsub('input_padrao_db.logradouro', 'input_padrao_db.temp_lograd_determ', join_condition_match)
+
+  # update cols that cannot be null
+  cols_not_null <-  paste(
+    glue::glue("{x}.{key_cols} IS NOT NULL"),
+    collapse = ' AND '
+  )
+  cols_not_null <-  paste( cols_not_null, glue::glue("AND {x}.temp_lograd_determ IS NOT NULL") )
+
+  # whether to keep all columns in the result
+  colunas_encontradas <- ""
+  additional_cols <- ""
+
+
+  if (isTRUE(resultado_completo)) {
+
+    colunas_encontradas <- paste0(
+      glue::glue("{key_cols}_encontrado"),
+      collapse = ', ')
+
+    colunas_encontradas <- gsub('localidade_encontrado', 'localidade_encontrada', colunas_encontradas)
+    colunas_encontradas <- paste0(", ", colunas_encontradas)
+    colunas_encontradas <- paste0(colunas_encontradas, ", similaridade_logradouro")
+
+    additional_cols <- paste0(
+      glue::glue("filtered_cnefe.{key_cols} AS {key_cols}_encontrado"),
+      collapse = ', ')
+
+    additional_cols <- gsub('localidade_encontrado', 'localidade_encontrada', additional_cols)
+    additional_cols <- paste0(", ", additional_cols, ", input_padrao_db.similaridade_logradouro AS similaridade_logradouro")
+  }
+
+
+  # summarize query
+  query_update_db <- glue::glue(
+    "INSERT INTO output_db (tempidgeocodebr, lat, lon, tipo_resultado, endereco_encontrado, contagem_cnefe {colunas_encontradas})
+      SELECT {x}.tempidgeocodebr, filtered_cnefe.lat, filtered_cnefe.lon,
+             '{match_type}' AS tipo_resultado, filtered_cnefe.endereco_completo AS endereco_encontrado,
+             filtered_cnefe.n_casos AS contagem_cnefe {additional_cols}
+      FROM {x}
+      LEFT JOIN filtered_cnefe
+      ON {join_condition_match}
+      WHERE {cols_not_null} AND filtered_cnefe.lon IS NOT NULL;"
+  )
+
+
+  DBI::dbExecute(con, query_update_db)
+  # c <- DBI::dbReadTable(con, 'output_db')
+
+
+  # remove arrow tables from db
+  duckdb::duckdb_unregister_arrow(con, "unique_logradouros")
+  duckdb::duckdb_unregister_arrow(con, "filtered_cnefe")
+
+
+
+  # UPDATE input_padrao_db: Remove observations found in previous step
+  temp_n <- update_input_db(
+    con,
+    update_tb = x,
+    reference_tb = output_tb
+  )
+
+  return(temp_n)
+} # nocov end
+
+
+
+
+
+# match_cases_probabilistic_new_num ---------------------------------
+
+match_cases_probabilistic_new_num <- function(
+    con = con,
+    x = 'input_padrao_db',
+    y = 'filtered_cnefe',
+    output_tb = "output_db",
+    key_cols = key_cols,
+    match_type = match_type,
+    resultado_completo){ # nocov start
+
+  # get corresponding parquet table and key columns
+  table_name <- get_reference_table(match_type)
+  key_cols <- get_key_cols(match_type)
+
+  # build path to local file
+  path_to_parquet <- paste0(listar_pasta_cache(), "/", table_name, ".parquet")
+
+  # determine geographical scope of the search
+  input_states <- DBI::dbGetQuery(con, "SELECT DISTINCT estado FROM input_padrao_db;")$estado
+  input_municipio <- DBI::dbGetQuery(con, "SELECT DISTINCT municipio FROM input_padrao_db;")$municipio
+
+  # Load CNEFE data and write to DuckDB
+  # filter cnefe to include only states and municipalities
+  # present in the input table, reducing the search scope
+  filtered_cnefe <- arrow_open_dataset( path_to_parquet ) |>
+    dplyr::filter(estado %in% input_states) |>
+    dplyr::filter(municipio %in% input_municipio) |>
+    dplyr::compute()
+
+  # register filtered_cnefe to db
+  duckdb::duckdb_register_arrow(con, "filtered_cnefe", filtered_cnefe)
+
+
+
+  # 1st step: create small table with unique logradouros -----------------------
+
+  # Load cnefe CNEFE data without numbers to speed up probabilistic match
+  unique_cols <- key_cols[!key_cols %in%  c("estado")]
+  unique_cols_table_name <- paste0(unique_cols, collapse = '_')
+
+  # register table
+  if (match_type %in% c("pn01", "pn02")) {
+
+    # register to db
+    duckdb::duckdb_register_arrow(con, "filtered_cnefe_logradouros", filtered_cnefe)
+
+    query_unique_logradouros <- glue::glue(
+      "CREATE OR REPLACE TEMPORARY VIEW unique_logradouros AS
+           SELECT *
+           FROM filtered_cnefe_logradouros
+           ORDER BY {paste(key_cols, collapse = ', ')};"
+    )
+
+    DBI::dbExecute(con, query_unique_logradouros)
+    # a <- DBI::dbReadTable(con, 'unique_logradouros')
+
+  } else if (match_type %in% c("pn03", "pl01", "pl02", "pl03")) {
+
+    file_path <- ifelse(
+      match_type %like% "01|02",
+      "/municipio_logradouro_cep_localidade.parquet",
+      paste0("/", unique_cols_table_name, '.parquet')
+    )
+
+    filtered_cnefe_logradouros <- paste0(geocodebr::listar_pasta_cache(), file_path) |>
+      arrow_open_dataset() |>
+      dplyr::filter(estado %in% input_states) |>
+      dplyr::filter(municipio %in% input_municipio) |>
+      dplyr::compute()
+
+
+    # register to db
+    duckdb::duckdb_register_arrow(con, "filtered_cnefe_logradouros", filtered_cnefe_logradouros)
+
+    query_unique_logradouros <- glue::glue(
+      "CREATE OR REPLACE TEMPORARY VIEW unique_logradouros AS
+           SELECT DISTINCT {paste(key_cols, collapse = ', ')}
+           FROM filtered_cnefe_logradouros
+           ORDER BY {paste(key_cols, collapse = ', ')};"
+    )
+
+    DBI::dbExecute(con, query_unique_logradouros)
+    # a <- DBI::dbReadTable(con, 'unique_logradouros')
+  }
+
+
+
+
+  # 2nd step: update input_padrao_db with the most probable logradouro ---------
+
+  # cols that cannot be null
+  cols_not_null <-  paste(
+    glue::glue("{x}.{key_cols} IS NOT NULL"),
+    collapse = ' AND '
+  )
+
+  # remove numero and logradouro from key cols to allow for the matching
+  key_cols <- key_cols[key_cols != 'logradouro']
+
+
+  join_condition_lookup <- paste(
+    glue::glue("unique_logradouros.{key_cols} = {x}.{key_cols}"),
+    collapse = ' AND '
+  )
+
+
+  # min cutoff for string match
+  min_cutoff <- get_prob_match_cutoff(match_type)
+
+
+  # query
+  query_lookup <- glue::glue(
+    "WITH ranked_data AS (
+    SELECT
+      {x}.tempidgeocodebr,
+      {x}.logradouro AS logradouro,
+      unique_logradouros.logradouro AS logradouro_cnefe,
+      jaro_similarity({x}.logradouro, unique_logradouros.logradouro) AS similarity,
+      RANK() OVER (PARTITION BY {x}.tempidgeocodebr ORDER BY similarity DESC) AS rank
+    FROM {x}
+    JOIN unique_logradouros
+      ON {join_condition_lookup}
+    WHERE {cols_not_null}
+  )
+
+  UPDATE {x}
+    SET temp_lograd_determ = ranked_data.logradouro_cnefe,
+        similaridade_logradouro = similarity
+    FROM ranked_data
+  WHERE {x}.tempidgeocodebr = ranked_data.tempidgeocodebr
+    AND similarity > {min_cutoff}
+    AND rank = 1;"
+  )
+
+  DBI::dbExecute(con, query_lookup)
+  # b <- DBI::dbReadTable(con, 'input_padrao_db')
+
+
+
+
+  # 3rd step: update output table com match deterministico --------------------------------------------------------
+
+  key_cols <- get_key_cols(match_type)
+
+  # update join condition to use probable logradouro and deterministic number
+  join_condition_match <- paste(
+    glue::glue("{y}.{key_cols} = {x}.{key_cols}"),
+    collapse = ' AND '
+  )
+
+  join_condition_match <- gsub('input_padrao_db.logradouro', 'input_padrao_db.temp_lograd_determ', join_condition_match)
+
+  # update cols that cannot be null
+  cols_not_null <-  paste(
+    glue::glue("{x}.{key_cols} IS NOT NULL"),
+    collapse = ' AND '
+    )
+  cols_not_null <-  paste( cols_not_null, glue::glue("AND {x}.temp_lograd_determ IS NOT NULL") )
+
+  # whether to keep all columns in the result
+  colunas_encontradas <- ""
+  additional_cols <- ""
+
+
+  if (isTRUE(resultado_completo)) {
+
+    colunas_encontradas <- paste0(
+      glue::glue("{key_cols}_encontrado"),
+      collapse = ', ')
+
+    colunas_encontradas <- gsub('localidade_encontrado', 'localidade_encontrada', colunas_encontradas)
+    colunas_encontradas <- paste0(", ", colunas_encontradas)
+    colunas_encontradas <- paste0(colunas_encontradas, ", similaridade_logradouro")
+
+    additional_cols <- paste0(
+      glue::glue("filtered_cnefe.{key_cols} AS {key_cols}_encontrado"),
+      collapse = ', ')
+
+    additional_cols <- gsub('localidade_encontrado', 'localidade_encontrada', additional_cols)
+    additional_cols <- paste0(", ", additional_cols, ", input_padrao_db.similaridade_logradouro AS similaridade_logradouro")
+    }
+
+
+  # summarize query
+  query_update_db <- glue::glue(
+    "INSERT INTO output_db (tempidgeocodebr, lat, lon, tipo_resultado, endereco_encontrado, contagem_cnefe {colunas_encontradas})
+      SELECT {x}.tempidgeocodebr, filtered_cnefe.lat, filtered_cnefe.lon,
+             '{match_type}' AS tipo_resultado, filtered_cnefe.endereco_completo AS endereco_encontrado,
+             filtered_cnefe.n_casos AS contagem_cnefe {additional_cols}
+      FROM {x}
+      LEFT JOIN filtered_cnefe
+      ON {join_condition_match}
+      WHERE {cols_not_null} AND filtered_cnefe.lon IS NOT NULL;"
+  )
+
+
+  DBI::dbExecute(con, query_update_db)
+  # c <- DBI::dbReadTable(con, 'output_db')
+
+
+  # remove arrow tables from db
+  duckdb::duckdb_unregister_arrow(con, "filtered_cnefe_logradouros")
+  duckdb::duckdb_unregister_arrow(con, "filtered_cnefe")
+
+
+
+  # UPDATE input_padrao_db: Remove observations found in previous step
+  temp_n <- update_input_db(
+    con,
+    update_tb = x,
+    reference_tb = output_tb
+  )
+
+  return(temp_n)
+} # nocov end
+
+
+
+
+
+# 666666666666666666666666666-------------------------------------------------------------------------------
+
+match_cases_probabilistic_old <- function(
+    con = con,
+    x = 'input_padrao_db',
+    y = 'filtered_cnefe',
+    output_tb = "output_db",
+    key_cols = key_cols,
+    match_type = match_type,
+    resultado_completo){ # nocov start
+
   # get corresponding parquet table
-  table_name <- get_reference_table(key_cols, match_type)
+  table_name <- get_reference_table(match_type)
 
   # build path to local file
   path_to_parquet <- paste0(listar_pasta_cache(), "/", table_name, ".parquet")
@@ -149,6 +542,7 @@ match_cases_probabilistic <- function(
   )
 
   DBI::dbExecute(con, query_update_db)
+  # b <- DBI::dbReadTable(con, 'output_db')
 
 
   duckdb::duckdb_unregister_arrow(con, "filtered_cnefe")
@@ -162,3 +556,5 @@ match_cases_probabilistic <- function(
 
   return(temp_n)
 } # nocov end
+
+

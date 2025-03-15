@@ -200,30 +200,30 @@ create_index <- function(con, tb, cols, operation, overwrite=TRUE){
 
 
 
-get_key_cols <- function(case) {
-  relevant_cols <- if (case %in% c('dn01', 'da01', 'pn01', 'pa01') ) {
+get_key_cols <- function(match_type) {
+  relevant_cols <- if (match_type %in% c('dn01', 'da01', 'pn01', 'pa01') ) {
     c("estado", "municipio", "logradouro", "numero", "cep", "localidade")
-  } else if (case %in% c('dn02', 'da02', 'pn02', 'pa02')) {
+  } else if (match_type %in% c('dn02', 'da02', 'pn02', 'pa02')) {
     c("estado", "municipio", "logradouro", "numero", "cep")
-  } else if (case %in% c('dn03', 'da03', 'pn03', 'pa03')) {
+  } else if (match_type %in% c('dn03', 'da03', 'pn03', 'pa03')) {
     c("estado", "municipio", "logradouro", "numero", "localidade")
-  } else if (case %in% c('dn04', 'da04', 'pn04', 'pa04')) {
+  } else if (match_type %in% c('dn04', 'da04', 'pn04', 'pa04')) {
     c("estado", "municipio", "logradouro", "numero")
-  } else if (case %in% c('dl01', 'pl01')) {
+  } else if (match_type %in% c('dl01', 'pl01')) {
     c("estado", "municipio", "logradouro", "cep", "localidade")
-  } else if (case %in% c('dl02', 'pl02')) {
+  } else if (match_type %in% c('dl02', 'pl02')) {
     c("estado", "municipio", "logradouro", "cep")
-  } else if (case %in% c('dl03', 'pl03')) {
+  } else if (match_type %in% c('dl03', 'pl03')) {
     c("estado", "municipio", "logradouro", "localidade")
-  } else if (case %in% c('dl04', 'pl04')) {
+  } else if (match_type %in% c('dl04', 'pl04')) {
     c("estado", "municipio", "logradouro")
-  } else if (case == 'dc01') {
+  } else if (match_type == 'dc01') {
     c("estado", "municipio", "cep", "localidade")
-  } else if (case == 'dc02') {
+  } else if (match_type == 'dc02') {
     c("estado", "municipio", "cep")
-  } else if (case == 'db01') {
+  } else if (match_type == 'db01') {
     c("estado", "municipio", "localidade")
-  } else if (case == 'dm01') {
+  } else if (match_type == 'dm01') {
     c("estado", "municipio")
   }
 
@@ -310,9 +310,11 @@ assert_and_assign_address_fields <- function(address_fields, addresses_table) {
 
 
 
-get_reference_table <- function(key_cols, match_type){
+get_reference_table <- function(match_type){
 
   # key_cols = get_key_cols('da03')
+
+  key_cols <- get_key_cols(match_type)
 
   # read corresponding parquet file
   table_name <- paste(key_cols, collapse = "_")
