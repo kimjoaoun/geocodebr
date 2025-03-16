@@ -3,8 +3,7 @@
 # 3rd step: deterministic match to update output
 
 #>>>> tentar usar distinct do arrow()
-
-match_cases_probabilistic <- function(
+match_cases_probabilistic_aeropo <- function(
     con = con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe',
@@ -39,11 +38,11 @@ match_cases_probabilistic <- function(
 
   # 1st step: create small table with unique logradouros -----------------------
 
-  # select only key columns to get unique values
-  unique_cols <- key_cols[!key_cols %in%  c("numero")]
+  # # select only key columns to get unique values
+  # unique_cols <- key_cols[!key_cols %in%  c("numero")]
 
   unique_logradouros <- filtered_cnefe |>
-    dplyr::select( dplyr::all_of(unique_cols)) |>
+    dplyr::select( dplyr::all_of(key_cols)) |> # unique_cols
     dplyr::distinct() |>
     dplyr::compute()
 
@@ -63,7 +62,8 @@ match_cases_probabilistic <- function(
   )
 
   # remove numero and logradouro from key cols to allow for the matching
-  key_cols_string_dist <- key_cols[key_cols != 'logradouro']
+  # 6666666666 testar se tirar o numero melhora performance
+  key_cols_string_dist <- key_cols[! key_cols %in% c('numero','logradouro')]
 
 
   join_condition_string_dist <- paste(
@@ -188,7 +188,7 @@ match_cases_probabilistic <- function(
 
 # match_cases_probabilistic_new_num ---------------------------------
 
-match_cases_probabilistic_new_num <- function(
+match_cases_probabilistic <- function(
     con = con,
     x = 'input_padrao_db',
     y = 'filtered_cnefe',
@@ -230,18 +230,15 @@ match_cases_probabilistic_new_num <- function(
   # register table
   if (match_type %in% c("pn01", "pn02")) {
 
+    unique_logradouros <- filtered_cnefe |>
+      dplyr::select( dplyr::all_of(key_cols)) |> # unique_cols
+      dplyr::distinct() |>
+      dplyr::compute()
+
     # register to db
-    duckdb::duckdb_register_arrow(con, "filtered_cnefe_logradouros", filtered_cnefe)
-
-    query_unique_logradouros <- glue::glue(
-      "CREATE OR REPLACE TEMPORARY VIEW unique_logradouros AS
-           SELECT *
-           FROM filtered_cnefe_logradouros
-           ORDER BY {paste(key_cols, collapse = ', ')};"
-    )
-
-    DBI::dbExecute(con, query_unique_logradouros)
+    duckdb::duckdb_register_arrow(con, "unique_logradouros", unique_logradouros)
     # a <- DBI::dbReadTable(con, 'unique_logradouros')
+
 
   } else if (match_type %in% c("pn03", "pl01", "pl02", "pl03")) {
 
@@ -251,27 +248,19 @@ match_cases_probabilistic_new_num <- function(
       paste0("/", unique_cols_table_name, '.parquet')
     )
 
-    filtered_cnefe_logradouros <- paste0(geocodebr::listar_pasta_cache(), file_path) |>
+    unique_logradouros <- paste0(geocodebr::listar_pasta_cache(), file_path) |>
       arrow_open_dataset() |>
       dplyr::filter(estado %in% input_states) |>
       dplyr::filter(municipio %in% input_municipio) |>
+      dplyr::select( dplyr::all_of(key_cols)) |> # unique_cols
+      dplyr::distinct() |>
       dplyr::compute()
 
 
     # register to db
-    duckdb::duckdb_register_arrow(con, "filtered_cnefe_logradouros", filtered_cnefe_logradouros)
-
-    query_unique_logradouros <- glue::glue(
-      "CREATE OR REPLACE TEMPORARY VIEW unique_logradouros AS
-           SELECT DISTINCT {paste(key_cols, collapse = ', ')}
-           FROM filtered_cnefe_logradouros
-           ORDER BY {paste(key_cols, collapse = ', ')};"
-    )
-
-    DBI::dbExecute(con, query_unique_logradouros)
+    duckdb::duckdb_register_arrow(con, "unique_logradouros", unique_logradouros)
     # a <- DBI::dbReadTable(con, 'unique_logradouros')
   }
-
 
 
 
@@ -388,7 +377,7 @@ match_cases_probabilistic_new_num <- function(
 
 
   # remove arrow tables from db
-  duckdb::duckdb_unregister_arrow(con, "filtered_cnefe_logradouros")
+  duckdb::duckdb_unregister_arrow(con, "unique_logradouros")
   duckdb::duckdb_unregister_arrow(con, "filtered_cnefe")
 
 

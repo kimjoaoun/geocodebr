@@ -1,18 +1,3 @@
-#' rua ipe roxo em sp
-
-
-#' ja implementado casos de empate
-#' - avalilar nome de coluna empate_geocodebr
-#' - avalilar tolerancia de 150 metros
-#'
-
-
-#' TO DO
-#'
-#' a) estrateia de montar output: com empty db ou tabelas separadas por case_match ?
-#' b) manter columna matched_address
-
-#'
 #' instalar extensoes do duckdb
 #' - spatial - acho q nao vale a pena por agora
 #'
@@ -110,11 +95,13 @@ bench::system_time(
     resultado_completo = T,
     verboso = T,
     resultado_sf = F,
-    resolver_empates = T
+    resolver_empates = F
   )
 )
-# VERSAO prob atual: 1.2m
 
+# VERSAO prob atual: 1.2m
+# VERSAO prob aerp: 1.8m   763 empates
+# aiport fix 1.5 704 empates
 
 empates <- subset(dfgeo, empate==T)
 a <- table(empates$id) |> as.data.frame()
@@ -216,15 +203,14 @@ d <- cnf |>
 
 
 # small sample data ------------------------------------------------------------------
-library(geocodebr)
+devtools::load_all('.')
+library(dplyr)
 
 # open input data
 data_path <- system.file("extdata/small_sample.csv", package = "geocodebr")
 input_df <- read.csv(data_path)
 
-
-
-fields <- geocodebr::definir_campos(
+campos <- geocodebr::definir_campos(
   logradouro = "nm_logradouro",
   numero = "Numero",
   cep = "Cep",
@@ -233,16 +219,16 @@ fields <- geocodebr::definir_campos(
   estado = "nm_uf"
 )
 
-
 # enderecos = input_df
 # campos_endereco = campos
 # n_cores = 7
 # verboso = T
 # cache=T
 # resultado_completo=T
+# resolver_empates = FALSE
+# resultado_sf = FALSE
 
-rafaF <- function(){ message('rafa F')
-  df_rafaF2 <- geocodebr::geocode(
+dfgeo <- geocodebr::geocode(
     enderecos = input_df,
     campos_endereco = campos,
     n_cores = 7,
@@ -250,7 +236,7 @@ rafaF <- function(){ message('rafa F')
     resolver_empates = T,
     verboso = T
   )
-}
+
 
 identical(df_rafaF$id, input_df$id)
 
