@@ -195,6 +195,7 @@ match_cases_probabilistic_old <- function(
 
   # get corresponding parquet table
   table_name <- get_reference_table(match_type)
+  key_cols <- get_key_cols(match_type)
 
   # build path to local file
   path_to_parquet <- paste0(listar_pasta_cache(), "/", table_name, ".parquet")

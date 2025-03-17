@@ -50,7 +50,6 @@ data_path <- system.file("extdata/large_sample.parquet", package = "geocodebr")
 input_df <- arrow::read_parquet(data_path)
 
 
-
 # enderecos = input_df
 # n_cores = 7
 # ncores <- 7
