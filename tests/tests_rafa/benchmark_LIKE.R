@@ -99,9 +99,12 @@ bench::system_time(
   )
 )
 
-# VERSAO prob atual: 1.2m
-# VERSAO prob aerp: 1.8m   763 empates
-# aiport fix 1.5 704 empates
+# 20K prob numero pn
+# atual: 46.69s / 706 empates
+# old:   34.91s / 783
+
+
+
 
 empates <- subset(dfgeo, empate==T)
 a <- table(empates$id) |> as.data.frame()

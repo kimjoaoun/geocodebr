@@ -1,3 +1,21 @@
+#   rcpp_distance_haversine(
+#     -20.16671, -40.1963,
+#     -20.17150, -40.19841, tolerance = 1e10)
+#
+#   dt_haversine(
+#     -20.16671, -40.1963,
+#     -20.17150, -40.19841)
+# # ----------
+#
+#   rcpp_distance_haversine(
+#     -20.16671, -40.1963,
+#     -20.17160, -40.19807, tolerance = 1e10)
+#
+#   dt_haversine(
+#     -20.16671, -40.1963,
+#     -20.17160, -40.19807)
+
+
 #' Reverse geocoding coordinates in Brazil based on CNEFE data
 #'
 #' @description

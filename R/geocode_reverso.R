@@ -185,13 +185,14 @@ geocode_reverso <- function(pontos,
   data.table::setDT(output)
   output[, c('lon_min', 'lon_max', 'lat_min', 'lat_max') := NULL]
 
-  # find the closest point
+  # calculate distances between pairs of coodinates
   # 66666666make it faster with rcpp_distance_haversine
-  # output[, distancia_metros := rcpp_distance_haversine(
+  # output[, distancia_metros2 := rcpp_distance_haversine(
   #             lat, lon, lat_cnefe, lon_cnefe, tolerance = 1e10)]
-  output[, distancia_metros := dt_haversine(lat,lon , lat_cnefe, lon_cnefe)]
-  output <- output[output[, .I[distancia_metros == min(distancia_metros)], by = tempidgeocodebr]$V1]
+  output[, distancia_metros := dt_haversine(lat, lon, lat_cnefe, lon_cnefe)]
 
+  # find the closest point
+  output <- output[output[, .I[distancia_metros == min(distancia_metros)], by = tempidgeocodebr]$V1]
 
   # sort data
   output <- output[order(tempidgeocodebr)]
