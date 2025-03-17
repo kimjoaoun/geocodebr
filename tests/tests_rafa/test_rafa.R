@@ -19,36 +19,6 @@ if (!is.null(resp_header(response, "last-modified"))) {
 }
 
 
-#### cache tests
-
-system.time(
-  df <- read_families(year = 2000,
-                      showProgress = T,
-                      cache = T)
-)
-
-censobr_cache(delete_file = '2000_families')
-
-
-
-
-############3
-# dici cenus tract 1970
-# arquivo dos 80
-
-
-# devtools::install_github("ipeaGIT/r5r", subdir = "r-package", force=T)
-library(censobr)
-library(dplyr)
-library(arrow)
-library(data.table)
-
-
-
-df <- read_population(year = 2010, add_labels = 'pt') |>
-  filter(code_state == 11) |>
-  collect()
-
 
 library(censobr)
 library(dplyr)
