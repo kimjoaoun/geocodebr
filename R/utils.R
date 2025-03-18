@@ -137,7 +137,7 @@ merge_results <- function(con,
 
   if (isTRUE(resultado_completo)) {
   select_columns_y <- c(select_columns_y, 'numero_encontrado' , 'cep_encontrado',
-                        'localidade_encontrada', 'municipio_encontrado' , 'estado_encontrado' # , 'similaridade_logradouro'
+                        'localidade_encontrada', 'municipio_encontrado' , 'estado_encontrado', 'similaridade_logradouro'
     )
   }
 

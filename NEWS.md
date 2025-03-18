@@ -1,4 +1,4 @@
-# geocodebr 0.1.19999 DEV
+# geocodebr 0.2.0
 
 ## Novas funcionalidades (Major changes)
 
