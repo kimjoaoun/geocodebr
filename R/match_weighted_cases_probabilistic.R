@@ -104,7 +104,7 @@ match_weighted_cases_probabilistic <- function( # nocov start
       {x}.tempidgeocodebr,
       {x}.logradouro AS logradouro,
       unique_logradouros.logradouro AS logradouro_cnefe,
-      jaro_similarity({x}.logradouro, unique_logradouros.logradouro) AS similarity,
+      CAST(jaro_similarity({x}.logradouro, unique_logradouros.logradouro) AS NUMERIC(5,3)) AS similarity,
       RANK() OVER ( PARTITION BY {x}.tempidgeocodebr ORDER BY similarity DESC ) AS rank
     FROM {x}
     JOIN unique_logradouros

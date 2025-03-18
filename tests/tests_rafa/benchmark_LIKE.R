@@ -99,9 +99,9 @@ bench::system_time(
 )
 
 # 20K prob numero pn
-# atual: 46.69s / 706 empates
-# old:   34.91s / 783
-
+# atual:   46.69s / 706 empates
+# old:     34.91s / 783
+# 20250318 40.21s / 698 empates
 
 
 
