@@ -136,9 +136,19 @@ merge_results <- function(con,
                         'endereco_encontrado', 'logradouro_encontrado', 'contagem_cnefe')
 
   if (isTRUE(resultado_completo)) {
-  select_columns_y <- c(select_columns_y, 'numero_encontrado' , 'cep_encontrado',
-                        'localidade_encontrada', 'municipio_encontrado' , 'estado_encontrado', 'similaridade_logradouro'
+
+    # select additional columns to output
+    select_columns_y <- c(select_columns_y, 'numero_encontrado' , 'cep_encontrado',
+                          'localidade_encontrada', 'municipio_encontrado' ,
+                          'estado_encontrado', 'similaridade_logradouro')
+
+    # relace NULL similaridade_logradouro as 1 because they were found deterministically
+    DBI::dbExecute(
+      con,
+      "UPDATE output_db
+      SET similaridade_logradouro = COALESCE(similaridade_logradouro, 1);"
     )
+
   }
 
   # Create the SELECT clause dynamically
