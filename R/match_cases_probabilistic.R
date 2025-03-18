@@ -71,6 +71,7 @@ match_cases_probabilistic <- function(
   # min cutoff for string match
   min_cutoff <- get_prob_match_cutoff(match_type)
 
+#       CAST(jaro_similarity({x}.logradouro, unique_logradouros.logradouro) AS NUMERIC(5,3)) AS similarity,
 
   # query
   query_lookup <- glue::glue(
@@ -79,7 +80,7 @@ match_cases_probabilistic <- function(
       {x}.tempidgeocodebr,
       {x}.logradouro AS logradouro,
       unique_logradouros.logradouro AS logradouro_cnefe,
-      jaro_similarity({x}.logradouro, unique_logradouros.logradouro) AS similarity,
+      CAST(jaro_similarity({x}.logradouro, unique_logradouros.logradouro) AS NUMERIC(5,3)) AS similarity,
       RANK() OVER (PARTITION BY {x}.tempidgeocodebr ORDER BY similarity DESC) AS rank
     FROM {x}
     JOIN unique_logradouros
