@@ -145,7 +145,7 @@ trata_empates_geocode <- function(output_df = parent.frame()$output_df,
     empates_perdidos <- empates_perdidos[ ! grepl(meses_pattern, logradouro_encontrado) ]
 
     # selecting the row with max 'contagem_cnefe'
-    empates_perdidos <- empates_perdidos[empates_perdidos[, .I[contagem_cnefe == max(contagem_cnefe)], by = tempidgeocodebr]$V1]
+    empates_perdidos <- empates_perdidos[empates_perdidos[, .I[contagem_cnefe == max(contagem_cnefe, na.rm=TRUE)], by = tempidgeocodebr]$V1]
     empates_perdidos <- empates_perdidos[empates_perdidos[, .I[1], by = tempidgeocodebr]$V1]
 
 
