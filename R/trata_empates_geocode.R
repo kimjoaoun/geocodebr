@@ -7,21 +7,6 @@ trata_empates_geocode <- function(output_df = parent.frame()$output_df,
   data.table::setDT(output_df)[, empate := ifelse(.N > 1, TRUE, FALSE), by = tempidgeocodebr]
 
   # # calcula distancias entre casos empatados
-  # output_df[empate == TRUE,
-  #           dist_geocodebr := dt_haversine(
-  #             lat, lon,
-  #             data.table::shift(lat), data.table::shift(lon)
-  #           ),
-  #           by = tempidgeocodebr
-  #           ]
-  #
-  # # coloca distancia 0 p/ primeiro caso
-  # #!!! isso aqui podia ser imples add 0 para 1st case
-  # output_df[empate == TRUE,
-  #           dist_geocodebr := ifelse(is.na(dist_geocodebr), 0, dist_geocodebr)
-  #           ]
-
-  # calculate distance between successive points
   output_df[empate == TRUE,
             dist_geocodebr := rcpp_distance_haversine(
               lat, lon,
