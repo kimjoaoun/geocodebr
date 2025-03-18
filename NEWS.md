@@ -14,9 +14,9 @@
 ## Notas
 
 - A função `geocode()` agora inclui busca com match probabilistico. [Encerra issue #34](https://github.com/ipeaGIT/geocodebr/issues/34).
-- Ajuste na solução de casos de empate mais refinada e agora detalhada na documentação da função `geocode()`. [Encerra issue #37](https://github.com/ipeaGIT/geocodebr/issues/37).
+- Ajuste na solução de casos de empate mais refinada e agora detalhada na documentação da função `geocode()`. [Encerra issue #37](https://github.com/ipeaGIT/geocodebr/issues/37). O método adotado na solução de empates agora fica transparente na documentação da função `geocode()`.
 - Nova vignette sobre a função `geocode_reverso()`
-- Vignette sobre a função `geocode()` reorganizada
+- Vignettew sobre *Get Started* e da função `geocode()` reorganizadas
 
 
 
