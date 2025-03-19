@@ -82,7 +82,7 @@ match_weighted_cases <- function( # nocov start
     WHERE {cols_not_null} AND {y}.numero IS NOT NULL;"
   )
 
-  DBI::dbExecute(con, query_match)
+  DBI::dbSendQueryArrow(con, query_match)
   # a <- DBI::dbReadTable(con, 'temp_db')
 
 
@@ -125,7 +125,7 @@ match_weighted_cases <- function( # nocov start
     )
   }
 
-  DBI::dbExecute(con, query_aggregate)
+  DBI::dbSendQueryArrow(con, query_aggregate)
   # b <- DBI::dbReadTable(con, 'output_db')
 
 

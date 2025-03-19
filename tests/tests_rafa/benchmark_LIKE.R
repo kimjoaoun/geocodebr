@@ -86,22 +86,37 @@ campos <- geocodebr::definir_campos(
 # test probabilistic
 # input_df <- input_df[c(7, 32, 34, 71, 173, 1348)]  # pn02 pi02 pn03 pi03 pr01 pr02
 
-bench::system_time(
-  dfgeo2 <- geocodebr::geocode(
+bench::mark( iterations = 1,
+  dfgeo <- geocodebr::geocode(
     enderecos = input_df,
     campos_endereco = campos,
     n_cores = ncores,
     resultado_completo = T,
     verboso = T,
     resultado_sf = F,
-    resolver_empates = F
+    resolver_empates = T
   )
 )
+
+expression       min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory
+<bch:expr>     <bch> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>
+  current      1.01m  1.01m    0.0165    81.3MB    0.182     1    11      1.01m <dt>   <Rprofmem>
+  ender_arrw   59.6s  59.6s    0.0168    81.2MB    0.201     1    12      59.6s <dt>   <Rprofmem>
+
 
 # 20K prob numero pn
 # atual:   46.69s / 706 empates
 # old:     34.91s / 783
 # 20250318 40.21s / 698 empates
+
+# 1.56m com arrow distinct
+# 1.47m com parquet no pn
+# 1.90m com parquet no pn e pa
+1.6 com write arrwo table   >>>>>>>>>>>> implementar com certeza
+1.3m e arrow distinc
+1.32m e arrow distinc  e outuop_arrw
+1.06m e arrow distinc  e outuop_arrw e sendQueryArrow (na tomada)
+1.06m isso + tudo com sendQueryArrow  (na tomada)
 
 
 

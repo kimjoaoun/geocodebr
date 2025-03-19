@@ -96,13 +96,11 @@ add_precision_col <- function(con, update_tb = NULL){
   # update_tb = "output_db"
 
   # add empty column
-  DBI::dbExecute(
-    con,
-    glue::glue("ALTER TABLE {update_tb} ADD COLUMN precisao TEXT;")
-  )
+  query_add_col <- glue::glue("ALTER TABLE {update_tb} ADD COLUMN precisao TEXT;")
+  DBI::dbSendQueryArrow(con, query_add_col)
 
   # populate column
-  query_precision <- glue::glue("
+  query_precision_cats <- glue::glue("
   UPDATE {update_tb}
   SET precisao = CASE
   WHEN tipo_resultado IN ('dn01', 'dn02', 'dn03', 'dn04',
@@ -117,7 +115,9 @@ add_precision_col <- function(con, update_tb = NULL){
   ELSE NULL
   END;")
 
-  DBI::dbExecute( con, query_precision )
+
+  # DBI::dbExecute(con, query_precision_cats )
+  DBI::dbSendQueryArrow(con, query_precision_cats )
 }
 
 
@@ -143,7 +143,7 @@ merge_results <- function(con,
                           'estado_encontrado', 'similaridade_logradouro')
 
     # relace NULL similaridade_logradouro as 1 because they were found deterministically
-    DBI::dbExecute(
+    DBI::dbSendQueryArrow(
       con,
       "UPDATE output_db
       SET similaridade_logradouro = COALESCE(similaridade_logradouro, 1);"
@@ -252,6 +252,7 @@ all_possible_match_types <- c(
   "dl04",         # pl04",  # too costly
   "dc01", "dc02", "db01", "dm01"
 )
+
 
 number_exact_types <- c(
   "dn01", "dn02", "dn03", "dn04"

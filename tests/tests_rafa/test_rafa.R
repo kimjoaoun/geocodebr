@@ -145,6 +145,9 @@ urlchecker::url_update()
 # CMD Check --------------------------------
 # Check package errors
 
+# linux ubuntu-clang for CRAN
+rhub::rhub_check(platforms = 'ubuntu-clang')
+
 # run only the tests
 Sys.setenv(NOT_CRAN = "true")
 testthat::test_local()
