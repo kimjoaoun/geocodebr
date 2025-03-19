@@ -360,3 +360,10 @@ get_prob_match_cutoff <- function(match_type){
   }
 
 
+
+# create a dummy function that uses nanoarrow with no effect
+# nanoarrow is only used internally in DBI::dbWriteTableArrow()
+# however, if we do not put this dummy function here, CRAN check flags an error
+dummy <- function() {
+  nanoarrow::as_nanoarrow_schema
+  }
