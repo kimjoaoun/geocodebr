@@ -144,34 +144,74 @@ geocode <- function(enderecos,
   # creating a temporary db and register the input table data
   con <- create_geocodebr_db(n_cores = n_cores)
 
-  # Convert input data frame to DuckDB table
-  duckdb::dbWriteTable(con, "input_padrao_db", input_padrao,
-                       overwrite = TRUE, temporary = TRUE
-                       )
+  # # Convert input data frame to DuckDB table
+  # duckdb::dbWriteTable(con, "input_padrao_db", input_padrao,
+  #                      overwrite = TRUE, temporary = TRUE
+  #                      )
+
+  input_padrao_arrw <- arrow::as_arrow_table(input_padrao)
+  DBI::dbWriteTableArrow(con, name = "input_padrao_db", input_padrao_arrw,
+                         overwrite = TRUE, temporary = TRUE)
+
 
   # create an empty output table that will be populated -----------------------------------------------
 
-  additional_cols_output_db <- ""
+  # additional_cols_output_db <- ""
+  # if (isTRUE(resultado_completo)) {
+  #   additional_cols_output_db <- glue::glue(
+  #   ", numero_encontrado VARCHAR, localidade_encontrada VARCHAR,
+  #   cep_encontrado VARCHAR, municipio_encontrado VARCHAR, estado_encontrado VARCHAR,
+  #   similaridade_logradouro NUMERIC(5, 3)"
+  #   )
+  # }
+  #
+  # query_create_empty_output_db <- glue::glue(
+  #   "CREATE OR REPLACE TABLE output_db (
+  #    tempidgeocodebr INTEGER,
+  #    lat NUMERIC(8, 6),
+  #    lon NUMERIC(8, 6),
+  #    endereco_encontrado VARCHAR,
+  #    logradouro_encontrado VARCHAR,
+  #    tipo_resultado VARCHAR,
+  #    contagem_cnefe INTEGER {additional_cols_output_db});"
+  #   )
+  #
+  # DBI::dbExecute(con, query_create_empty_output_db)
+
+  # Define schema
+  schema_output_db <- arrow::schema(
+    tempidgeocodebr = arrow::int32(),
+    lat = arrow::float16(),  # Equivalent to NUMERIC(8,6)
+    lon = arrow::float16(),
+    endereco_encontrado = arrow::string(),
+    logradouro_encontrado = arrow::string(),
+    tipo_resultado = arrow::string(),
+    contagem_cnefe = arrow::int32()
+  )
+
   if (isTRUE(resultado_completo)) {
-    additional_cols_output_db <- glue::glue(
-    ", numero_encontrado VARCHAR, localidade_encontrada VARCHAR,
-    cep_encontrado VARCHAR, municipio_encontrado VARCHAR, estado_encontrado VARCHAR,
-    similaridade_logradouro NUMERIC(5, 3)"
-    )
+
+    schema_output_db <- arrow::schema(
+      tempidgeocodebr = arrow::int32(),
+      lat = arrow::float16(),  # Equivalent to NUMERIC(8,6)
+      lon = arrow::float16(),
+      endereco_encontrado = arrow::string(),
+      logradouro_encontrado = arrow::string(),
+      tipo_resultado = arrow::string(),
+      contagem_cnefe = arrow::int32(),
+      #
+      numero_encontrado = arrow::int32(),
+      localidade_encontrada = arrow::string(),
+      cep_encontrado = arrow::string(),
+      municipio_encontrado = arrow::string(),
+      estado_encontrado = arrow::string(),
+      similaridade_logradouro = arrow::float16()
+      )
   }
 
-  query_create_empty_output_db <- glue::glue(
-    "CREATE OR REPLACE TABLE output_db (
-     tempidgeocodebr INTEGER,
-     lat NUMERIC(8, 6),
-     lon NUMERIC(8, 6),
-     endereco_encontrado VARCHAR,
-     logradouro_encontrado VARCHAR,
-     tipo_resultado VARCHAR,
-     contagem_cnefe INTEGER {additional_cols_output_db});"
-    )
-
-  DBI::dbExecute(con, query_create_empty_output_db)
+  output_db_arrow <- arrow::arrow_table(schema = schema_output_db)
+  DBI::dbWriteTableArrow(con, name = "output_db", output_db_arrow,
+                         overwrite = TRUE, temporary = TRUE)
 
 
   # START MATCHING -----------------------------------------------
@@ -230,17 +270,12 @@ geocode <- function(enderecos,
   add_precision_col(con, update_tb = 'output_db')
 
 
-  # relace NULL similaridade_logradouro as 1 because they were found deterministically
-  DBI::dbExecute(
-    con,
-    "UPDATE output_db
-    SET similaridade_logradouro = COALESCE(similaridade_logradouro, 1);"
-    )
-
-
   # output with all original columns
   duckdb::dbWriteTable(con, "input_db", enderecos,
                        temporary = TRUE, overwrite=TRUE)
+  # enderecos_arrw <- arrow::as_arrow_table(enderecos)
+  # DBI::dbWriteTableArrow(con, name = "input_db", enderecos_arrw,
+  #                        overwrite = TRUE, temporary = TRUE)
 
   x_columns <- names(enderecos)
 

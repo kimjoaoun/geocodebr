@@ -96,13 +96,11 @@ add_precision_col <- function(con, update_tb = NULL){
   # update_tb = "output_db"
 
   # add empty column
-  DBI::dbExecute(
-    con,
-    glue::glue("ALTER TABLE {update_tb} ADD COLUMN precisao TEXT;")
-  )
+  query_add_col <- glue::glue("ALTER TABLE {update_tb} ADD COLUMN precisao TEXT;")
+  DBI::dbSendQueryArrow(con, query_add_col)
 
   # populate column
-  query_precision <- glue::glue("
+  query_precision_cats <- glue::glue("
   UPDATE {update_tb}
   SET precisao = CASE
   WHEN tipo_resultado IN ('dn01', 'dn02', 'dn03', 'dn04',
@@ -117,7 +115,9 @@ add_precision_col <- function(con, update_tb = NULL){
   ELSE NULL
   END;")
 
-  DBI::dbExecute( con, query_precision )
+
+  # DBI::dbExecute(con, query_precision_cats )
+  DBI::dbSendQueryArrow(con, query_precision_cats )
 }
 
 
@@ -136,9 +136,19 @@ merge_results <- function(con,
                         'endereco_encontrado', 'logradouro_encontrado', 'contagem_cnefe')
 
   if (isTRUE(resultado_completo)) {
-  select_columns_y <- c(select_columns_y, 'numero_encontrado' , 'cep_encontrado',
-                        'localidade_encontrada', 'municipio_encontrado' , 'estado_encontrado', 'similaridade_logradouro'
+
+    # select additional columns to output
+    select_columns_y <- c(select_columns_y, 'numero_encontrado' , 'cep_encontrado',
+                          'localidade_encontrada', 'municipio_encontrado' ,
+                          'estado_encontrado', 'similaridade_logradouro')
+
+    # relace NULL similaridade_logradouro as 1 because they were found deterministically
+    DBI::dbSendQueryArrow(
+      con,
+      "UPDATE output_db
+      SET similaridade_logradouro = COALESCE(similaridade_logradouro, 1);"
     )
+
   }
 
   # Create the SELECT clause dynamically
@@ -242,6 +252,7 @@ all_possible_match_types <- c(
   "dl04",         # pl04",  # too costly
   "dc01", "dc02", "db01", "dm01"
 )
+
 
 number_exact_types <- c(
   "dn01", "dn02", "dn03", "dn04"
@@ -349,3 +360,10 @@ get_prob_match_cutoff <- function(match_type){
   }
 
 
+
+# create a dummy function that uses nanoarrow with no effect
+# nanoarrow is only used internally in DBI::dbWriteTableArrow()
+# however, if we do not put this dummy function here, CRAN check flags an error
+dummy <- function() {
+  nanoarrow::as_nanoarrow_schema
+  }

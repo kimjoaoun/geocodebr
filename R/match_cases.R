@@ -79,7 +79,7 @@ match_cases <- function( # nocov start
       WHERE {cols_not_null} AND filtered_cnefe.lon IS NOT NULL;"
   )
 
-  DBI::dbExecute(con, query_match)
+  DBI::dbSendQueryArrow(con, query_match)
   # a <- DBI::dbReadTable(con, 'output_db')
 
   duckdb::duckdb_unregister_arrow(con, "filtered_cnefe")

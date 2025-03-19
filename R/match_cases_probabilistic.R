@@ -50,6 +50,15 @@ match_cases_probabilistic <- function(
   duckdb::duckdb_register_arrow(con, "unique_logradouros", unique_logradouros)
   # a <- DBI::dbReadTable(con, 'unique_logradouros')
 
+  # query_unique_logradouros <- glue::glue(
+  #   "CREATE OR REPLACE VIEW unique_logradouros AS
+  #    SELECT DISTINCT {paste(key_cols, collapse = ', ')}
+  #    FROM filtered_cnefe;"
+  #   )
+  #
+  # DBI::dbExecute(con, query_unique_logradouros)
+
+
 
 
   # 2nd step: update input_padrao_db with the most probable logradouro ---------
@@ -97,7 +106,8 @@ match_cases_probabilistic <- function(
     AND rank = 1;"
   )
 
-  DBI::dbExecute(con, query_lookup)
+  DBI::dbSendQueryArrow(con, query_lookup)
+  # DBI::dbExecute(con, query_lookup)
   # b <- DBI::dbReadTable(con, 'input_padrao_db')
 
 
@@ -159,7 +169,9 @@ match_cases_probabilistic <- function(
   )
 
 
-  DBI::dbExecute(con, query_update_db)
+
+  DBI::dbSendQueryArrow(con, query_update_db)
+  # DBI::dbExecute(con, query_update_db)
   # c <- DBI::dbReadTable(con, 'output_db')
 
 

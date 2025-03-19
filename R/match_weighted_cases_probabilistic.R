@@ -77,6 +77,32 @@ match_weighted_cases_probabilistic <- function( # nocov start
   # a <- DBI::dbReadTable(con, 'unique_logradouros')
 
 
+  # if (match_type %like% "01") {
+  #
+  #   path_unique_cep_loc <- paste0(listar_pasta_cache(), "/municipio_logradouro_cep_localidade.parquet")
+  #
+  #   unique_logradouros <- arrow_open_dataset( path_unique_cep_loc ) |>
+  #     dplyr::filter(estado %in% input_states) |>
+  #     dplyr::filter(municipio %in% input_municipio) |>
+  #     dplyr::compute()
+  #
+  #   # register to db
+  #   duckdb::duckdb_register_arrow(con, "unique_logradouros", unique_logradouros)
+  #
+  #   } else {
+  #
+  #     unique_cols <- key_cols[!key_cols %in%  "numero"]
+  #
+  #     query_unique_logradouros <- glue::glue(
+  #       "CREATE OR REPLACE VIEW unique_logradouros AS
+  #         SELECT DISTINCT {paste(key_cols, collapse = ', ')}
+  #         FROM filtered_cnefe;"
+  #       )
+  #     DBI::dbExecute(con, query_unique_logradouros)
+  #
+  # }
+  # # a <- DBI::dbReadTable(con, 'unique_logradouros')
+
 
   # 2nd step: update input_padrao_db with the most probable logradouro ---------
 
@@ -121,7 +147,8 @@ match_weighted_cases_probabilistic <- function( # nocov start
     AND rank = 1;"
   )
 
-  DBI::dbExecute(con, query_lookup)
+  DBI::dbSendQueryArrow(con, query_lookup)
+  # DBI::dbExecute(con, query_lookup)
   # b <- DBI::dbReadTable(con, 'input_padrao_db')
 
 
@@ -182,7 +209,8 @@ match_weighted_cases_probabilistic <- function( # nocov start
     WHERE {cols_not_null_match};"
   )
 
-  DBI::dbExecute(con, query_match)
+  DBI::dbSendQueryArrow(con, query_match)
+  # DBI::dbExecute(con, query_match)
   # c <- DBI::dbReadTable(con, 'temp_db')
 
 
@@ -244,13 +272,17 @@ match_weighted_cases_probabilistic <- function( # nocov start
 
   }
 
-  DBI::dbExecute(con, query_aggregate)
+  DBI::dbSendQueryArrow(con, query_aggregate)
+  # DBI::dbExecute(con, query_aggregate)
   # d <- DBI::dbReadTable(con, 'output_db')
   # d <- DBI::dbReadTable(con, 'aaa')
 
   # remove arrow tables from db
   duckdb::duckdb_unregister_arrow(con, "filtered_cnefe")
-  duckdb::duckdb_unregister_arrow(con, "unique_logradouros")
+
+#  if (match_type %like% "01") {
+    duckdb::duckdb_unregister_arrow(con, "unique_logradouros")
+#  }
 
   # UPDATE input_padrao_db: Remove observations found in previous step
   temp_n <- update_input_db(
