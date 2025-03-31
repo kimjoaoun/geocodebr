@@ -98,12 +98,12 @@ trata_empates_geocode <- function(output_df = parent.frame()$output_df,
       'NOVENTA'
     )
 
-    ruas_letras <- paste(paste("RUA", LETTERS), collapse = " |")
-    ruas_numerais <- paste(paste("RUA", 1:30), collapse = " |")
-    ruas_num_ext <- paste(paste("RUA", num_ext), collapse = " |")
+    # ruas_letras <- paste(paste("RUA", LETTERS), collapse = " |")
+    # ruas_numerais <- paste(paste("RUA", 1:30), collapse = " |")
+    # ruas_letras <- paste0(ruas_letras, " ")
+    # ruas_numerais <- paste0(ruas_numerais, " ")
 
-    ruas_letras <- paste0(ruas_letras, " ")
-    ruas_numerais <- paste0(ruas_numerais, " ")
+    ruas_num_ext <- paste(paste("RUA", num_ext), collapse = " |")
     ruas_num_ext <- paste0(ruas_num_ext, " ")
 
     # casos empatados muito distantes
@@ -113,15 +113,26 @@ trata_empates_geocode <- function(output_df = parent.frame()$output_df,
     ## a distancia entre 1o e ultimo ponto maior q 1 Km
     # ids_empate_too_distant <- output_df2[empate == TRUE & sum(dist_geocodebr)>1000, ]$tempidgeocodebr
 
+  # tictoc::tic()
+  #   empates_perdidos <- output_df2[
+  #     empate == TRUE &
+  #       (
+  #         tempidgeocodebr %in% ids_empate_too_distant |
+  #           endereco_encontrado %like% ruas_letras      |
+  #           endereco_encontrado %like% ruas_numerais    |
+  #           endereco_encontrado %like% ruas_num_ext     |
+  #           endereco_encontrado %like% 'ESTRADA|RODOVIA'
+  #       )
+  #   ]
+  #   tictoc::toc()
 
     empates_perdidos <- output_df2[
       empate == TRUE &
         (
           tempidgeocodebr %in% ids_empate_too_distant |
-            endereco_encontrado %like% ruas_letras      |
-            endereco_encontrado %like% ruas_numerais    |
-            endereco_encontrado %like% ruas_num_ext     |
-            endereco_encontrado %like% 'ESTRADA|RODOVIA'
+          endereco_encontrado %like% "^(RUA|TRAVESSA|RAMAL|BECO|BLOCO)\\s+([A-Z]{1,2}|[0-9]{1,3}|[A-Z]{1,2}[0-9]{1,2}|[A-Z]{1,2}\\s+[0-9]{1,2}|[0-9]{1,2}[A-Z]{1,2})\\s+" |
+          endereco_encontrado %like% ruas_num_ext     |
+          endereco_encontrado %like% 'ESTRADA|RODOVIA'
         )
     ]
 
@@ -161,6 +172,9 @@ trata_empates_geocode <- function(output_df = parent.frame()$output_df,
     output_df2 <- data.table::rbindlist(list(df_sem_empate, empates_salve, empates_perdidos))
     output_df2[, 'contagem_cnefe' := NULL]
 
+    # reorder columns
+    output_df2 <- output_df2[order(tempidgeocodebr)]
+
     if (verboso) {
       plural <- ifelse(n_casos_empate==1, 'caso', 'casos')
       message(glue::glue(
@@ -171,9 +185,6 @@ trata_empates_geocode <- function(output_df = parent.frame()$output_df,
 
   # drop geocodebr dist columns
   output_df2[, dist_geocodebr := NULL]
-
-  # reorder columns
-  output_df2 <- output_df2[order(tempidgeocodebr)]
 
   return(output_df2)
 } # nocov end
