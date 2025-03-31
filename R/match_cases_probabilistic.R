@@ -1,3 +1,6 @@
+# prolema atual é que a pacote recalcula distancias de string TODA VEZ
+# seria melhor criar uma tabela de distancia e ir populando
+
 # 1st step: create small table with unique logradouros
 # 2nd step: update input_padrao_db with the most probable logradouro
 # 3rd step: deterministic match to update output
@@ -37,27 +40,37 @@ match_cases_probabilistic <- function(
 
   # 1st step: create small table with unique logradouros -----------------------
 
-  if (match_type %like% "01") {
-    unique_logradouros <- filtered_cnefe
-  } else {
-    unique_logradouros <- filtered_cnefe |>
-      dplyr::select(dplyr::all_of(key_cols)) |> # unique_cols
+  if (match_type == 'pn01') {
+
+    unique_logradouros_cep_localidade <- filtered_cnefe |>
+      dplyr::select(dplyr::all_of(c("estado", "municipio", "logradouro", "cep", "localidade"))) |>
       dplyr::distinct() |>
       dplyr::compute()
+
+    # path_unique_cep_loc <- paste0(listar_pasta_cache(), "/municipio_logradouro_cep_localidade.parquet")
+    # unique_logradouros_cep_localidade <- arrow_open_dataset( path_unique_cep_loc ) |>
+    #   dplyr::filter(estado %in% input_states) |>
+    #   dplyr::filter(municipio %in% input_municipio) |>
+    #   dplyr::compute()
+
+    # register to db
+    duckdb::duckdb_register_arrow(con, "unique_logradouros", unique_logradouros_cep_localidade)
+    duckdb::duckdb_register_arrow(con, "unique_logradouros_cep_localidade", unique_logradouros_cep_localidade)
+    # a <- DBI::dbReadTable(con, 'unique_logradouros')
+
+  } else {
+
+    # 666 esse passo poderia tmb filtar estados e municipios presentes
+    unique_cols <- key_cols[!key_cols %in% "numero"]
+
+    query_unique_logradouros <- glue::glue(
+          "CREATE OR REPLACE VIEW unique_logradouros AS
+            SELECT DISTINCT {paste(unique_cols, collapse = ', ')}
+            FROM unique_logradouros_cep_localidade;"
+          )
+
+    DBI::dbSendQueryArrow(con, query_unique_logradouros)
   }
-
-  # register to db
-  duckdb::duckdb_register_arrow(con, "unique_logradouros", unique_logradouros)
-  # a <- DBI::dbReadTable(con, 'unique_logradouros')
-
-  # query_unique_logradouros <- glue::glue(
-  #   "CREATE OR REPLACE VIEW unique_logradouros AS
-  #    SELECT DISTINCT {paste(key_cols, collapse = ', ')}
-  #    FROM filtered_cnefe;"
-  #   )
-  #
-  # DBI::dbExecute(con, query_unique_logradouros)
-
 
 
 
@@ -70,17 +83,17 @@ match_cases_probabilistic <- function(
   )
 
   # remove numero and logradouro from key cols to allow for the matching
-  key_cols <- key_cols[key_cols != 'logradouro']
+  key_cols_string_dist <- key_cols[!key_cols %in%  c("numero", "logradouro")]
 
   join_condition_lookup <- paste(
-    glue::glue("unique_logradouros.{key_cols} = {x}.{key_cols}"),
+    glue::glue("unique_logradouros.{key_cols_string_dist} = {x}.{key_cols_string_dist}"),
     collapse = ' AND '
   )
 
   # min cutoff for string match
   min_cutoff <- get_prob_match_cutoff(match_type)
 
-#       CAST(jaro_similarity({x}.logradouro, unique_logradouros.logradouro) AS NUMERIC(5,3)) AS similarity,
+# filtro determi no cep e localidade
 
   # query
   query_lookup <- glue::glue(
@@ -94,7 +107,7 @@ match_cases_probabilistic <- function(
     FROM {x}
     JOIN unique_logradouros
       ON {join_condition_lookup}
-    WHERE {cols_not_null}
+    WHERE {cols_not_null} AND {x}.similaridade_logradouro IS NULL AND similarity > {min_cutoff}
   )
 
   UPDATE {x}
@@ -130,7 +143,9 @@ match_cases_probabilistic <- function(
     glue::glue("{x}.{key_cols} IS NOT NULL"),
     collapse = ' AND '
     )
-  cols_not_null <-  paste( cols_not_null, glue::glue("AND {x}.temp_lograd_determ IS NOT NULL") )
+
+  # cols that cannot be null
+  cols_not_null <- gsub('.logradouro', '.temp_lograd_determ', cols_not_null)
 
   # whether to keep all columns in the result
   colunas_encontradas <- ""

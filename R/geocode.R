@@ -144,39 +144,13 @@ geocode <- function(enderecos,
   # creating a temporary db and register the input table data
   con <- create_geocodebr_db(n_cores = n_cores)
 
-  # # Convert input data frame to DuckDB table
-  # duckdb::dbWriteTable(con, "input_padrao_db", input_padrao,
-  #                      overwrite = TRUE, temporary = TRUE
-  #                      )
-
+  # register standardized input data
   input_padrao_arrw <- arrow::as_arrow_table(input_padrao)
   DBI::dbWriteTableArrow(con, name = "input_padrao_db", input_padrao_arrw,
                          overwrite = TRUE, temporary = TRUE)
 
 
   # create an empty output table that will be populated -----------------------------------------------
-
-  # additional_cols_output_db <- ""
-  # if (isTRUE(resultado_completo)) {
-  #   additional_cols_output_db <- glue::glue(
-  #   ", numero_encontrado VARCHAR, localidade_encontrada VARCHAR,
-  #   cep_encontrado VARCHAR, municipio_encontrado VARCHAR, estado_encontrado VARCHAR,
-  #   similaridade_logradouro NUMERIC(5, 3)"
-  #   )
-  # }
-  #
-  # query_create_empty_output_db <- glue::glue(
-  #   "CREATE OR REPLACE TABLE output_db (
-  #    tempidgeocodebr INTEGER,
-  #    lat NUMERIC(8, 6),
-  #    lon NUMERIC(8, 6),
-  #    endereco_encontrado VARCHAR,
-  #    logradouro_encontrado VARCHAR,
-  #    tipo_resultado VARCHAR,
-  #    contagem_cnefe INTEGER {additional_cols_output_db});"
-  #   )
-  #
-  # DBI::dbExecute(con, query_create_empty_output_db)
 
   # Define schema
   schema_output_db <- arrow::schema(
@@ -243,7 +217,6 @@ geocode <- function(enderecos,
         } else if (match_type %in% probabilistic_interpolation_types) { match_weighted_cases_probabilistic
           }
 
-
       n_rows_affected <- match_fun(
         con,
         match_type = match_type,
@@ -251,8 +224,6 @@ geocode <- function(enderecos,
         resultado_completo = resultado_completo
       )
 
-      # n_rows_left <- DBI::dbGetQuery(con, 'SELECT COUNT(*) FROM input_padrao_db;')$`count_star()`
-      # matched_rows <- n_rows - n_rows_left
       matched_rows <- matched_rows + n_rows_affected
 
       # leave the loop early if we find all addresses before covering all cases
@@ -262,7 +233,6 @@ geocode <- function(enderecos,
   }
 
   if (verboso) finish_progress_bar(matched_rows)
-
 
   if (verboso) message_preparando_output()
 

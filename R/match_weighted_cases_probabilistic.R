@@ -38,45 +38,8 @@ match_weighted_cases_probabilistic <- function( # nocov start
 
   # 1st step: create small table with unique logradouros -----------------------
 
-  # # select only key columns to get unique values
-  # unique_cols <- key_cols[!key_cols %in%  "numero"]
-  #
-  # unique_logradouros <- filtered_cnefe |>
-  #   dplyr::select( dplyr::all_of(unique_cols)) |>
-  #   dplyr::distinct() |>
-  #   dplyr::compute()
-  #
-  # # register to db
-  # duckdb::duckdb_register_arrow(con, "unique_logradouros", unique_logradouros)
-  # # a <- DBI::dbReadTable(con, 'unique_logradouros')
-
-
   # get_reference_table('pa02')
   # get_key_cols('pa02')
-  if (match_type %like% "01") {
-
-    path_unique_cep_loc <- paste0(listar_pasta_cache(), "/municipio_logradouro_cep_localidade.parquet")
-
-    unique_logradouros <- arrow_open_dataset( path_unique_cep_loc ) |>
-      dplyr::filter(estado %in% input_states) |>
-      dplyr::filter(municipio %in% input_municipio) |>
-      dplyr::compute()
-
-    } else {
-
-      unique_cols <- key_cols[!key_cols %in%  "numero"]
-
-      unique_logradouros <- filtered_cnefe |>
-        dplyr::select( dplyr::all_of(unique_cols)) |>
-        dplyr::distinct() |>
-        dplyr::compute()
-
-  }
-  # register to db
-  duckdb::duckdb_register_arrow(con, "unique_logradouros", unique_logradouros)
-  # a <- DBI::dbReadTable(con, 'unique_logradouros')
-
-
   # if (match_type %like% "01") {
   #
   #   path_unique_cep_loc <- paste0(listar_pasta_cache(), "/municipio_logradouro_cep_localidade.parquet")
@@ -86,22 +49,51 @@ match_weighted_cases_probabilistic <- function( # nocov start
   #     dplyr::filter(municipio %in% input_municipio) |>
   #     dplyr::compute()
   #
-  #   # register to db
-  #   duckdb::duckdb_register_arrow(con, "unique_logradouros", unique_logradouros)
-  #
   #   } else {
   #
   #     unique_cols <- key_cols[!key_cols %in%  "numero"]
   #
-  #     query_unique_logradouros <- glue::glue(
-  #       "CREATE OR REPLACE VIEW unique_logradouros AS
-  #         SELECT DISTINCT {paste(key_cols, collapse = ', ')}
-  #         FROM filtered_cnefe;"
-  #       )
-  #     DBI::dbExecute(con, query_unique_logradouros)
+  #     unique_logradouros <- filtered_cnefe |>
+  #       dplyr::select( dplyr::all_of(unique_cols)) |>
+  #       dplyr::distinct() |>
+  #       dplyr::compute()
   #
   # }
+  # # register to db
+  # duckdb::duckdb_register_arrow(con, "unique_logradouros", unique_logradouros)
   # # a <- DBI::dbReadTable(con, 'unique_logradouros')
+
+  if (match_type %like% "01") {
+
+    # unique_logradouros_cep_localidade <- filtered_cnefe |>
+    #   dplyr::select(dplyr::all_of(c("estado", "municipio", "logradouro", "cep", "localidade"))) |>
+    #   dplyr::distinct() |>
+    #   dplyr::compute()
+
+    path_unique_cep_loc <- paste0(listar_pasta_cache(), "/municipio_logradouro_cep_localidade.parquet")
+    unique_logradouros <- arrow_open_dataset( path_unique_cep_loc ) |>
+      dplyr::filter(estado %in% input_states) |>
+      dplyr::filter(municipio %in% input_municipio) |>
+      dplyr::compute()
+
+    # register to db
+    duckdb::duckdb_register_arrow(con, "unique_logradouros", unique_logradouros)
+    # a <- DBI::dbReadTable(con, 'unique_logradouros')
+
+  } else {
+
+    # 666 esse passo poderia tmb filtar estados e municipios presentes
+    unique_cols <- key_cols[!key_cols %in%  "numero"]
+
+    query_unique_logradouros <- glue::glue(
+      "CREATE OR REPLACE VIEW unique_logradouros AS
+            SELECT DISTINCT {paste(unique_cols, collapse = ', ')}
+            FROM unique_logradouros_cep_localidade;"
+    )
+
+    DBI::dbSendQueryArrow(con, query_unique_logradouros)
+  }
+
 
 
   # 2nd step: update input_padrao_db with the most probable logradouro ---------
@@ -135,7 +127,7 @@ match_weighted_cases_probabilistic <- function( # nocov start
     FROM {x}
     JOIN unique_logradouros
       ON {join_condition_string_dist}
-    WHERE {cols_not_null}
+    WHERE {cols_not_null} AND {x}.similaridade_logradouro IS NULL AND similarity > {min_cutoff}
   )
 
   UPDATE {x}
