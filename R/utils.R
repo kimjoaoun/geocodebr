@@ -355,7 +355,7 @@ get_reference_table <- function(match_type){
 # min cutoff for string match
 # min cutoff for probabilistic string match of logradouros
 get_prob_match_cutoff <- function(match_type){
-  min_cutoff <- ifelse(match_type %in% c('pn01', 'pa01', 'pl01'), 0.8,  0.9)
+  min_cutoff <- ifelse(match_type %in% c('pn01', 'pa01', 'pl01'), 0.85,  0.9)
   return(min_cutoff)
   }
 
