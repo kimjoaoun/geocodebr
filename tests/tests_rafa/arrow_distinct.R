@@ -44,18 +44,21 @@ input_padrao <- arrow::read_parquet('input_padrao.parquet')
 input_states <- unique(input_padrao$estado_padr)
 input_municipio <- unique(input_padrao$municipio_padr)
 
+
+
 path_to_parquet <- geocodebr::listar_dados_cache()[7]
 
-key_cols <- c("estado", "municipio", "logradouro", "cep" )
+key_cols <- c("estado", "municipio", "logradouro", "numero", "cep" )
 
 
-filtered_cnefe <- arrow::open_dataset(path_to_parquet) |>
+filtered_cnefe2 <- arrow::open_dataset(path_to_parquet) |>
   dplyr::filter(estado %in% input_states) |>
   dplyr::filter(municipio %in% input_municipio) |>
   dplyr::compute()
 
 
-unique_logradouros <- filtered_cnefe |>
-  dplyr::select(dplyr::all_of(key_cols)) |> # unique_cols
+# unique_logradouros <- filtered_cnefe2 |>
+unique_logradouros <- arrow::open_dataset(path_to_parquet) |>
+  dplyr::select(dplyr::all_of(key_cols)) |>
   dplyr::distinct() |>
   dplyr::compute()
