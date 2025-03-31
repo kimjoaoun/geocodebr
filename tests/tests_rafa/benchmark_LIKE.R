@@ -94,15 +94,24 @@ bench::mark( iterations = 1,
     resultado_completo = T,
     verboso = T,
     resultado_sf = F,
-    resolver_empates = T
+    resolver_empates = F
   )
 )
 
-expression       min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory
-<bch:expr>     <bch> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>
-  current      1.01m  1.01m    0.0165    81.3MB    0.182     1    11      1.01m <dt>   <Rprofmem>
-  ender_arrw   59.6s  59.6s    0.0168    81.2MB    0.201     1    12      59.6s <dt>   <Rprofmem>
-
+# expression       min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory
+# <bch:expr>     <bch> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>
+#   current      1.01m  1.01m    0.0165    81.3MB    0.182     1    11      1.01m <dt>   <Rprofmem>
+#   ender_arrw   59.6s  59.6s    0.0168    81.2MB    0.201     1    12      59.6s <dt>   <Rprofmem>
+#                40.2s  40.2s    0.0249      83MB    0.323     1    13      40.2s <dt>   <Rprofmem>
+#                30.3s  30.3s    0.0330    71.8MB    0.363     1    11      30.3s <dt>   <Rprofmem> 715 empates
+#                26.2s  26.2s    0.0382    70.3MB    0.343     1     9      26.2s <dt>   <Rprofmem> 722
+#                24.5s  24.5s    0.0409    70.3MB    0.368     1     9      24.5s <dt>   <Rprofmem> 722
+# *** latest     24.1s  24.1s    0.0414    63.8MB    0.373     1     9      24.1s <dt>   <Rprofmem> 704
+# > regex empates sem oreder
+#
+#                match prob
+# filter               25.7s  25.7s    0.0389    63.8MB    0.350     1     9      25.7s <dt>   <Rprofmem> <bench_tm>
+# distinct             27s    27s    0.0371    91.1MB    0.334     1     9        27s <dt>   <Rprofmem> <bench_tm>
 
 # 20K prob numero pn
 # atual:   46.69s / 706 empates
@@ -112,11 +121,11 @@ expression       min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time 
 # 1.56m com arrow distinct
 # 1.47m com parquet no pn
 # 1.90m com parquet no pn e pa
-1.6 com write arrwo table   >>>>>>>>>>>> implementar com certeza
-1.3m e arrow distinc
-1.32m e arrow distinc  e outuop_arrw
-1.06m e arrow distinc  e outuop_arrw e sendQueryArrow (na tomada)
-1.06m isso + tudo com sendQueryArrow  (na tomada)
+# 1.6 com write arrwo table   >>>>>>>>>>>> implementar com certeza
+# 1.3m e arrow distinc
+# 1.32m e arrow distinc  e outuop_arrw
+# 1.06m e arrow distinc  e outuop_arrw e sendQueryArrow (na tomada)
+# 1.06m isso + tudo com sendQueryArrow  (na tomada)
 
 
 

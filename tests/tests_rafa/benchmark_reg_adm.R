@@ -25,7 +25,7 @@ set.seed(42)
 
 
 # cad unico --------------------------------------------------------------------
-sample_size <- 1000000
+sample_size <- 5000000
 
 cad_con <- ipeadatalake::ler_cadunico(
   data = 202312,
@@ -62,7 +62,7 @@ cad <- cad_con |>
          cep,
          bairro) |>
   dplyr::compute() |>
-  dplyr::slice_sample(n = sample_size) |> # sample 20K
+   # dplyr::slice_sample(n = sample_size) |> # sample 20K
   dplyr::collect()
 
 
@@ -94,6 +94,34 @@ fields_cad <- geocodebr::definir_campos(
 #' > rafa_drop
 #' process    real
 #' 23.9m     17m
+#' expression           min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory     time
+#' determ_wth_matches 2.15h  2.15h  0.000129    73.7GB   0.0107     1    83      2.15h / 2,204,315 empates
+
+# ℹ Geolocalizando endereços
+# Error in `duckdb_result()`:70,985/43,882,017 ■■■■■■■■■■■■■■■■■■■■■■            69% - Procurando pl02
+# ! rapi_execute: Failed to run query
+# Error: Out of Memory Error: Allocation failure
+# Run `rlang::last_trace()` to see where the error occurred.
+#
+#
+# Backtrace:
+#   ▆
+# 1. ├─bench::system_time(...)
+# 2. │ ├─stats::setNames(...)
+# 3. │ └─bench::as_bench_time(.Call(system_time_, substitute(expr), parent.frame()))
+# 4. └─geocodebr::geocode(...)
+# 5.   └─geocodebr (local) match_fun(...) at geocodebr/R/geocode.R:220:7
+# 6.     ├─DBI::dbSendQueryArrow(con, query_lookup) at geocodebr/R/match_cases_probabilistic.R:119:3
+# 7.     └─DBI::dbSendQueryArrow(con, query_lookup)
+# 8.       └─DBI (local) .local(conn, statement, ...)
+# 9.         ├─DBI::dbSendQuery(conn, statement, params = params, ...)
+# 10.         └─duckdb::dbSendQuery(conn, statement, params = params, ...)
+# 11.           └─duckdb (local) .local(conn, statement, ...)
+# 12.             └─duckdb:::duckdb_result(connection = conn, stmt_lst = stmt_lst, arrow = arrow)
+# Run rlang::last_trace(drop = FALSE) to see 14 hidden frames.
+
+
+
 
 bench::mark(
   cadgeo <- geocodebr::geocode(
@@ -118,8 +146,18 @@ bench::mark(
 #   20250318 5.26m  5.26m   0.00317     1.8GB    0.181     1    57      5.26m <dt>   <Rprofmem> <bench_tm>
 #> com arrow unique
 
+#   20250319 5.53m  5.53m   0.00301    1.82GB    0.154     1    51      5.53m <dt>   <Rprofmem> 67285
+#> arrow unique + sendQuerryarrow
+
+#   20250320 5.98m  5.98m   0.00279    1.82GB    0.173     1    62      5.98m <dt>   <Rprofmem> 67409
+#> arrow unique + sendQuerryarrow e NO NUMBER nas cat 'pn'
+
+
 # 20250318 1.28h  1.28h  0.000217    1.83GB   0.0141     1    65      1.28h <dt>   <Rprofmem> <bench_tm> <tibble> 67608
 #> com duckdb unique
+
+# 3.61m  3.61m   0.00462    1.83GB    0.365     1    79      3.61m <dt>   <Rprofmem> // 69725
+# latest
 
 
 
@@ -127,17 +165,25 @@ bench::mark(
 # expression   min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory     EMPATES
 #       old 9.56m  9.56m   0.00174    1.02GB   0.0994     1    57      9.56m <dt>   <Rprofmem>  47,258
 #       new 1.99m  1.99m   0.00839    1000MB    0.327     1    39      1.99m <dt>   <Rprofmem>  41,317
-#  20250318 2.26m   2.26m   0.00736    1003MB    0.434     1    59      2.26m <dt>   <Rprofmem>
+#  20250318 2.26m  2.26m   0.00736    1003MB    0.434     1    59      2.26m <dt>   <Rprofmem>
+
+#  20250321 2.24m  2.24m   0.00743    1015MB    0.320     1    43      2.24m <dt>   <Rprofmem> 41,841
+
+# latest distinct  1.55m  1.55m    0.0107    1022MB    0.569     1    53      1.55m <dt>   <Rprofmem> 43,146
+# latest filter    1.85m  1.85m   0.00903     910MB    0.361     1    40      1.85m <dt>   <Rprofmem> 43147
+
+#         distinct 1.84m  1.84m   0.00905     912MB    0.299     1    33      1.84m <dt>   <Rprofmem> 43129
+#         filter   1.90m   1.9m   0.00878     910MB    0.316     1    36       1.9m <dt>   <Rprofmem> 43153
 
 
 
-
-
+# 5 milhoes
+# expression   min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory     EMPATES
+#            57.2m  57.2m  0.000292    7.84GB   0.0248     1    85      57.2m <dt>   <Rprofmem> 294,678
 
 
 
 # checando empates no cadunico -------------------------------------------------
-
 
 
 data.table::setDT(empate)
@@ -176,9 +222,9 @@ mapview::mapview(temp, zcol='endereco_encontrado')
 sf::st_distance(temp)
 
 # nao era para ser empate
-5 "da02" "da02"   mesmo rua e cep
-[1] "RUA PAULO SIMOES DA COSTA, 32 (aprox) - JARDIM ANGELA, SAO PAULO - SP, 04929-140"
-[2] "RUA PAULO SIMOES DA COSTA, 32 (aprox) - ALTO DO RIVIERA, SAO PAULO - SP, 04929-140"
+# 5 "da02" "da02"   mesmo rua e cep
+# [1] "RUA PAULO SIMOES DA COSTA, 32 (aprox) - JARDIM ANGELA, SAO PAULO - SP, 04929-140"
+# [2] "RUA PAULO SIMOES DA COSTA, 32 (aprox) - ALTO DO RIVIERA, SAO PAULO - SP, 04929-140"
 
 
 
