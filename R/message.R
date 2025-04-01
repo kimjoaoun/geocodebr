@@ -18,6 +18,10 @@ message_baixando_cnefe <- function() {
   geocodebr_message(c("i" = "Baixando dados do CNEFE"))
 }
 
+message_usando_cnefe_local <- function() {
+  geocodebr_message(c("i" = "Utilizando dados do CNEFE armazenados localmente"))
+}
+
 message_looking_for_matches <- function() {
   geocodebr_message(c("i" = "Geolocalizando endere\u00e7os"))
 }
