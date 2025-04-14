@@ -66,7 +66,7 @@ busca_por_cep <- function(cep,
 
 
   output_df <- cnefe |>
-    dplyr::select(cep, estado, municipio, logradouro, localidade, lat, lon) |>          # Drop the n_casos column
+    dplyr::select(cep, estado, municipio, logradouro, localidade, lat, lon) |>  # Drop the n_casos column
     dplyr::filter(cep %in% cep_padrao) |>
     dplyr::collect()
 

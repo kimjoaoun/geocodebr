@@ -117,27 +117,32 @@ geocode_reverso <- function(pontos,
   )
 
 
-  # limita escopo de busca aos estados  -------------------------------------------------------
+  # limita escopo de busca aos municipios  -------------------------------------------------------
 
-  # determine potential states
-  bbox_states <- readRDS(system.file("extdata/states_bbox.rds", package = "geocodebr"))
-  potential_states <- dplyr::filter(
-    bbox_states,
-    xmin >= bbox_lon_min |
-      xmax <= bbox_lon_max |
-      ymin >= bbox_lat_min |
-      ymax <= bbox_lat_max)$abbrev_state
+  # determine potential municipalities
+  bbox_munis <- readRDS(system.file("extdata/munis_bbox.rds", package = "geocodebr"))
 
+  get_muni <- function(i){ # i=10
+    temp <- coords[i,]
+    potential_muni <- dplyr::filter(
+      bbox_munis,
+      xmin <= temp$lon_min &
+        xmax >= temp$lon_max &
+        ymin <= temp$lat_min &
+        ymax >= temp$lat_max)$code_muni
+    return(potential_muni)
+  }
+
+  potential_munis <- lapply(X=1:nrow(coords), FUN=get_muni)
+  potential_munis <- unlist(potential_munis) |> unique()
+
+  potential_munis <- enderecobr::padronizar_municipios(potential_munis)
   # Load CNEFE data and filter it to include only states
   # present in the input table, reducing the search scope
   # Narrow search global scope of cnefe to bounding box
   path_to_parquet <- paste0(listar_pasta_cache(), "/municipio_logradouro_numero_cep_localidade.parquet")
   filtered_cnefe <- arrow_open_dataset( path_to_parquet ) |>
-    dplyr::filter(estado %in% potential_states) |>
-    dplyr::filter(lon >= bbox_lon_min &
-                    lon <= bbox_lon_max &
-                    lat >= bbox_lat_min &
-                    lat <= bbox_lat_max) |>
+    dplyr::filter(municipio %in% potential_munis) |>
     dplyr::compute()
 
 
@@ -203,13 +208,14 @@ geocode_reverso <- function(pontos,
 
   # convert df to simple feature
   output_sf <- sfheaders::sf_point(
-      obj = output,
-      x = 'lon',
-      y = 'lat',
-      keep = TRUE
-    )
+    obj = output,
+    x = 'lon',
+    y = 'lat',
+    keep = TRUE
+  )
 
   sf::st_crs(output_sf) <- 4674
 
   return(output_sf)
 }
+
