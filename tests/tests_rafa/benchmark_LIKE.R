@@ -86,9 +86,11 @@ campos <- geocodebr::definir_campos(
 # test probabilistic
 # input_df <- input_df[c(7, 32, 34, 71, 173, 1348)]  # pn02 pi02 pn03 pi03 pr01 pr02
 
+temp_df <- filter(input_df,id %in% c(1371)  )
+
 bench::mark( iterations = 1,
-  dfgeo <- geocodebr::geocode(
-    enderecos = input_df,
+  temp_dfgeo2 <- geocodebr::geocode(
+    enderecos = temp_df,
     campos_endereco = campos,
     n_cores = ncores,
     resultado_completo = T,
@@ -106,9 +108,9 @@ bench::mark( iterations = 1,
 #                30.3s  30.3s    0.0330    71.8MB    0.363     1    11      30.3s <dt>   <Rprofmem> 715 empates
 #                26.2s  26.2s    0.0382    70.3MB    0.343     1     9      26.2s <dt>   <Rprofmem> 722
 #                24.5s  24.5s    0.0409    70.3MB    0.368     1     9      24.5s <dt>   <Rprofmem> 722
-# *** latest     24.1s  24.1s    0.0414    63.8MB    0.373     1     9      24.1s <dt>   <Rprofmem> 704
-# > regex empates sem oreder
-#
+#                24.1s  24.1s    0.0414    63.8MB    0.373     1     9      24.1s <dt>   <Rprofmem> 704
+# prob befo det  24.4s  24.4s    0.0411    39.3MB    0.411     1    10      24.4s <dt>   <Rprofmem> 723
+# prob after det 24.9s  24.9s    0.0401      67MB    0.401     1    10      24.9s <dt>   <Rprofmem> 810
 #                match prob
 # filter               25.7s  25.7s    0.0389    63.8MB    0.350     1     9      25.7s <dt>   <Rprofmem> <bench_tm>
 # distinct             27s    27s    0.0371    91.1MB    0.334     1     9        27s <dt>   <Rprofmem> <bench_tm>

@@ -1,4 +1,62 @@
 
+temp <- dfgeo |> select(id, tipo_resultado, precisao) |> unique()
+temp2 <- dfgeo2 |> select(id, tipo_resultado2 =tipo_resultado, precisao2 = precisao) |> unique()
+
+df <- left_join(temp, temp2)
+
+
+table(df$precisao,df$precisao2 )
+
+table(df$precisao )
+
+table(df$precisao2 )
+
+data.table::setDT(df)[, Freq := 1]
+
+df_agreg <- df[, .(Freq = .N), by = .(tipo_resultado, tipo_resultado2, precisao, precisao2)]
+df_agreg <- df_agreg[tipo_resultado != tipo_resultado2]
+df_agreg <- df_agreg[precisao != precisao2]
+
+library(ggplot2)
+library(ggalluvial)
+
+
+gg <- ggplot(df_agreg,
+             aes(y = Freq, axis1 = tipo_resultado, axis2 = tipo_resultado2)) +
+  geom_alluvium(aes(fill = tipo_resultado2), width = 1/12) +
+  geom_stratum(width = 1/12, fill = "white", color = "grey") +
+  geom_label(stat = "stratum", aes(label = after_stat(stratum)), size=2) +
+  scale_x_discrete(limits = c("antes", "depois"), expand = c(.05, .05)) +
+  # scale_fill_brewer(type = "qual", palette = "Set1") +
+  scale_fill_viridis_d()
+
+ggsave(gg, filename = 'ggaluvia.png', width = 18, height = 12, units='cm')
+
+
+
+pn01            da04
+
+dfall <- left_join(dfgeo, dfgeo2, by='id') |>
+  filter(tipo_resultado.x=='pn01' &
+           tipo_resultado.y=='da04')
+
+dfall$id
+
+filter(dfgeo,id %in% c(1371)  )
+filter(dfgeo2,id %in% c(1371)  )
+#' por que id '463' nao foi encontrado na cat da01 ? e sim no da02
+#' em tese, nao deveria ter nenhuma transicao de p para d
+#' outro exemplo: de pa01 para da03
+#'  - ora, se foi pa01, encontrou bairro e cep
+#'  - se depois achou com da03, entao achou com logradouro determ, e soh o bairro mas nao o cep
+#'
+#' outro caso pn01 e depois vira da04
+#' pn03 e depois vira da04
+
+
+
+
+
 ############## sankey plot ----------------------------------------
 library(ggplot2)
 library(ggsankey)

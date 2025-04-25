@@ -96,6 +96,7 @@ fields_cad <- geocodebr::definir_campos(
 #' 23.9m     17m
 #' expression           min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory     time
 #' determ_wth_matches 2.15h  2.15h  0.000129    73.7GB   0.0107     1    83      2.15h / 2,204,315 empates
+#' prob after all det 2.64h  2.64h  0.000105    67.4GB   0.0110     1   104      2.64h / 2,444,248 empates
 
 # ℹ Geolocalizando endereços
 # Error in `duckdb_result()`:70,985/43,882,017 ■■■■■■■■■■■■■■■■■■■■■■            69% - Procurando pl02

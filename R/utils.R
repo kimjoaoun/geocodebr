@@ -254,6 +254,19 @@ all_possible_match_types <- c(
 )
 
 
+# all_possible_match_types <- c(
+#   "dn01", "da01",
+#   "dn02", "da02",
+#   "dn03", "da03",
+#   "dn04", "da04", #"pn04", "pa04", # too costly
+#   "dl01",
+#   "dl02",
+#   "dl03",
+#   "dl04",         # pl04",  # too costly
+#   "pn01", "pa01", "pn02", "pa02", "pn03", "pa03", "pl01", "pl02", "pl03",
+#   "dc01", "dc02", "db01", "dm01"
+# )
+
 number_exact_types <- c(
   "dn01", "dn02", "dn03", "dn04"
   )
