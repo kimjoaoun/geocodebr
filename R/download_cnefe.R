@@ -69,7 +69,12 @@ download_cnefe <- function(tabela = "todas", verboso = TRUE, cache = TRUE) {
   files_to_download <- setdiff(all_files, existing_files)
   files_to_download <- data_urls[all_files %in% files_to_download]
 
-  if (length(files_to_download) == 0) return(invisible(data_dir))
+  if (length(files_to_download) == 0) {
+
+    if (verboso) { message_usando_cnefe_local() }
+
+    return(invisible(data_dir))
+    }
 
   downloaded_files <- download_files(data_dir, files_to_download, verboso)
 
@@ -118,7 +123,7 @@ perform_requests_in_parallel <- function(requests, dest_files, verboso) {
     requests,
     paths = dest_files,
     on_error = "continue",
-    progress = ifelse(verboso == TRUE, '', FALSE)
+    progress = ifelse(verboso == TRUE, 'z', FALSE)
   )
 }
 
