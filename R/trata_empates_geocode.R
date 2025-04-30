@@ -149,23 +149,26 @@ trata_empates_geocode <- function(output_df = parent.frame()$output_df,
     ids_empate_salve <- output_df2[!tempidgeocodebr %in% c(ids_sem_empate, empates_perdidos$tempidgeocodebr)]$tempidgeocodebr
     empates_salve <- output_df2[ tempidgeocodebr %in% ids_empate_salve ]
 
-    # check if we have every id TRUE: no id should be left behind
-    length(unique(output_df2$tempidgeocodebr)) == sum(
-      length(ids_sem_empate),
-      length(unique(empates_perdidos$tempidgeocodebr)) ,
-      length(unique(ids_empate_salve))
-    )
+    if (nrow(empates_salve)>0){
+      # check if we have every id TRUE: no id should be left behind
+      length(unique(output_df2$tempidgeocodebr)) == sum(
+        length(ids_sem_empate),
+        length(unique(empates_perdidos$tempidgeocodebr)) ,
+        length(unique(ids_empate_salve))
+      )
 
-    # calcula media ponderada das coordenadas
-    # fica com caso que tem max 'contagem_cnefe'
-    empates_salve[, c('lat', 'lon') := list(weighted.mean(lat, w = contagem_cnefe),
-                                            weighted.mean(lon, w = contagem_cnefe)
-                                            ),
-                  by = tempidgeocodebr]
+      # calcula media ponderada das coordenadas
+      # fica com caso que tem max 'contagem_cnefe'
+      empates_salve[, c('lat', 'lon') := list(weighted.mean(lat, w = contagem_cnefe),
+                                              weighted.mean(lon, w = contagem_cnefe)
+                                              ),
+                    by = tempidgeocodebr]
 
-    # selecting the row with max 'contagem_cnefe'
-    empates_salve <- empates_salve[empates_salve[, .I[contagem_cnefe == max(contagem_cnefe)], by = tempidgeocodebr]$V1]
-    empates_salve <- empates_salve[empates_salve[, .I[1], by = tempidgeocodebr]$V1]
+      # selecting the row with max 'contagem_cnefe'
+      empates_salve <- empates_salve[empates_salve[, .I[contagem_cnefe == max(contagem_cnefe, na.rm=TRUE)], by = tempidgeocodebr]$V1]
+      empates_salve <- empates_salve[empates_salve[, .I[1], by = tempidgeocodebr]$V1]
+
+      }
 
 
     # junta tudo
