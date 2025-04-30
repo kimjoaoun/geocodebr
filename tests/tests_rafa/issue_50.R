@@ -34,4 +34,19 @@ out_completo <- geocodebr::geocode(
 
 View(out_completo)
 
+
+# Segundo passo: geolocalizar
+out_simles2 <- geocodebr::geocode(
+  enderecos = enderecosbrasil,
+  campos_endereco = campos_1,
+  resultado_completo = FALSE,
+  resolver_empates = F,
+  resultado_sf = FALSE,
+  verboso = T,
+  cache = TRUE,
+  n_cores = 1
+)
+
+head(out_simles2)
+
 # logradouro_encontrado mesmo quando  resultado_completo = FALSE

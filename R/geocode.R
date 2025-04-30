@@ -272,6 +272,9 @@ geocode <- function(enderecos,
   # drop geocodebr temp id column
   output_df[, tempidgeocodebr := NULL]
 
+  if(isFALSE(resultado_completo)){ output_df[, logradouro_encontrado := NULL]}
+
+
   # convert df to simple feature
   if (isTRUE(resultado_sf)) {
     output_sf <- sfheaders::sf_point(
