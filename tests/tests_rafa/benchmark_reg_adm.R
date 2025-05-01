@@ -25,7 +25,7 @@ set.seed(42)
 
 
 # cad unico --------------------------------------------------------------------
-sample_size <- 5000000
+sample_size <- 25000000
 
 cad_con <- ipeadatalake::ler_cadunico(
   data = 202312,
@@ -62,7 +62,7 @@ cad <- cad_con |>
          cep,
          bairro) |>
   dplyr::compute() |>
-   # dplyr::slice_sample(n = sample_size) |> # sample 20K
+ # dplyr::slice_sample(n = sample_size) |> # sample 20K
   dplyr::collect()
 
 
@@ -97,6 +97,15 @@ fields_cad <- geocodebr::definir_campos(
 #' expression           min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory     time
 #' determ_wth_matches 2.15h  2.15h  0.000129    73.7GB   0.0107     1    83      2.15h / 2,204,315 empates
 #' prob after all det 2.64h  2.64h  0.000105    67.4GB   0.0110     1   104      2.64h / 2,444,248 empates
+#' ideal seq          2.89h  2.89h 0.0000962    66.6GB   0.0123     1   128      2.89h / 2,296,752 empates
+#' 2nd best seq       2.98h  2.98h 0.0000934    67.1GB   0.0114     1   122      2.98h / 2,409,066 empates
+
+
+
+# sequencia de matches
+# 2nd best  1.18h    2296759
+# ideal seq 1.21h    2296827  empates
+# determ    46.06m   2204536
 
 # ℹ Geolocalizando endereços
 # Error in `duckdb_result()`:70,985/43,882,017 ■■■■■■■■■■■■■■■■■■■■■■            69% - Procurando pl02
@@ -104,27 +113,11 @@ fields_cad <- geocodebr::definir_campos(
 # Error: Out of Memory Error: Allocation failure
 # Run `rlang::last_trace()` to see where the error occurred.
 #
-#
-# Backtrace:
-#   ▆
-# 1. ├─bench::system_time(...)
-# 2. │ ├─stats::setNames(...)
-# 3. │ └─bench::as_bench_time(.Call(system_time_, substitute(expr), parent.frame()))
-# 4. └─geocodebr::geocode(...)
-# 5.   └─geocodebr (local) match_fun(...) at geocodebr/R/geocode.R:220:7
-# 6.     ├─DBI::dbSendQueryArrow(con, query_lookup) at geocodebr/R/match_cases_probabilistic.R:119:3
-# 7.     └─DBI::dbSendQueryArrow(con, query_lookup)
-# 8.       └─DBI (local) .local(conn, statement, ...)
-# 9.         ├─DBI::dbSendQuery(conn, statement, params = params, ...)
-# 10.         └─duckdb::dbSendQuery(conn, statement, params = params, ...)
-# 11.           └─duckdb (local) .local(conn, statement, ...)
-# 12.             └─duckdb:::duckdb_result(connection = conn, stmt_lst = stmt_lst, arrow = arrow)
-# Run rlang::last_trace(drop = FALSE) to see 14 hidden frames.
 
 
 
-
-bench::mark(
+# bench::mark( iterations = 1,
+ bench::system_time(
   cadgeo <- geocodebr::geocode(
     enderecos  = cad,
     campos_endereco = fields_cad,
@@ -133,10 +126,18 @@ bench::mark(
     verboso = T,
     resultado_sf = F,
     resolver_empates = F
-  ), iterations = 1
+    )
 )
 
 # 1 milhao
+# seque best 2.15m // 69723 empates
+# 2nd   best 2.1m // 72743 empates
+
+# 25 milhoes
+# seque best 49.4m // 1268668 empates
+# 2nd   best 42.9m // 1331655 empates
+
+
 # novo prob 4.44m // 66561 empates
 # antg prob 15.8m // 77189 empates
 

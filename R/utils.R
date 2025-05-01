@@ -240,12 +240,26 @@ get_key_cols <- function(match_type) {
   return(relevant_cols)
 }
 
-# ### ideal sequence of match types
+### ideal sequence of match types
+all_possible_match_types <- c(
+  "dn01", "da01", "pn01", "pa01",
+  "dn02", "da02", "pn02", "pa02",
+  "dn03", "da03", "pn03", "pa03",
+  "dn04", "da04", #"pn04", "pa04", # too costly
+  "dl01",         "pl01",
+  "dl02",         "pl02",
+  "dl03",         "pl03",
+  "dl04",         # pl04",  # too costly
+  "dc01", "dc02", "db01", "dm01"
+)
+
+# ### 2nd best viable sequence of match types for really large datasets ? testando com cadunico
 # all_possible_match_types <- c(
-#   "dn01", "da01", "pn01", "pa01",
-#   "dn02", "da02", "pn02", "pa02",
-#   "dn03", "da03", "pn03", "pa03",
-#   "dn04", "da04", #"pn04", "pa04", # too costly
+#   "dn01", "da01",
+#   "dn02", "da02",
+#   "dn03", "da03",
+#   "dn04", "da04",
+#   "pn01", "pa01", "pn02", "pa02", "pn03", "pa03", #"pn04", "pa04", # too costly
 #   "dl01",         "pl01",
 #   "dl02",         "pl02",
 #   "dl03",         "pl03",
@@ -253,19 +267,10 @@ get_key_cols <- function(match_type) {
 #   "dc01", "dc02", "db01", "dm01"
 # )
 
-### viable sequence of match types for really large datasets
-all_possible_match_types <- c(
-  "dn01", "da01",
-  "dn02", "da02",
-  "dn03", "da03",
-  "pn01", "pa01", "pn02", "pa02", "pn03", "pa03", "pl01", "pl02", "pl03",
-  "dn04", "da04", #"pn04", "pa04", # too costly
-  "dl01",
-  "dl02",
-  "dl03",
-  "dl04",         # pl04",  # too costly
-  "dc01", "dc02", "db01", "dm01"
-)
+
+
+
+
 
 number_exact_types <- c(
   "dn01", "dn02", "dn03", "dn04"

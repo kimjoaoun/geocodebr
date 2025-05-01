@@ -85,12 +85,12 @@ campos <- geocodebr::definir_campos(
 
 # test probabilistic
 # input_df <- input_df[c(7, 32, 34, 71, 173, 1348)]  # pn02 pi02 pn03 pi03 pr01 pr02
+# temp_df <- filter(input_df,id %in% c(1371)  )
 
-temp_df <- filter(input_df,id %in% c(1371)  )
 
 bench::mark( iterations = 1,
   temp_dfgeo2 <- geocodebr::geocode(
-    enderecos = temp_df,
+    enderecos = input_df,
     campos_endereco = campos,
     n_cores = ncores,
     resultado_completo = T,
@@ -99,6 +99,11 @@ bench::mark( iterations = 1,
     resolver_empates = F
   )
 )
+# sequencia de matches
+#   expression    min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory     time       gc
+# 2nd best      25.7s  25.7s    0.0389    67.1MB    0.350     1     9      25.7s ;;787 empates
+# ideal         23.8s  23.8s    0.0420    38.1MB    0.378     1     9      23.8s ;;724
+
 
 # expression       min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory
 # <bch:expr>     <bch> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>

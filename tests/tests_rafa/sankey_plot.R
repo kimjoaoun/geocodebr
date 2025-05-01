@@ -1,6 +1,39 @@
+library(ggalluvial)
 
-temp <- dfgeo |> select(id, tipo_resultado, precisao) |> unique()
-temp2 <- dfgeo2 |> select(id, tipo_resultado2 =tipo_resultado, precisao2 = precisao) |> unique()
+temp <- temp_dfgeo |> select(id, tipo_resultado, precisao) |> unique()
+# 37.9s
+### viable sequence of match types for really large datasets
+all_possible_match_types <- c(
+  "dn01", "da01",
+  "dn02", "da02",
+  "dn03", "da03",
+  "dn04", "da04",
+  "pn01", "pa01", "pn02", "pa02", "pn03", "pa03", #"pn04", "pa04", # too costly
+  "dl01",
+  "dl02",
+  "dl03",
+  "dl04",         # pl04",  # too costly
+  "pl01", "pl02", "pl03",
+  "dc01", "dc02", "db01", "dm01"
+)
+
+
+
+temp2 <- temp_dfgeo2 |> select(id, tipo_resultado2 =tipo_resultado, precisao2 = precisao) |> unique()
+# 30s
+all_possible_match_types <- c(
+  "dn01", "da01",
+  "dn02", "da02",
+  "dn03", "da03",
+  "dn04", "da04",
+  "pn01", "pa01", "pn02", "pa02", "pn03", "pa03", #"pn04", "pa04", # too costly
+  "dl01",         "pl01",
+  "dl02",         "pl02",
+  "dl03",         "pl03",
+  "dl04",         # pl04",  # too costly
+  "dc01", "dc02", "db01", "dm01"
+)
+
 
 df <- left_join(temp, temp2)
 
@@ -19,6 +52,7 @@ df_agreg <- df_agreg[precisao != precisao2]
 
 library(ggplot2)
 library(ggalluvial)
+library(ggplotly)
 
 
 gg <- ggplot(df_agreg,
@@ -30,17 +64,20 @@ gg <- ggplot(df_agreg,
   # scale_fill_brewer(type = "qual", palette = "Set1") +
   scale_fill_viridis_d()
 
+gg
+# plotly::ggplotly(gg)
+
 ggsave(gg, filename = 'ggaluvia.png', width = 18, height = 12, units='cm')
 
 
 
-pn01            da04
-
-dfall <- left_join(dfgeo, dfgeo2, by='id') |>
-  filter(tipo_resultado.x=='pn01' &
-           tipo_resultado.y=='da04')
-
-dfall$id
+# pn01            da04
+#
+# dfall <- left_join(dfgeo, dfgeo2, by='id') |>
+#   filter(tipo_resultado.x=='pn01' &
+#            tipo_resultado.y=='da04')
+#
+# dfall$id
 
 filter(dfgeo,id %in% c(1371)  )
 filter(dfgeo2,id %in% c(1371)  )
