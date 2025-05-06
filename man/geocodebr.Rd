@@ -28,6 +28,7 @@ Authors:
 
 Other contributors:
 \itemize{
+  \item Arthur Bazolli \email{baz.arthur@gmail.com} [contributor]
   \item Ipea - Instituto de Pesquisa Econômica Aplicada [copyright holder, funder]
 }
 
