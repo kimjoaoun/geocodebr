@@ -164,6 +164,7 @@ match_weighted_cases_probabilistic <- function( # nocov start
 
   # cols that cannot be null
   cols_not_null_match <- gsub('.logradouro', '.temp_lograd_determ', cols_not_null)
+  cols_not_null_match <- paste("AND ", cols_not_null_match)
 
   # whether to keep all columns in the result
   colunas_encontradas <- ""
@@ -198,7 +199,7 @@ match_weighted_cases_probabilistic <- function( # nocov start
     FROM {x}
     LEFT JOIN {y}
     ON {join_condition_determ}
-    WHERE {cols_not_null_match};"
+    WHERE lon IS NOT NULL {cols_not_null_match};"
   )
 
   DBI::dbSendQueryArrow(con, query_match)

@@ -79,7 +79,7 @@ match_weighted_cases <- function( # nocov start
     FROM {x}
     LEFT JOIN {y}
     ON {join_condition}
-    WHERE {cols_not_null} AND {y}.numero IS NOT NULL;"
+    WHERE {cols_not_null} AND {y}.numero IS NOT NULL AND lon IS NOT NULL;"
   )
 
   DBI::dbSendQueryArrow(con, query_match)

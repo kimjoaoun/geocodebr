@@ -197,6 +197,15 @@ Endereços não encontrados são retornados com latitude, longitude, precisão e
 tipo de resultado \code{NA}.
 }
 
+\section{Busca probabilitisca}{
+Os tipos de resultado com busca probabilitisca usam como base o algoritmo de
+semelhança de Jaro para comparar as strings de 'logradouro' dos dados de
+input e da base de endereços do geocodebr. O pacote considera como match o
+logradouro da base de endereços que apresenta a maior semelhança de
+Jaro condicionado a uma semelhança mínima de \code{0.85}, e desde que também haja
+match determinístico em ao menos um dos campos "cep" e "localidade".
+}
+
 \examples{
 \dontshow{if (identical(tolower(Sys.getenv("NOT_CRAN")), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 library(geocodebr)
