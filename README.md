@@ -64,7 +64,6 @@ passos:
 ``` r
 library(geocodebr)
 library(sf)
-#> Warning: package 'sf' was built under R version 4.4.2
 #> Linking to GEOS 3.13.0, GDAL 3.10.1, PROJ 9.5.1; sf_use_s2() is TRUE
 
 # carregando uma amostra de dados
