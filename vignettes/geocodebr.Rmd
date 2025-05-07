@@ -64,7 +64,7 @@ Uma vez que você possui uma tabela de dados (`data.frame`) com endereços no Br
 1. O primeiro passo é usar a função `definir_campos()` para indicar os nomes das colunas no seu `data.frame` que correspondem a cada campo dos endereços.
 2. O segundo passo é usar a função `geocode()` para encontrar as coordenadas geográficas dos endereços de input.
 
-```{r, eval=TRUE}
+```{r}
 library(geocodebr)
 library(sf)
 
@@ -109,7 +109,7 @@ Os resultados do **{geocodebr}** são classificados em seis categorias gerais de
 
 A função `geocode_reverso()`, por sua vez, permite a geolocalização reversa, ou seja, a busca de endereços próximos a um conjunto de coordenadas geográficas. Mais detalhes na [**vignette "geocode"**](https://ipeagit.github.io/geocodebr/articles/geocode_reverso.html).
 
-```{r, eval=TRUE}
+```{r}
 # amostra de pontos espaciais
 pontos <- readRDS(
   system.file("extdata/pontos.rds", package = "geocodebr")
@@ -133,7 +133,7 @@ df_enderecos <- geocodebr::geocode_reverso(
 
 Por fim, a função `busca_por_cep()` permite fazer consultas de CEPs para encontrar endereços associados a cada CEP. A função recebe um vetor de CEPs e retorna um `data.frame` com os endereços e as coordenadas geográficas de cada CEP.
 
-```{r, eval=TRUE}
+```{r}
 # amostra de CEPs
 ceps <- c("70390-025", "20071-001")
 

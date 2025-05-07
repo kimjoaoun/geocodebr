@@ -29,7 +29,7 @@ A função `geocode_reverso()` permite fazer geolocalização reversa, isto é, 
 A função recebe como *input* um objeto espacial `sf` com geometria do tipo `POINT`. O resultado é um *data frame* com o endereço encontrado mais próximo de cada ponto de *input*, onde a coluna `"distancia_metros"` indica a distância entre coordenadas originais e os endereços encontrados.
 
 
-```{r, eval=TRUE}
+```{r}
 library(geocodebr)
 library(sf)
 
