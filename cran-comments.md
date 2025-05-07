@@ -5,6 +5,7 @@ Duration: 6m 44.3s
 
 0 errors ✔ | 0 warnings ✔ | 0 notes ✔
 
+- fixed error of corrupted data
 
 ## Novas funcionalidades (Major changes)
 
