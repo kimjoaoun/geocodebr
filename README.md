@@ -1,179 +1,68 @@
+# PyGeocodeBR
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
+Python port of the [geocodebr](https://github.com/ipea/geocodebr) R package - A geocoding library for Brazilian addresses using CNEFE data.
 
-# geocodebr: Geolocalização de Endereços Brasileiros <img align="right" src="man/figures/logo.svg" alt="" width="180">
+## Overview
 
-[![CRAN
-status](https://www.r-pkg.org/badges/version/geocodebr)](https://CRAN.R-project.org/package=geocodebr)
-[![CRAN/METACRAN Total
-downloads](https://cranlogs.r-pkg.org/badges/grand-total/geocodebr?color=blue)](https://CRAN.R-project.org/package=geocodebr)
-[![check](https://github.com/ipeaGIT/geocodebr/workflows/check/badge.svg)](https://github.com/ipeaGIT/geocodebr/actions)
-[![Codecov test
-coverage](https://codecov.io/gh/ipeaGIT/geocodebr/branch/main/graph/badge.svg)](https://app.codecov.io/gh/ipeaGIT/geocodebr?branch=main)
-[![Lifecycle:
-experimental](https://lifecycle.r-lib.org/articles/figures/lifecycle-experimental.svg)](https://lifecycle.r-lib.org/articles/stages.html)
+PyGeocodeBR provides high-quality geocoding for Brazilian addresses using data from the National Address File for Statistical Purposes (CNEFE) maintained by IBGE. This Python implementation offers the same functionality as the original R package with optimized performance using DuckDB and Arrow.
 
-O **{geocodebr}** é um pacote computacional para geolicalização de
-endereços Brasileiros. O pacote oferece uma maneira simples e eficiente
-de geolocalizar dados sem limite de número de consultas. O pacote é
-baseado em conjuntos de dados espaciais abertos de endereços
-brasileiros, utilizando como fonte principal o Cadastro Nacional de
-Endereços para Fins Estatísticos (CNEFE). O CNEFE é
-[publicado](https://www.ibge.gov.br/estatisticas/sociais/populacao/38734-cadastro-nacional-de-enderecos-para-fins-estatisticos.html)
-pelo Instituto Brasileiro de Geografia e Estatística (IBGE). Atualmente,
-o pacote está disponível apenas em R.
+## Features
 
-## Instalação
+- **Precise Geocoding**: Match Brazilian addresses to latitude/longitude coordinates
+- **Reverse Geocoding**: Find addresses from coordinates
+- **CEP Search**: Look up addresses by postal code (CEP)
+- **Multiple Match Types**: Support for various geocoding precision levels
+- **Fast Performance**: Powered by DuckDB and Arrow for efficient data processing
+- **Caching**: Smart caching system for CNEFE data files
 
-A última versão estável pode ser baixada do CRAN com o comando a seguir:
+## Installation
 
-``` r
-# from CRAN
-install.packages("geocodebr")
+```bash
+pip install pygeocodebr
 ```
 
-Caso prefira, a versão em desenvolvimento:
+## Quick Start
 
-``` r
-# install.packages("remotes")
-remotes::install_github("ipeaGIT/geocodebr")
+```python
+import pygeocodebr as geo
+
+# Download CNEFE data (first time only)
+geo.download_cnefe()
+
+# Geocode addresses
+addresses = [
+    "Rua da Consolação, 1000, São Paulo, SP",
+    "Avenida Paulista, 500, São Paulo, SP"
+]
+
+results = geo.geocode(addresses)
+print(results)
 ```
 
-## Utilização
+## API Reference
 
-O {geocodebr} possui três funções principais para geolocalização de
-dados:
+### Main Functions
 
-1.  `geocode()`
-2.  `geocode_reverso()`
-3.  `busca_por_cep()`
+- `geocode(enderecos, ...)`: Geocode Brazilian addresses
+- `reverse_geocode(points, ...)`: Reverse geocoding from coordinates
+- `search_by_cep(ceps, ...)`: Search addresses by CEP
+- `download_cnefe()`: Download CNEFE data files
 
-### 1. Geolocalização: de endereços para coordenadas espaciais
+### Cache Management
 
-Uma que você possui uma tabela de dados (`data.frame`) com endereços no
-Brasil, a geolocalização desses dados pode ser feita em apenas dois
-passos:
+- `get_cache_dir()`: Get current cache directory
+- `set_cache_dir(path)`: Set custom cache directory
+- `delete_cache()`: Clear all cached data
 
-1.  O primeiro passo é usar a função `definir_campos()` para indicar os
-    nomes das colunas no seu `data.frame` que correspondem a cada campo
-    dos endereços.
+## Requirements
 
-2.  O segundo passo é usar a função `geocode()` para encontrar as
-    coordenadas geográficas dos endereços de input.
+- Python 3.9+
+- Internet connection for initial data download
 
-``` r
-library(geocodebr)
-library(sf)
-#> Linking to GEOS 3.13.0, GDAL 3.10.1, PROJ 9.5.1; sf_use_s2() is TRUE
+## License
 
-# carregando uma amostra de dados
-input_df <- read.csv(system.file("extdata/small_sample.csv", package = "geocodebr"))
+MIT License - see LICENSE file for details.
 
-# Primeiro passo: inidicar o nome das colunas com cada campo dos enderecos
-campos <- geocodebr::definir_campos(
-  logradouro = "nm_logradouro",
-  numero = "Numero",
-  cep = "Cep",
-  localidade = "Bairro",
-  municipio = "nm_municipio",
-  estado = "nm_uf"
-  )
+## Contributing
 
-# Segundo passo: geolocalizar
-df <- geocodebr::geocode(
-  enderecos = input_df,
-  campos_endereco = campos,
-  resultado_completo = FALSE,
-  resolver_empates = FALSE,
-  resultado_sf = FALSE,
-  verboso = FALSE,
-  cache = TRUE,
-  n_cores = 1
-  )
-#> Warning: Foram encontrados 1 casos de empate. Estes casos foram marcados com valor
-#> `TRUE` na coluna 'empate', e podem ser inspecionados na coluna
-#> 'endereco_encontrado'. Alternativamente, use `resolver_empates = TRUE` para que
-#> o pacote lide com os empates automaticamente. Ver documentação da função.
-```
-
-Os resultados do **{geocodebr}** são classificados em seis categorias
-gerais de `precisao`, dependendo do nível de exatidão com que cada
-endereço de input foi encontrado nos dados do CNEFE. Para mais
-informações, consulte a documentação da função ou a [**vignette
-“geocode”**](https://ipeagit.github.io/geocodebr/articles/geocode.html).
-
-### 2. Geolocalização reversa: de coordenadas espaciais para endereços
-
-A função `geocode_reverso()`, por sua vez, permite a geolocalização
-reversa, ou seja, a busca de endereços próximos a um conjunto de
-coordenadas geográficas. A função pode ser útil, por exemplo, para
-identificar endereços próximos a pontos de interesse, como escolas,
-hospitais, ou locais de acidentes.
-
-Mais detalhes na [**vignette
-“geocode”**](https://ipeagit.github.io/geocodebr/articles/geocode_reverso.html).
-
-``` r
-# amostra de pontos espaciais
-pontos <- readRDS(
-   system.file("extdata/pontos.rds", package = "geocodebr")
-   )
-
-pontos <- pontos[1:20,]
-
-# geocode reverso
-df_enderecos <- geocodebr::geocode_reverso(
- pontos = pontos,
- dist_max = 1000,
- verboso = FALSE,
- n_cores = 1
- )
-```
-
-### 3. Busca por CEPs
-
-Por fim, a função `busca_por_cep()` permite fazer consultas de CEPs para
-encontrar endereços associados a cada CEP e suas coordenadas espaciais.
-
-``` r
-# amostra de CEPs
-ceps <- c("70390-025", "20071-001")
-
-df_ceps <- geocodebr::busca_por_cep(
- cep = ceps,
- resultado_sf = FALSE,
- verboso = FALSE
- )
-```
-
-## Projetos relacionados
-
-Existem diversos pacotes de geolocalização disponíveis, muitos dos quais
-podem ser utilizados em R (listados abaixo). A maioria dessas
-alternativas depende de softwares e conjuntos de dados comerciais,
-geralmente impondo limites de número de consultas gratuitas. Em
-contraste, as principais vantagens do **{geocodebr}** são que o pacote:
-(a) é completamente gratuito, permitindo consultas ilimitadas sem nenhum
-custo; (b) opera com alta velocidade e escalabilidade eficiente,
-permitindo geocodificar milhões de endereços em apenas alguns minutos,
-sem a necessidade de infraestrutura computacional avançada ou de alto
-desempenho.
-
-- [{arcgisgeocode}](https://cran.r-project.org/package=arcgisgeocode)
-  and [{arcgeocoder}](https://cran.r-project.org/package=arcgeocoder):
-  utiliza serviço de geocode do ArcGIS
-- [{nominatimlite}](https://cran.r-project.org/package=nominatimlite):
-  baseado dados do OSM
-- [{photon}](https://cran.r-project.org/package=photon): baseado dados
-  do OSM
-- [{tidygeocoder}](https://cran.r-project.org/package=tidygeocoder): API
-  para diversos servicos de geolocalização
-- [{googleway}](https://cran.r-project.org/package=googleway) and
-  [{mapsapi}](https://cran.r-project.org/package=mapsapi): interface
-  para API do Google Maps
-
-## Nota <a href="https://www.ipea.gov.br"><img src="man/figures/ipea_logo.png" alt="IPEA" align="right" width="300"/></a>
-
-Os dados originais do CNEFE são coletados pelo Instituto Brasileiro de
-Geografia e Estatística (IBGE). O **{geocodebr}** foi desenvolvido por
-uma equipe do Instituto de Pesquisa Econômica Aplicada (Ipea)
+This is a Python port of the original R package. Please refer to the main geocodebr repository for contribution guidelines. 
