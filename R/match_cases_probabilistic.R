@@ -40,18 +40,16 @@ match_cases_probabilistic <- function(
 
   # 1st step: create small table with unique logradouros -----------------------
 
-  if (match_type == 'pn01') {
+  # check if view 'unique_logradouros_cep_localidade' exists
+  temp_check <- duckdb::duckdb_list_arrow(conn = con)
+  temp_check <- 'unique_logradouros_cep_localidade' %in% temp_check
+
+  if (match_type == 'pn01' | isFALSE(temp_check)) {
 
     unique_logradouros_cep_localidade <- filtered_cnefe |>
       dplyr::select(dplyr::all_of(c("estado", "municipio", "logradouro", "cep", "localidade"))) |>
       dplyr::distinct() |>
       dplyr::compute()
-
-    # path_unique_cep_loc <- paste0(listar_pasta_cache(), "/municipio_logradouro_cep_localidade.parquet")
-    # unique_logradouros_cep_localidade <- arrow_open_dataset( path_unique_cep_loc ) |>
-    #   dplyr::filter(estado %in% input_states) |>
-    #   dplyr::filter(municipio %in% input_municipio) |>
-    #   dplyr::compute()
 
     # register to db
     duckdb::duckdb_register_arrow(con, "unique_logradouros", unique_logradouros_cep_localidade)
@@ -71,7 +69,6 @@ match_cases_probabilistic <- function(
 
     DBI::dbSendQueryArrow(con, query_unique_logradouros)
   }
-
 
 
   # 2nd step: update input_padrao_db with the most probable logradouro ---------
@@ -395,7 +392,4 @@ match_cases_probabilistic_old <- function(
 #
 # # expression     min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory
 # # current1     60.9ms 66.9ms      14.1     218KB     2.35     6     1      426ms <dbl>  <Rprofmem>
-# # currentL3     125ms  131ms      7.26     456KB     2.42     3     1      413ms <dbl>  <Rprofmem>
 # # old1           56ms 64.4ms      15.2     225KB     2.18     7     1      460ms <dbl>  <Rprofmem>
-# # old3         71.8ms 81.4ms      12.1     222KB     2.41     5     1      415ms <dbl>  <Rprofmem>
-# # oldL3        51.8ms 56.8ms      17.4     221KB     2.17     8     1      460ms
