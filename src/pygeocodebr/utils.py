@@ -6,6 +6,7 @@ import math
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import duckdb
+import pandas as pd
 import polars as pl
 from haversine import haversine, Unit
 
@@ -74,26 +75,38 @@ def add_precision_column(con: duckdb.DuckDBPyConnection, table_name: str) -> Non
 
 def update_input_db(
     con: duckdb.DuckDBPyConnection,
-    update_table: str = "input_padrao_db",
-    reference_table: str = "output_db",
-) -> None:
+    update_tb: str = "input_padrao_db",
+    reference_tb: str = "output_db",
+) -> int:
     """
     Update input database to remove observations that were previously matched.
 
     Args:
         con: DuckDB connection
-        update_table: Name of table to update
-        reference_table: Reference table containing matched records
+        update_tb: Name of table to update (matches R parameter name)
+        reference_tb: Reference table containing matched records (matches R parameter name)
+
+    Returns:
+        Number of rows affected (like R implementation)
 
     Examples:
         >>> con = duckdb.connect()
-        >>> update_input_db(con, "input_padrao_db", "output_caso_1")
+        >>> n_affected = update_input_db(con, "input_padrao_db", "output_caso_1")
     """
+    # First count how many will be matched
+    count_query = f"""
+    SELECT COUNT(*) FROM {reference_tb}
+    """
+    n_matched = con.execute(count_query).fetchone()[0]
+
+    # Then delete the matched rows
     query = f"""
-    DELETE FROM {update_table}
-    WHERE tempidgeocodebr IN (SELECT tempidgeocodebr FROM {reference_table});
+    DELETE FROM {update_tb}
+    WHERE tempidgeocodebr IN (SELECT tempidgeocodebr FROM {reference_tb});
     """
     con.execute(query)
+
+    return n_matched
 
 
 def create_index(
@@ -171,22 +184,34 @@ def get_key_columns(match_type: str) -> List[str]:
 
     Examples:
         >>> get_key_columns("dn01")
-        ['municipio', 'logradouro', 'numero']
+        ['estado', 'municipio', 'logradouro', 'numero', 'cep', 'localidade']
     """
-    if match_type.startswith("dn") or match_type.startswith("pn"):
-        return ["municipio", "logradouro", "numero"]
-    elif match_type.startswith("da") or match_type.startswith("pa"):
-        return ["municipio", "logradouro", "numero"]
-    elif match_type.startswith("dl") or match_type.startswith("pl"):
-        return ["municipio", "logradouro"]
-    elif match_type.startswith("dc"):
-        return ["municipio", "cep"]
-    elif match_type.startswith("db"):
-        return ["municipio", "localidade"]
-    elif match_type.startswith("dm"):
-        return ["municipio"]
+    if match_type in ["dn01", "da01", "pn01", "pa01"]:
+        return ["estado", "municipio", "logradouro", "numero", "cep", "localidade"]
+    elif match_type in ["dn02", "da02", "pn02", "pa02"]:
+        return ["estado", "municipio", "logradouro", "numero", "cep"]
+    elif match_type in ["dn03", "da03", "pn03", "pa03"]:
+        return ["estado", "municipio", "logradouro", "numero", "localidade"]
+    elif match_type in ["dn04", "da04", "pn04", "pa04"]:
+        return ["estado", "municipio", "logradouro", "numero"]
+    elif match_type in ["dl01", "pl01"]:
+        return ["estado", "municipio", "logradouro", "cep", "localidade"]
+    elif match_type in ["dl02", "pl02"]:
+        return ["estado", "municipio", "logradouro", "cep"]
+    elif match_type in ["dl03", "pl03"]:
+        return ["estado", "municipio", "logradouro", "localidade"]
+    elif match_type in ["dl04", "pl04"]:
+        return ["estado", "municipio", "logradouro"]
+    elif match_type == "dc01":
+        return ["estado", "municipio", "cep", "localidade"]
+    elif match_type == "dc02":
+        return ["estado", "municipio", "cep"]
+    elif match_type == "db01":
+        return ["estado", "municipio", "localidade"]
+    elif match_type == "dm01":
+        return ["estado", "municipio"]
     else:
-        return ["municipio"]
+        return ["estado", "municipio"]
 
 
 def get_reference_table(match_type: str) -> str:
@@ -201,22 +226,37 @@ def get_reference_table(match_type: str) -> str:
 
     Examples:
         >>> get_reference_table("dn01")
-        'municipio_logradouro_numero_localidade'
+        'municipio_logradouro_numero_cep_localidade'
     """
-    if match_type.startswith("dn") or match_type.startswith("pn"):
+    if match_type in ["dn02", "pn02", "da02", "pa02", "dn03", "pn03"]:
+        return "municipio_logradouro_numero_cep_localidade"
+    elif match_type in ["da03", "pa03", "dn04", "da04", "pn04", "pa04"]:
         return "municipio_logradouro_numero_localidade"
-    elif match_type.startswith("da") or match_type.startswith("pa"):
-        return "municipio_logradouro_numero_localidade"
-    elif match_type.startswith("dl") or match_type.startswith("pl"):
+    elif match_type in ["dl02", "pl02", "dl03", "pl03"]:
+        return "municipio_logradouro_cep_localidade"
+    elif match_type in ["dl04", "pl04"]:
         return "municipio_logradouro_localidade"
-    elif match_type.startswith("dc"):
+    elif match_type in ["dn01", "da01", "pn01", "pa01"]:
+        return "municipio_logradouro_numero_cep_localidade"
+    elif match_type in ["dl01", "pl01"]:
+        return "municipio_logradouro_cep_localidade"
+    elif match_type in ["dc01", "dc02"]:
         return "municipio_cep_localidade"
-    elif match_type.startswith("db"):
+    elif match_type == "db01":
         return "municipio_localidade"
-    elif match_type.startswith("dm"):
+    elif match_type == "dm01":
         return "municipio"
     else:
         return "municipio"
+
+
+# Match type categories (from R implementation)
+NUMBER_EXACT_TYPES = ["dn01", "dn02", "dn03", "dn04"]
+NUMBER_INTERPOLATION_TYPES = ["da01", "da02", "da03", "da04"]
+PROBABILISTIC_EXACT_TYPES = ["pn01", "pn02", "pn03", "pn04"]
+PROBABILISTIC_INTERPOLATION_TYPES = ["pa01", "pa02", "pa03", "pa04"]
+EXACT_TYPES_NO_NUMBER = ["dl01", "dl02", "dl03", "dl04", "dc01", "dc02", "db01", "dm01"]
+PROBABILISTIC_TYPES_NO_NUMBER = ["pl01", "pl02", "pl03", "pl04"]
 
 
 def merge_results(
@@ -226,7 +266,7 @@ def merge_results(
     key_column: str,
     select_columns: List[str],
     complete_result: bool = False,
-) -> pl.DataFrame:
+) -> pd.DataFrame:
     """
     Merge geocoding results with original input data.
 
@@ -287,5 +327,5 @@ def merge_results(
     ON {input_table}.{key_column} = sorted_output.{key_column};
     """
 
-    result = con.execute(query).pl()
+    result = con.execute(query).df()
     return result

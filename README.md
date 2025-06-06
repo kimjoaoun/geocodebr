@@ -2,6 +2,9 @@
 
 Python port of the [geocodebr](https://github.com/ipea/geocodebr) R package - A geocoding library for Brazilian addresses using CNEFE data.
 
+> **Note**: This library is experimental and was translated from R to Python using AI assistance. It is not actively maintained and should be used with caution in production environments.
+
+
 ## Overview
 
 PyGeocodeBR provides high-quality geocoding for Brazilian addresses using data from the National Address File for Statistical Purposes (CNEFE) maintained by IBGE. This Python implementation offers the same functionality as the original R package with optimized performance using DuckDB and Arrow.
@@ -15,11 +18,6 @@ PyGeocodeBR provides high-quality geocoding for Brazilian addresses using data f
 - **Fast Performance**: Powered by DuckDB and Arrow for efficient data processing
 - **Caching**: Smart caching system for CNEFE data files
 
-## Installation
-
-```bash
-pip install pygeocodebr
-```
 
 ## Quick Start
 
