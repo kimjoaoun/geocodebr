@@ -1,8 +1,8 @@
-# geocodebr 0.2.09999 dev
+# geocodebr 0.2.1
 
 ## Correção de bugs (Bug fixes)
 
-- Resolvido bug que retornava erro se o input to usuario comecava o geocode direto a partir do match case `pl01`.
+- Resolvido bug que retornava erro se o input to usuario comecava o geocode direto a partir do match case `"pl01"`.
 
 
 # geocodebr 0.2.0
