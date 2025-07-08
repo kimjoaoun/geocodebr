@@ -135,20 +135,27 @@ df_ceps <- geocodebr::busca_por_cep(
 ```
 
 
+## Nota <a href="https://www.ipea.gov.br"><img src="man/figures/ipea_logo.png" alt="IPEA" align="right" width="300"/></a>
+
+Os dados originais do CNEFE são coletados pelo Instituto Brasileiro de Geografia e Estatística (IBGE). O **{geocodebr}** foi desenvolvido por uma equipe do Instituto de Pesquisa Econômica Aplicada (Ipea)
+
+
+## Instituições utilizando o {geocodebr}
+
+Além de diversos pesquisadores e empresas que utilizam o {geocodebr}, o pacote também tem sido utilizado oficialmente por algumas instituições públicas no planejamento e avaliação de políticas públicas. Entre elas:
+
+- Banco Central do Brasil
+- Ministério do Desenvolvimento Social e Combate à Fome (MDS)
+
+
 ## Projetos relacionados
 
 Existem diversos pacotes de geolocalização disponíveis, muitos dos quais podem ser utilizados em R (listados abaixo). A maioria dessas alternativas depende de softwares e conjuntos de dados comerciais, geralmente impondo limites de número de consultas gratuitas. Em contraste, as principais vantagens do **{geocodebr}** são que o pacote: (a) é completamente gratuito, permitindo consultas ilimitadas sem nenhum custo; (b) opera com alta velocidade e escalabilidade eficiente, permitindo geocodificar milhões de endereços em apenas alguns minutos, sem a necessidade de infraestrutura computacional avançada ou de alto desempenho.
-
 
 - [{arcgisgeocode}](https://cran.r-project.org/package=arcgisgeocode) and [{arcgeocoder}](https://cran.r-project.org/package=arcgeocoder): utiliza serviço de geocode do ArcGIS
 - [{nominatimlite}](https://cran.r-project.org/package=nominatimlite): baseado dados do OSM
 - [{photon}](https://cran.r-project.org/package=photon): baseado dados do OSM
 - [{tidygeocoder}](https://cran.r-project.org/package=tidygeocoder): API para diversos servicos de geolocalização
 - [{googleway}](https://cran.r-project.org/package=googleway) and [{mapsapi}](https://cran.r-project.org/package=mapsapi): interface para API do Google Maps
-
-
-## Nota <a href="https://www.ipea.gov.br"><img src="man/figures/ipea_logo.png" alt="IPEA" align="right" width="300"/></a>
-
-Os dados originais do CNEFE são coletados pelo Instituto Brasileiro de Geografia e Estatística (IBGE). O **{geocodebr}** foi desenvolvido por uma equipe do Instituto de Pesquisa Econômica Aplicada (Ipea)
 
 

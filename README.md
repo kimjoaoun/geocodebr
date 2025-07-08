@@ -146,6 +146,21 @@ df_ceps <- geocodebr::busca_por_cep(
  )
 ```
 
+## Nota <a href="https://www.ipea.gov.br"><img src="man/figures/ipea_logo.png" alt="IPEA" align="right" width="300"/></a>
+
+Os dados originais do CNEFE são coletados pelo Instituto Brasileiro de
+Geografia e Estatística (IBGE). O **{geocodebr}** foi desenvolvido por
+uma equipe do Instituto de Pesquisa Econômica Aplicada (Ipea)
+
+## Instituições utilizando o {geocodebr}
+
+Além de diversos pesquisadores e empresas que utilizam o {geocodebr}, o
+pacote também tem sido utilizado oficialmente por algumas instituições
+públicas no planejamento e avaliação de políticas públicas. Entre elas:
+
+- Banco Central do Brasil
+- Ministério do Desenvolvimento Social e Combate à Fome (MDS)
+
 ## Projetos relacionados
 
 Existem diversos pacotes de geolocalização disponíveis, muitos dos quais
@@ -171,9 +186,3 @@ desempenho.
 - [{googleway}](https://cran.r-project.org/package=googleway) and
   [{mapsapi}](https://cran.r-project.org/package=mapsapi): interface
   para API do Google Maps
-
-## Nota <a href="https://www.ipea.gov.br"><img src="man/figures/ipea_logo.png" alt="IPEA" align="right" width="300"/></a>
-
-Os dados originais do CNEFE são coletados pelo Instituto Brasileiro de
-Geografia e Estatística (IBGE). O **{geocodebr}** foi desenvolvido por
-uma equipe do Instituto de Pesquisa Econômica Aplicada (Ipea)
